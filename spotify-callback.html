@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connecting to Spotify - DASH</title>
+    <link rel="stylesheet" href="loading.css">
+</head>
+<body>
+    <!-- iOS Status Bar -->
+    <div class="status-bar">
+        <div class="status-left">
+            <span class="time">9:41</span>
+        </div>
+        <div class="status-right">
+            <span class="signal">●●●●●</span>
+            <span class="wifi">📶</span>
+            <span class="battery">🔋</span>
+        </div>
+    </div>
+
+    <!-- Mobile Container -->
+    <div class="mobile-container">
+        <!-- Loading Animation -->
+        <div class="loading-animation">
+            <div class="dash-logo">
+                <div class="logo-circle">
+                    <div class="logo-inner">
+                        <span class="logo-text">🎵</span>
+                    </div>
+                </div>
+                <div class="loading-dots">
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Text -->
+        <div class="loading-content">
+            <h1><span class="dash-text">DASH</span></h1>
+            <h2 class="account-created">account created!</h2>
+            <p class="loading-subtitle">Connecting to Spotify</p>
+            
+
+            <!-- Loading Messages -->
+            <div class="loading-messages">
+                <div class="message active">Authenticating with Spotify...</div>
+                <div class="message">Loading your music library...</div>
+                <div class="message">Analyzing your music taste...</div>
+                <div class="message">Almost ready...</div>
+            </div>
+        </div>
+
+        <!-- Floating Elements -->
+        <div class="floating-elements">
+            <div class="floating-person">
+                <div class="person-avatar person-1"></div>
+            </div>
+            <div class="floating-person">
+                <div class="person-avatar person-2"></div>
+            </div>
+            <div class="floating-person">
+                <div class="person-avatar person-3"></div>
+            </div>
+            <div class="floating-person">
+                <div class="person-avatar person-4"></div>
+            </div>
+            <div class="floating-person">
+                <div class="person-avatar person-5"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Background Particles -->
+    <div class="particles">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+
+    <script src="spotify-callback.js"></script>
+</body>
+</html>
