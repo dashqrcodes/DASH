@@ -1,0 +1,820 @@
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background: #000000;
+    color: #ffffff;
+    line-height: 1.6;
+    min-height: 100vh;
+}
+
+/* iOS Status Bar */
+.status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 20px;
+    background: #000000;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+}
+
+.status-left .time {
+    font-weight: 600;
+}
+
+.status-right {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.signal, .wifi, .battery {
+    font-size: 12px;
+}
+
+/* Mobile Container */
+.mobile-container {
+    max-width: 375px;
+    margin: 0 auto;
+    padding: 60px 20px 20px;
+    min-height: 100vh;
+    background: #000000;
+}
+
+/* Header */
+.signup-header {
+    text-align: center;
+    margin-bottom: 40px;
+    padding: 20px 0;
+}
+
+.signup-header h1 {
+    font-size: 2.5em;
+    font-weight: 700;
+    color: white;
+    margin: 0 0 10px 0;
+    line-height: 1.2;
+}
+
+.signup-header p {
+    color: #c77dff;
+    font-size: 16px;
+    margin: 0;
+}
+
+/* Form Styles */
+.signup-form {
+    margin-bottom: 30px;
+}
+
+.form-section {
+    margin-bottom: 25px;
+}
+
+.form-section label {
+    display: block;
+    color: #f5f5f5;
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+/* Mobile Number Section - Special Emphasis */
+.mobile-section {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 25px;
+}
+
+.mobile-section label {
+    color: #f5f5f5;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+#mobileNumber {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 25px;
+    color: #ffffff;
+    padding: 12px 15px;
+    font-size: 16px;
+    height: 50px;
+}
+
+#mobileNumber:focus {
+    outline: none;
+    border-color: #9d4edd;
+    box-shadow: 0 0 0 2px rgba(157, 78, 221, 0.2);
+}
+
+#mobileNumber::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.input-hint {
+    color: #c77dff;
+    font-size: 14px;
+    margin: 0;
+    display: none;
+}
+
+/* OTP Section */
+.otp-section {
+    text-align: center;
+}
+
+.otp-hint {
+    color: #c77dff;
+    font-size: 14px;
+    margin: 8px 0 20px 0;
+}
+
+.otp-container {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.otp-input {
+    width: 50px;
+    height: 50px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    color: #ffffff;
+    font-size: 24px;
+    font-weight: bold;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.otp-input:focus {
+    outline: none;
+    border-color: #9d4edd;
+    box-shadow: 0 0 0 2px rgba(157, 78, 221, 0.2);
+    transform: scale(1.05);
+}
+
+.otp-input:valid {
+    border-color: #4caf50;
+    background: rgba(76, 175, 80, 0.1);
+}
+
+.resend-button {
+    background: none;
+    border: none;
+    color: #9d4edd;
+    font-size: 14px;
+    cursor: pointer;
+    text-decoration: underline;
+    transition: color 0.3s ease;
+}
+
+.resend-button:hover {
+    color: #c77dff;
+}
+
+input[type="email"]:focus, input[type="password"]:focus {
+    outline: none;
+    border-color: #9d4edd;
+    box-shadow: 0 0 0 2px rgba(157, 78, 221, 0.2);
+}
+
+input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* Password Container */
+.password-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-container input {
+    padding-right: 50px;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 15px;
+    background: none;
+    border: none;
+    color: #c77dff;
+    cursor: pointer;
+    font-size: 18px;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Terms and Conditions */
+.terms-section {
+    margin: 30px 0;
+}
+
+.checkbox-container {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    cursor: pointer;
+    font-size: 11px;
+    line-height: 1.3;
+}
+
+.checkbox-container input[type="checkbox"] {
+    display: none;
+}
+
+.checkmark {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+    position: relative;
+    flex-shrink: 0;
+    margin-top: 1px;
+    transition: all 0.3s ease;
+}
+
+.checkbox-container input[type="checkbox"]:checked + .checkmark {
+    background: #9d4edd;
+    border-color: #9d4edd;
+}
+
+.checkbox-container input[type="checkbox"]:checked + .checkmark::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+}
+
+.terms-link {
+    color: #9d4edd;
+    text-decoration: none;
+}
+
+.terms-link:hover {
+    text-decoration: underline;
+}
+
+/* Action Section */
+.action-section {
+    margin: 30px 0;
+    text-align: center;
+}
+
+.signup-button {
+    width: 100%;
+    padding: 18px 30px;
+    border: 2px solid transparent;
+    border-radius: 25px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    background: linear-gradient(45deg, #9d4edd, #c77dff, #ff6b6b, #4ecdc4, #45b7d1);
+    background-size: 300% 300%;
+    color: white;
+    box-shadow: 0 4px 15px rgba(157, 78, 221, 0.3);
+    animation: buttonGradient 3s ease-in-out infinite;
+    position: relative;
+}
+
+.signup-button::before {
+    content: '';
+    position: absolute;
+    top: -4px;
+    left: -4px;
+    right: -4px;
+    bottom: -4px;
+    background: linear-gradient(45deg, #9d4edd, #c77dff, #ff6b6b, #4ecdc4, #45b7d1);
+    background-size: 300% 300%;
+    border-radius: 29px;
+    z-index: -1;
+    animation: buttonGradient 3s ease-in-out infinite, borderPulse 2s ease-in-out infinite;
+    box-shadow: 0 0 20px rgba(157, 78, 221, 0.5);
+}
+
+.signup-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(157, 78, 221, 0.4);
+}
+
+.signup-button:active {
+    transform: translateY(0);
+}
+
+/* Alternative Sign Up */
+.alternative-signup {
+    margin: 30px 0;
+}
+
+.divider {
+    text-align: center;
+    margin: 20px 0;
+    position: relative;
+}
+
+.divider::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.divider span {
+    background: #000000;
+    padding: 0 15px;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 14px;
+}
+
+.social-button {
+    width: 100%;
+    padding: 15px 20px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 25px;
+    background: rgba(255, 255, 255, 0.05);
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.social-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-1px);
+}
+
+.social-icon {
+    font-size: 18px;
+}
+
+.google-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+}
+
+.google-logo svg {
+    width: 18px;
+    height: 18px;
+}
+
+.apple-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    color: #000000;
+}
+
+.apple-logo svg {
+    width: 18px;
+    height: 18px;
+}
+
+.spotify-button {
+    background: linear-gradient(135deg, #1db954 0%, #1ed760 100%);
+    border: 1px solid #1db954;
+    color: white;
+    font-weight: 700;
+}
+
+.spotify-button:hover {
+    background: linear-gradient(135deg, #1ed760 0%, #1db954 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(29, 185, 84, 0.3);
+}
+
+.google-button {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+}
+
+.google-button:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2);
+}
+
+.apple-button {
+    background: linear-gradient(135deg, #007AFF 0%, #0056CC 100%);
+    border: 1px solid #007AFF;
+    color: white;
+    box-shadow: 0 4px 15px rgba(0, 122, 255, 0.3);
+}
+
+.apple-button:hover {
+    background: linear-gradient(135deg, #0056CC 0%, #007AFF 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(0, 122, 255, 0.4);
+}
+
+/* Email Signup Option */
+.email-signup-option {
+    text-align: center;
+    margin-top: 15px;
+}
+
+.email-signup-link {
+    background: none;
+    border: none;
+    color: #9d4edd;
+    font-size: 12px;
+    cursor: pointer;
+    text-decoration: underline;
+    transition: color 0.3s ease;
+    padding: 0;
+}
+
+.email-signup-link:hover {
+    color: #c77dff;
+}
+
+/* Login Link */
+.login-link {
+    text-align: center;
+    margin: 30px 0;
+}
+
+.login-link p {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+}
+
+.login-text {
+    color: #9d4edd;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.login-text:hover {
+    text-decoration: underline;
+}
+
+/* Footer */
+.signup-footer {
+    text-align: center;
+    padding: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: 40px;
+}
+
+.signup-footer p {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 12px;
+}
+
+/* Button Gradient Animation */
+@keyframes buttonGradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+@keyframes borderPulse {
+    0%, 100% { 
+        transform: scale(1);
+        box-shadow: 0 0 20px rgba(157, 78, 221, 0.5);
+    }
+    50% { 
+        transform: scale(1.02);
+        box-shadow: 0 0 30px rgba(157, 78, 221, 0.8), 0 0 40px rgba(199, 125, 255, 0.6);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+    .mobile-container {
+        padding: 60px 15px 20px;
+    }
+    
+    .signup-header h1 {
+        font-size: 2.2em;
+    }
+    
+    .mobile-input-container {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .country-code {
+        width: 100%;
+    }
+}
+
+/* Remove pulsing animation for cleaner look */
+
+/* Email Link Styling */
+.email-link {
+    display: block;
+    text-align: center;
+    color: #9d4edd;
+    font-size: 14px;
+    text-decoration: underline;
+    margin: 20px 0;
+    padding: 10px 0;
+}
+
+.email-link:hover {
+    color: #c77dff;
+}
+
+/* Phone Button Styling */
+.phone-button {
+    background: linear-gradient(135deg, #9d4edd 0%, #c77dff 100%);
+    border: 1px solid #9d4edd;
+    color: white;
+    font-weight: 700;
+}
+
+.phone-button:hover {
+    background: linear-gradient(135deg, #c77dff 0%, #9d4edd 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(157, 78, 221, 0.3);
+}
+
+/* Phone OTP Section */
+.phone-otp-section {
+    margin: 20px 0;
+    display: none; /* Hidden by default */
+}
+
+.phone-otp-section.active {
+    display: block;
+}
+
+.phone-input-container {
+    margin-bottom: 20px;
+}
+
+.phone-input-container input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    color: #ffffff;
+    padding: 15px;
+    font-size: 18px;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.phone-input-container input:focus {
+    outline: none;
+    border-color: #9d4edd;
+    box-shadow: 0 0 0 2px rgba(157, 78, 221, 0.2);
+}
+
+.phone-input-container input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* OTP Display Section */
+.otp-display-section {
+    text-align: center;
+    margin: 20px 0;
+}
+
+.otp-label {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 16px;
+    margin-bottom: 15px;
+}
+
+.otp-container {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+.otp-input {
+    width: 55px;
+    height: 55px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    color: #ffffff;
+    font-size: 28px;
+    font-weight: bold;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.otp-input:focus {
+    outline: none;
+    border-color: #9d4edd;
+    box-shadow: 0 0 0 3px rgba(157, 78, 221, 0.3);
+    transform: scale(1.05);
+}
+
+.resend-text {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 14px;
+    margin-top: 10px;
+}
+
+.resend-link {
+    color: #9d4edd;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.resend-link:hover {
+    text-decoration: underline;
+    color: #c77dff;
+}
+
+/* Terms Agreement */
+.terms-agreement {
+    margin: 20px 0;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    margin-top: 2px;
+    cursor: pointer;
+}
+
+.checkmark {
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+    display: inline-block;
+    flex-shrink: 0;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.checkbox-label input[type="checkbox"]:checked + .checkmark {
+    background: #9d4edd;
+    border-color: #9d4edd;
+}
+
+.checkbox-label input[type="checkbox"]:checked + .checkmark::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.terms-text {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.terms-link {
+    color: #9d4edd;
+    text-decoration: underline;
+}
+
+.terms-link:hover {
+    color: #c77dff;
+}
+
+/* Update Terms Text Size */
+.terms-text {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 11px !important;
+    line-height: 1.3;
+}
+
+/* Make terms section more compact */
+.terms-agreement {
+    margin: 15px 0;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 8px;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+}
+
+.checkmark {
+    width: 16px;
+    height: 16px;
+}
+
+.checkbox-label input[type="checkbox"]:checked + .checkmark::after {
+    font-size: 12px;
+}
+
+/* Ensure OTP squares are visible and properly sized */
+.otp-display-section {
+    text-align: center;
+    margin: 20px 0;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 12px;
+}
+
+.otp-container {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 15px auto;
+}
+
+.otp-input {
+    width: 50px;
+    height: 50px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+    color: #ffffff;
+    font-size: 24px;
+    font-weight: bold;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.otp-input:focus {
+    outline: none;
+    border-color: #9d4edd;
+    box-shadow: 0 0 0 3px rgba(157, 78, 221, 0.3);
+    transform: scale(1.08);
+}
+
+.otp-input:valid {
+    border-color: #1db954;
+    background: rgba(29, 185, 84, 0.1);
+}
+
+/* Hide the actual checkbox and use only custom checkmark */
+.checkbox-label input[type="checkbox"] {
+    display: none;
+}
+
+
+/* Reduce vertical padding on terms */
+.terms-agreement {
+    margin: 10px 0 !important;
+    padding: 8px !important;
+}
+
+/* Show OTP section by default for testing */
+.phone-otp-section {
+    display: block !important;
+    margin: 20px 0;
+}

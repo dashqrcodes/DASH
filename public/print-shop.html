@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Print Shop - DASH</title>
+    <link rel="stylesheet" href="print-shop.css">
+</head>
+<body>
+    <div class="status-bar">
+        <div class="status-left"><span class="time">9:41</span></div>
+        <div class="status-right">
+            <span class="signal">●●●●●</span>
+            <span class="wifi">📶</span>
+            <span class="battery">🔋</span>
+        </div>
+    </div>
+
+    <div class="mobile-container">
+        <div class="shop-header">
+            <h1>DASH Print Shop</h1>
+            <div class="earnings-display" id="earningsDisplay">
+                <span class="earnings-label">Today's Earnings:</span>
+                <span class="earnings-amount" id="todayEarnings">$0.00</span>
+            </div>
+        </div>
+
+        <div class="inbox-section">
+            <div class="section-header">
+                <h2>Job Inbox</h2>
+                <span class="job-count" id="jobCount">3 orders = $210.00</span>
+            </div>
+            
+            <div class="order-list" id="orderList">
+                <div class="order-card urgent" data-id="1">
+                    <div class="order-header">
+                        <span class="order-id">Order #1234</span>
+                        <span class="order-amount">$70.00</span>
+                    </div>
+                    <div class="urgency-badge">⚠️ SAME DAY</div>
+                    <div class="due-time">
+                        Funeral: Today at 2:00 PM
+                        <span class="time-remaining">(4h 19m remaining)</span>
+                    </div>
+                    <div class="order-status in-progress">In Progress</div>
+                    <div class="order-details">Memorial card + Portrait</div>
+                    <button class="complete-btn" onclick="markComplete(1, 70)">Mark Complete</button>
+                </div>
+                
+                <div class="order-card" data-id="2">
+                    <div class="order-header">
+                        <span class="order-id">Order #1235</span>
+                        <span class="order-amount">$70.00</span>
+                    </div>
+                    <div class="due-time">
+                        Funeral: Tomorrow at 10:00 AM
+                        <span class="time-remaining">(1 day remaining)</span>
+                    </div>
+                    <div class="order-status pending">Pending</div>
+                    <div class="order-details">Memorial card + Portrait</div>
+                    <button class="complete-btn" onclick="markComplete(2, 70)">Mark Complete</button>
+                </div>
+                
+                <div class="order-card" data-id="3">
+                    <div class="order-header">
+                        <span class="order-id">Order #1236</span>
+                        <span class="order-amount">$70.00</span>
+                    </div>
+                    <div class="due-time">
+                        Funeral: Dec 15 at 3:00 PM
+                        <span class="time-remaining">(2 days remaining)</span>
+                    </div>
+                    <div class="order-status pending">Pending</div>
+                    <div class="order-details">Memorial card + Portrait</div>
+                    <button class="complete-btn" onclick="markComplete(3, 70)">Mark Complete</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="payment-modal" id="paymentModal">
+            <div class="payment-content">
+                <div class="success-icon">✓</div>
+                <div class="cha-ching">CHA-CHING!</div>
+                <div class="payment-amount" id="paymentAmount">$70.00</div>
+                <div class="payment-message">Deposited to your account</div>
+                <button class="close-modal" onclick="closePaymentModal()">Got it!</button>
+            </div>
+        </div>
+
+        <div class="courier-alert" id="courierAlert">
+            <div class="alert-content">
+                <div class="alert-icon">🚨</div>
+                <div class="alert-title">COURIER ON THE WAY!</div>
+                <div class="alert-details">John from Uber<br>ETA: 15 minutes</div>
+                <div class="alert-urgency">⚠️ HAVE ORDER READY!</div>
+                <button class="alert-close" onclick="closeCourierAlert()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="print-shop.js"></script>
+</body>
+</html>

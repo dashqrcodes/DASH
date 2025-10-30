@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Memorial - DASH</title>
+    <link rel="stylesheet" href="create-account.css">
+</head>
+<body>
+    <!-- iOS Status Bar -->
+    <div class="status-bar">
+        <div class="status-left">
+            <span class="time">9:41</span>
+        </div>
+        <div class="status-right">
+            <span class="signal">●●●●●</span>
+            <span class="wifi">📶</span>
+            <span class="battery">🔋</span>
+        </div>
+    </div>
+
+    <!-- Mobile Container -->
+    <div class="mobile-container">
+        <!-- Header -->
+        <div class="signup-header">
+            <h1>Create a DASH</h1>
+            <p>Let's build memories together</p>
+        </div>
+
+        <!-- Form -->
+        <form class="memorial-form" id="memorialForm">
+            <!-- Loved One's Name -->
+            <div class="form-group">
+                <label>Loved One's Name</label>
+                <input type="text" placeholder="Enter name" id="lovedOneName" required>
+            </div>
+
+            <!-- Sunrise Date -->
+            <div class="form-group">
+                <label>Sunrise (Date of Birth)</label>
+                <input type="date" id="sunriseDate" required>
+            </div>
+
+            <!-- Sunset Date -->
+            <div class="form-group">
+                <label>Sunset</label>
+                <input type="date" id="sunsetDate" required>
+            </div>
+
+            <!-- Hero Photo Upload -->
+            <div class="form-group">
+                <label>Hero Photo (for memorial card)</label>
+                <div class="photo-upload">
+                    <input type="file" accept="image/*" id="heroPhoto" required>
+                    <div class="upload-preview"></div>
+                </div>
+            </div>
+
+            <!-- Music Selection -->
+            <div class="form-group">
+                <label>Select Music</label>
+                <div class="spotify-playlist-display">
+                    <p class="music-hint">🎵 Connected to Spotify</p>
+                    <p class="music-hint-small">We'll fetch your playlists...</p>
+                </div>
+            </div>
+            <div class="form-group">
+            <!-- Music Selection -->
+            <div class="form-group">
+                <label>Select Music</label>
+                <div class="spotify-playlist-display">
+                    <p class="music-hint">🎵 Connected to Spotify</p>
+                    <p class="music-hint-small">We'll fetch your playlists...</p>
+                </div>
+            </div>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" class="social-button phone-button">Continue</button>
+        </form>
+    </div>
+
+    <script src="customer-intake.js"></script>
+</body>
+</html>
