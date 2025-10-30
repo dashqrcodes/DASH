@@ -279,3 +279,63 @@ body {
         height: 120px;
     }
 }
+
+/* Make Face ID icon bigger and more prominent */
+.faceid-circle {
+    width: 180px !important;
+    height: 180px !important;
+    border-width: 3px !important;
+}
+
+/* Add subtle animation to draw attention */
+.faceid-circle {
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        box-shadow: 0 0 20px rgba(0, 122, 255, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 40px rgba(0, 122, 255, 0.6);
+    }
+}
+
+/* Make description text less prominent */
+.faceid-description {
+    opacity: 0.7;
+    font-size: 14px;
+}
+
+/* Add gradient border to Enable Face ID button */
+.enable-button {
+    background: transparent !important;
+    border: 2px solid transparent;
+    position: relative;
+}
+
+.enable-button::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg, #9d4edd, #c77dff, #ff6b6b, #4ecdc4, #45b7d1);
+    background-size: 300% 300%;
+    border-radius: 50px;
+    z-index: -1;
+}
+
+/* Filled gradient button with DASH colors */
+.enable-button {
+    background: linear-gradient(135deg, #9d4edd 0%, #c77dff 100%) !important;
+    border: none !important;
+    color: white !important;
+}
+
+.enable-button:hover {
+    background: linear-gradient(135deg, #c77dff 0%, #9d4edd 100%) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(157, 78, 221, 0.4);
+}
