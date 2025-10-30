@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>20x30 Enlargement Builder - DASH</title>
+    <link rel="stylesheet" href="enlargement-builder.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Open+Sans:wght@300;400;600&family=Crimson+Text:wght@400;600&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="status-bar">
+        <div class="status-left"><span class="time">9:41</span></div>
+        <div class="status-right">
+            <span class="signal">●●●●●</span>
+            <span class="wifi">📶</span>
+            <span class="battery">🔋</span>
+        </div>
+    </div>
+
+    <div class="mobile-container">
+        <div class="header">
+            <h1>20x30 Enlargement</h1>
+            <p>Design your portrait enlargement</p>
+        </div>
+
+
+        <!-- Customization Controls -->
+        <div class="customization-section">
+            <h2>Customize Design</h2>
+            
+            <!-- Font Switcher -->
+            <div class="switcher-group">
+                <label>Font Style</label>
+                <div class="switcher-buttons">
+                    <button class="switcher-btn active" data-font="opensans" onclick="switchFont('opensans')">
+                        <span>Open Sans</span>
+                    </button>
+                    <button class="switcher-btn" data-font="playfair" onclick="switchFont('playfair')">
+                        <span>Playfair</span>
+                    </button>
+                    <button class="switcher-btn" data-font="crimson" onclick="switchFont('crimson')">
+                        <span>Crimson</span>
+                    </button>
+                    <button class="switcher-btn" data-font="montserrat" onclick="switchFont('montserrat')">
+                        <span>Montserrat</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Background Switcher -->
+            <div class="switcher-group">
+                <label>Background</label>
+                <div class="switcher-buttons">
+                    <button class="switcher-btn active" data-bg="sky" onclick="switchBackground('sky')">
+                        <span>Sky</span>
+                    </button>
+                    <button class="switcher-btn" data-bg="white" onclick="switchBackground('white')">
+                        <span>White</span>
+                    </button>
+                    <button class="switcher-btn" data-bg="gradient" onclick="switchBackground('gradient')">
+                        <span>Gradient</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Information Form -->
+        <div class="form-section">
+            <h2>Information</h2>
+            <div class="form-group">
+                <label>Loved One's Full Name</label>
+                <input type="text" id="lovedOneName" placeholder="MARIA GUADALUPE JIMENEZ">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Sunrise Date</label>
+                    <input type="text" id="sunriseDate" placeholder="JUNE 28, 1965">
+                </div>
+                <div class="form-group">
+                    <label>Sunset Date</label>
+                    <input type="text" id="sunsetDate" placeholder="OCTOBER 11, 2025">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Upload Portrait Photo</label>
+                <input type="file" id="photoUpload" accept="image/*">
+            </div>
+        </div>
+
+        <!-- Enlargement Preview -->
+        <div class="preview-section">
+            <h2>20x30 Preview</h2>
+            <div class="enlargement-preview">
+                <div class="enlargement-header">
+                    <h3 class="enlargement-name" id="previewName">MARIA GUADALUPE JIMENEZ</h3>
+                </div>
+                <div class="portrait-area">
+                    <img id="previewPhoto" src="" alt="Portrait">
+                </div>
+                <div class="enlargement-footer">
+                    <div class="date-left">
+                        <p class="date-value" id="previewSunrise">JUNE 28, 1965</p>
+                        <p class="date-label">Sunrise</p>
+                    </div>
+                    <div class="qr-center">
+                        <div class="qr-code" id="qrCodePlaceholder">QR</div>
+                    </div>
+                    <div class="date-right">
+                        <p class="date-value" id="previewSunset">OCTOBER 11, 2025</p>
+                        <p class="date-label">Sunset</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="submit-section">
+            <button class="submit-btn" onclick="generateEnlargement()">Generate Print-Ready PDF</button>
+        </div>
+    </div>
+
+    <script src="auto-contrast.js"></script>
+    <script src="print-shop-delivery.js"></script>
+    <script src="qr-generator.js"></script>
+    <script src="enlargement-builder.js"></script>
+</body>
+</html>
