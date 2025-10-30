@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enable Face ID - DASH</title>
+    <link rel="stylesheet" href="faceid.css">
+</head>
+<body>
+    <!-- iOS Status Bar -->
+    <div class="status-bar">
+        <div class="status-left">
+            <span class="time">9:41</span>
+        </div>
+        <div class="status-right">
+            <span class="signal">●●●●●</span>
+            <span class="wifi">📶</span>
+            <span class="battery">🔋</span>
+        </div>
+    </div>
+
+    <!-- Mobile Container -->
+    <div class="mobile-container">
+        <!-- Header -->
+        <div class="faceid-header">
+            <h1>Enable Face ID</h1>
+            <p>Use Face ID for quick access. No passcodes</p>
+        </div>
+
+        <!-- Face ID Animation -->
+        <div class="faceid-animation">
+            <div class="faceid-icon">
+                <div class="faceid-circle">
+                    <div class="faceid-inner">
+                        <div class="faceid-dots">
+                            <div class="dot dot-1"></div>
+                            <div class="dot dot-2"></div>
+                            <div class="dot dot-3"></div>
+                            <div class="dot dot-4"></div>
+                            <div class="dot dot-5"></div>
+                            <div class="dot dot-6"></div>
+                            <div class="dot dot-7"></div>
+                            <div class="dot dot-8"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Face ID Description -->
+        <div class="faceid-description">
+            <p>Use Face ID for quick access. No passcodes</p>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="faceid-actions">
+            <button class="enable-button" onclick="enableFaceID()">
+                Enable Face ID
+            </button>
+            
+            <button class="skip-button" onclick="skipFaceID()">
+                Skip for now
+            </button>
+        </div>
+
+        <!-- Progress Indicator -->
+        <div class="progress-indicator">
+            <div class="progress-dot active"></div>
+            <div class="progress-dot active"></div>
+            <div class="progress-dot"></div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="faceid-footer">
+        <p>You can change this setting anytime in your account</p>
+    </div>
+
+    <script src="faceid.js"></script>
+</body>
+</html>
