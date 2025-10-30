@@ -1,0 +1,46 @@
+=====================================
+VERCEL ENVIRONMENT VARIABLES SETUP
+=====================================
+
+STEP 1: Go to your project in Vercel dashboard
+STEP 2: Click "Settings" (gear icon in top nav)
+STEP 3: Click "Environment Variables" in left sidebar
+STEP 4: Add each variable ONE by ONE:
+
+Name: CLOUDINARY_URL
+Value: cloudinary://936793599379724:Tejbnin77Rb6AE2Am5g8CvMSF3s@djepgisuk
+Apply to: Production, Preview, Development (check all)
+
+Name: CLOUDINARY_CLOUD_NAME
+Value: djepgisuk
+Apply to: Production, Preview, Development (check all)
+
+Name: CLOUDINARY_API_KEY
+Value: 936793599379724
+Apply to: Production, Preview, Development (check all)
+
+Name: CLOUDINARY_API_SECRET
+Value: Tejbnin77Rb6AE2Am5g8CvMSF3s
+Apply to: Production, Preview, Development (check all)
+
+Name: NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+Value: djepgisuk
+Apply to: Production, Preview, Development (check all)
+
+Name: NEXT_PUBLIC_SUPABASE_URL
+Value: https://urnkszyyabomkpujkzo.supabase.co
+Apply to: Production, Preview, Development (check all)
+
+Name: NEXT_PUBLIC_SUPABASE_ANON_KEY
+Value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVybmtzenlieWFib21rcHVqa3pvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEyNzM2MTcsImV4cCI6MjA3Njg0OTYxN30.TqwxERGGqOPBlwlhyidUmZ2ktFFaLT2FMfZvreicNt4
+Apply to: Production, Preview, Development (check all)
+
+STEP 5: After adding all, go to Deployments tab
+STEP 6: Click the 3 dots on latest deployment → "Redeploy"
+STEP 7: Wait 2 minutes → YOU'RE LIVE! 🎉
+
+TROUBLESHOOTING:
+- Make sure you click "Save" after each variable
+- Make sure all 3 checkboxes (Production, Preview, Development) are checked
+- If it says "Variable already exists", skip it
+- After adding ALL variables, you MUST redeploy
