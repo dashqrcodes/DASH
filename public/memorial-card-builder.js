@@ -62,6 +62,7 @@ function generateCard() {
     console.log('Generating memorial card with QR:', qrData.url);
     alert('PDF generated! QR code links to: ' + qrData.url);
 }
+
 // Auto-contrast and print delivery integration
 const contrastDetector = new AutoContrastDetector();
 const printDelivery = new PrintShopDelivery();
@@ -134,7 +135,10 @@ function switchFont(fontType) {
     document.querySelectorAll('.switcher-btn[data-font]').forEach(btn => {
         btn.classList.remove('active');
     });
-    document.querySelector(`.switcher-btn[data-font="${fontType}"]`).classList.add('active');
+    const selectedBtn = document.querySelector(`.switcher-btn[data-font="${fontType}"]`);
+    if (selectedBtn) {
+        selectedBtn.classList.add('active');
+    }
 }
 
 // Background Switcher
@@ -149,7 +153,10 @@ function switchBackground(bgType) {
     document.querySelectorAll('.switcher-btn[data-bg]').forEach(btn => {
         btn.classList.remove('active');
     });
-    document.querySelector(`.switcher-btn[data-bg="${bgType}"]`).classList.add('active');
+    const selectedBtn = document.querySelector(`.switcher-btn[data-bg="${bgType}"]`);
+    if (selectedBtn) {
+        selectedBtn.classList.add('active');
+    }
 }
 
 // Initialize with default settings
