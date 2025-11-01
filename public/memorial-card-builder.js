@@ -141,6 +141,11 @@ function switchFont(fontType) {
     }
 }
 
+// Listen to name changes for real-time preview updates
+document.getElementById('lovedOneName').addEventListener('input', updatePreview);
+document.getElementById('sunriseDate').addEventListener('input', updatePreview);
+document.getElementById('sunsetDate').addEventListener('input', updatePreview);
+
 // Background Switcher
 function switchBackground(bgType) {
     // Remove all background classes
