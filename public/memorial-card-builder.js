@@ -1,6 +1,10 @@
 // QR Code Generator - Generate as user types name
 const qrGenerator = new DashQRGenerator();
 
+// Auto-contrast and print delivery integration
+const contrastDetector = new AutoContrastDetector();
+const printDelivery = new PrintShopDelivery();
+
 // Update preview when name changes
 function updatePreview() {
     const name = document.getElementById('lovedOneName').value || 'Maria Guadalupe Jimenez';
@@ -24,50 +28,7 @@ function updateQRCode(elementId, qrCodeUrl) {
     }
 }
 
-// Photo upload handler
-document.getElementById('photoUpload').addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const img = document.getElementById('previewPhoto');
-            img.src = e.target.result;
-            img.classList.add('active');
-        };
-        reader.readAsDataURL(file);
-    }
-});
-
-// Listen to name changes
-document.getElementById('lovedOneName').addEventListener('input', updatePreview);
-document.getElementById('sunriseDate').addEventListener('input', updatePreview);
-document.getElementById('sunsetDate').addEventListener('input', updatePreview);
-
-// Initialize preview
-document.addEventListener('DOMContentLoaded', function() {
-    updatePreview();
-});
-
-function generateCard() {
-    const name = document.getElementById('lovedOneName').value;
-    
-    if (!name) {
-        alert('Please enter the loved one\'s name');
-        return;
-    }
-    
-    // Generate final QR URL
-    const qrData = qrGenerator.generateQR(name);
-    
-    console.log('Generating memorial card with QR:', qrData.url);
-    alert('PDF generated! QR code links to: ' + qrData.url);
-}
-
-// Auto-contrast and print delivery integration
-const contrastDetector = new AutoContrastDetector();
-const printDelivery = new PrintShopDelivery();
-
-// Update QR contrast when photo changes
+// Photo upload handler with auto-contrast detection
 document.getElementById('photoUpload').addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (file) {
@@ -141,11 +102,6 @@ function switchFont(fontType) {
     }
 }
 
-// Listen to name changes for real-time preview updates
-document.getElementById('lovedOneName').addEventListener('input', updatePreview);
-document.getElementById('sunriseDate').addEventListener('input', updatePreview);
-document.getElementById('sunsetDate').addEventListener('input', updatePreview);
-
 // Background Switcher
 function switchBackground(bgType) {
     // Remove all background classes
@@ -166,6 +122,22 @@ function switchBackground(bgType) {
 
 // Initialize with default settings
 document.addEventListener('DOMContentLoaded', function() {
+    // Listen to name changes for real-time preview updates
+    const lovedOneName = document.getElementById('lovedOneName');
+    const sunriseDate = document.getElementById('sunriseDate');
+    const sunsetDate = document.getElementById('sunsetDate');
+    
+    if (lovedOneName) {
+        lovedOneName.addEventListener('input', updatePreview);
+    }
+    if (sunriseDate) {
+        sunriseDate.addEventListener('input', updatePreview);
+    }
+    if (sunsetDate) {
+        sunsetDate.addEventListener('input', updatePreview);
+    }
+    
+    // Initialize with defaults
     switchFont('opensans');
     switchBackground('sky');
     updatePreview();
