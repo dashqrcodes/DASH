@@ -1,11 +1,45 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
+import Script from 'next/script';
 
 const LifeChaptersPage: React.FC = () => {
     const router = useRouter();
     const [lovedOneName, setLovedOneName] = useState('Name...');
     const [showOtpModal, setShowOtpModal] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        // Initialize floating stars effect
+        const createStars = () => {
+            const container = document.querySelector('.floating-stars');
+            if (!container) return;
+
+            const createStar = () => {
+                const star = document.createElement('div');
+                star.className = 'particle';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 8 + 's';
+                const duration = 6 + Math.random() * 4;
+                star.style.animationDuration = duration + 's';
+                container.appendChild(star);
+
+                setTimeout(() => {
+                    if (star.parentNode) {
+                        star.parentNode.removeChild(star);
+                    }
+                }, (duration + 2) * 1000);
+            };
+
+            const interval = setInterval(createStar, 300 + Math.random() * 500);
+            createStar();
+
+            return () => clearInterval(interval);
+        };
+
+        const cleanup = createStars();
+        return cleanup;
+    }, []);
 
     const goBack = () => {
         router.back();
@@ -17,17 +51,37 @@ const LifeChaptersPage: React.FC = () => {
 
     const handleCollaborate = () => {
         // Collaboration functionality from life-chapters.js
-        console.log('Collaborate clicked');
+        if (typeof window !== 'undefined' && (window as any).handleCollaboration) {
+            (window as any).handleCollaboration();
+        } else {
+            console.log('Collaborate clicked');
+        }
     };
 
     const handleVideoVoice = () => {
         // Video with voice functionality
-        console.log('Video with voice clicked');
+        if (typeof window !== 'undefined' && (window as any).handleVideoWithVoice) {
+            (window as any).handleVideoWithVoice();
+        } else {
+            console.log('Video with voice clicked');
+        }
     };
 
     const handleChapterClick = (chapter: string) => {
         // Handle chapter photo upload
-        console.log('Chapter clicked:', chapter);
+        if (fileInputRef.current) {
+            fileInputRef.current.dataset.chapter = chapter;
+            fileInputRef.current.click();
+        }
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        const chapter = e.target.dataset.chapter;
+        if (files && chapter) {
+            console.log(`Selected ${files.length} files for chapter: ${chapter}`);
+            // Handle file upload logic here
+        }
     };
 
     return (
@@ -212,8 +266,19 @@ const LifeChaptersPage: React.FC = () => {
                 </div>
             )}
 
+            {/* Hidden File Input */}
+            <input 
+                type="file" 
+                id="photoInput" 
+                ref={fileInputRef}
+                multiple 
+                accept="image/*,video/*" 
+                style={{ display: 'none' }}
+                onChange={handleFileChange}
+            />
+
             {/* Load the life chapters JavaScript */}
-            <script src="/life-chapters.js" />
+            <Script src="/life-chapters.js" strategy="lazyOnload" />
         </>
     );
 };
