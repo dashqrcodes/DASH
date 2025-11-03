@@ -1,9 +1,18 @@
 // QR Code Generator - Generate as user types name
-const qrGenerator = new DashQRGenerator();
+let qrGenerator, contrastDetector, printDelivery;
 
-// Auto-contrast and print delivery integration
-const contrastDetector = new AutoContrastDetector();
-const printDelivery = new PrintShopDelivery();
+// Initialize classes when available
+function initializeClasses() {
+    if (typeof DashQRGenerator !== 'undefined') {
+        qrGenerator = new DashQRGenerator();
+    }
+    if (typeof AutoContrastDetector !== 'undefined') {
+        contrastDetector = new AutoContrastDetector();
+    }
+    if (typeof PrintShopDelivery !== 'undefined') {
+        printDelivery = new PrintShopDelivery();
+    }
+}
 
 // Update preview when name changes
 function updatePreview() {
@@ -17,8 +26,10 @@ function updatePreview() {
     document.getElementById('backSunsetDate').textContent = sunset;
     
     // Generate QR code immediately based on name
-    const qrData = qrGenerator.generateQR(name);
-    updateQRCode('qrCodePlaceholder', qrData.qrCodeUrl);
+    if (qrGenerator) {
+        const qrData = qrGenerator.generateQR(name);
+        updateQRCode('qrCodePlaceholder', qrData.qrCodeUrl);
+    }
 }
 
 function updateQRCode(elementId, qrCodeUrl) {
@@ -39,11 +50,15 @@ document.getElementById('photoUpload').addEventListener('change', function(e) {
             img.classList.add('active');
             
             // Auto-detect contrast and adjust QR
-            setTimeout(() => {
-                const backgroundType = contrastDetector.detectBackgroundBrightness(img);
-                const qrElement = document.getElementById('qrCodePlaceholder');
-                contrastDetector.applyQRContrast(qrElement, backgroundType);
-            }, 100);
+            if (contrastDetector) {
+                setTimeout(() => {
+                    const backgroundType = contrastDetector.detectBackgroundBrightness(img);
+                    const qrElement = document.getElementById('qrCodePlaceholder');
+                    if (qrElement) {
+                        contrastDetector.applyQRContrast(qrElement, backgroundType);
+                    }
+                }, 100);
+            }
         };
         reader.readAsDataURL(file);
     }
@@ -61,6 +76,11 @@ function generateCard() {
     }
     
     // Generate QR and create order
+    if (!qrGenerator || !printDelivery) {
+        alert('QR generator or print delivery not initialized. Please refresh the page.');
+        return;
+    }
+    
     const qrData = qrGenerator.generateQR(name);
     
     const orderData = {
@@ -122,6 +142,14 @@ function switchBackground(bgType) {
 
 // Initialize with default settings
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize classes first
+    initializeClasses();
+    
+    // Wait a bit for scripts to load, then try again
+    setTimeout(() => {
+        initializeClasses();
+    }, 100);
+    
     // Listen to name changes for real-time preview updates
     const lovedOneName = document.getElementById('lovedOneName');
     const sunriseDate = document.getElementById('sunriseDate');
