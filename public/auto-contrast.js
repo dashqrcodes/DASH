@@ -74,3 +74,7 @@ class AutoContrastDetector {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = AutoContrastDetector;
 }
+// Make available globally for browser scripts
+if (typeof window !== 'undefined') {
+    window.AutoContrastDetector = AutoContrastDetector;
+}

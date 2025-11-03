@@ -131,3 +131,7 @@ DASH Memorial Platform
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = PrintShopDelivery;
 }
+// Make available globally for browser scripts
+if (typeof window !== 'undefined') {
+    window.PrintShopDelivery = PrintShopDelivery;
+}

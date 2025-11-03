@@ -65,3 +65,7 @@ class DashQRGenerator {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = DashQRGenerator;
 }
+// Make available globally for browser scripts
+if (typeof window !== 'undefined') {
+    window.DashQRGenerator = DashQRGenerator;
+}

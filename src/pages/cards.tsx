@@ -115,9 +115,21 @@ const CardsPage: React.FC = () => {
             </Head>
             
             {/* Load helper JavaScript classes */}
-            <Script src="/qr-generator.js" strategy="beforeInteractive" />
-            <Script src="/auto-contrast.js" strategy="beforeInteractive" />
-            <Script src="/print-shop-delivery.js" strategy="beforeInteractive" />
+            <Script src="/qr-generator.js" strategy="lazyOnload" onLoad={() => {
+                if (typeof window !== 'undefined' && (window as any).DashQRGenerator) {
+                    console.log('DashQRGenerator loaded');
+                }
+            }} />
+            <Script src="/auto-contrast.js" strategy="lazyOnload" onLoad={() => {
+                if (typeof window !== 'undefined' && (window as any).AutoContrastDetector) {
+                    console.log('AutoContrastDetector loaded');
+                }
+            }} />
+            <Script src="/print-shop-delivery.js" strategy="lazyOnload" onLoad={() => {
+                if (typeof window !== 'undefined' && (window as any).PrintShopDelivery) {
+                    console.log('PrintShopDelivery loaded');
+                }
+            }} />
             <Script src="/memorial-card-builder.js" strategy="lazyOnload" />
             <div className="status-bar">
                 <div className="status-left"><span className="time">9:41</span></div>
