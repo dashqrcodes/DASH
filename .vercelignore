@@ -1,0 +1,5 @@
+# Ignore backup directories
+app.backup/
+*.backup
+*.bak
+
