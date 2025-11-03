@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Program Builder - DASH</title>
+    <link rel="stylesheet" href="service-program-builder.css">
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Playfair+Display:wght@400;700&family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="status-bar">
+        <div class="status-left"><span class="time">9:41</span></div>
+        <div class="status-right">
+            <span class="signal">●●●●●</span>
+            <span class="wifi">📶</span>
+            <span class="battery">🔋</span>
+        </div>
+    </div>
+
+    <div class="mobile-container">
+        <div class="header">
+            <h1>Service Program Builder</h1>
+            <p>Create your memorial program</p>
+        </div>
+
+        <!-- Step 1: Basic Information -->
+        <div class="form-section">
+            <h2>Basic Information</h2>
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" id="fullName" placeholder="Christian Dieter Gassler">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Birth Date</label>
+                    <input type="text" id="birthDate" placeholder="May 16, 1971">
+                </div>
+                <div class="form-group">
+                    <label>Passing Date</label>
+                    <input type="text" id="passingDate" placeholder="June 21, 2025">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Title/Rank</label>
+                <input type="text" id="titleRank" placeholder="Firefighter III / PM">
+            </div>
+        </div>
+
+        <!-- Step 2: Portrait Photo -->
+        <div class="form-section">
+            <h2>Portrait Photo</h2>
+            <div class="form-group">
+                <label>Upload Portrait</label>
+                <input type="file" id="portraitUpload" accept="image/*">
+                <div class="photo-preview" id="portraitPreview"></div>
+            </div>
+        </div>
+
+        <!-- Step 3: Biography -->
+        <div class="form-section">
+            <h2>Biography</h2>
+            <div class="form-group">
+                <label>Biography (Paragraph 1)</label>
+                <textarea id="bio1" rows="3" placeholder="Born in Hollywood, raised in Cerritos..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Biography (Paragraph 2)</label>
+                <textarea id="bio2" rows="3" placeholder="Firefighter paramedic in the LA City Fire Department..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Biography (Paragraph 3)</label>
+                <textarea id="bio3" rows="4" placeholder="Greatest joy was being a family man..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Biography (Paragraph 4)</label>
+                <textarea id="bio4" rows="3" placeholder="Funny, loyal, generous, and real..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Survivors</label>
+                <textarea id="survivors" rows="2" placeholder="Laura, Taylor, his mother Anna..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Motto/Tagline</label>
+                <input type="text" id="motto" placeholder="Christian was proud to serve, protect, and LOVE">
+            </div>
+        </div>
+
+        <!-- Step 4: Celebration Program -->
+        <div class="form-section">
+            <h2>Celebration of Life Program</h2>
+            <div id="programItems">
+                <!-- Dynamic program items -->
+            </div>
+            <button class="add-item-btn" onclick="addProgramItem()">+ Add Program Item</button>
+        </div>
+
+        <!-- Step 5: Memorial Message -->
+        <div class="form-section">
+            <h2>Memorial Message</h2>
+            <div class="form-group">
+                <label>From</label>
+                <input type="text" id="messageFrom" placeholder="The Gassler family">
+            </div>
+            <div class="form-group">
+                <label>Message Paragraph 1</label>
+                <textarea id="message1" rows="2" placeholder="We express our solemn gratitude..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Message Paragraph 2</label>
+                <textarea id="message2" rows="2" placeholder="It is beautiful to see so many..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Message Paragraph 3</label>
+                <textarea id="message3" rows="2" placeholder="Let us remember Christian..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Message Paragraph 4</label>
+                <textarea id="message4" rows="2" placeholder="Let's always honor the best version..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Bible Verse</label>
+                <input type="text" id="bibleVerse" placeholder="I can do all things through Christ who strengthens me. -Philippians 4:13">
+            </div>
+        </div>
+
+        <!-- Step 6: Service Details -->
+        <div class="form-section">
+            <h2>Service Details</h2>
+            <div class="form-group">
+                <label>Date & Time</label>
+                <input type="text" id="serviceDate" placeholder="July 25, 2025 11:00 a.m.">
+            </div>
+            <div class="form-group">
+                <label>Location</label>
+                <input type="text" id="serviceLocation" placeholder="Cottonwood Church">
+            </div>
+            <div class="form-group">
+                <label>Address</label>
+                <input type="text" id="serviceAddress" placeholder="4505 Katella Avenue, Los Alamitos, California">
+            </div>
+        </div>
+
+        <!-- Step 7: Preview -->
+        <div class="preview-section">
+            <h2>Preview</h2>
+            <div class="program-preview">
+                <div class="preview-left">
+                    <h3 class="preview-title-cursive" id="previewFamilyMessage">From the Gassler family</h3>
+                    <p id="previewMessage1"></p>
+                    <p id="previewMessage2"></p>
+                    <p id="previewMessage3"></p>
+                    <p id="previewMessage4"></p>
+                    <p id="previewRegards"></p>
+                    <p id="previewBibleVerse"></p>
+                    <div class="service-details">
+                        <p id="previewServiceDate"></p>
+                        <p id="previewServiceLocation"></p>
+                        <p id="previewServiceAddress"></p>
+                    </div>
+                </div>
+                <div class="preview-right">
+                    <h3 class="preview-title-cursive">In Loving Memory</h3>
+                    <div class="portrait-area">
+                        <img id="previewPortrait" src="" alt="Portrait">
+                    </div>
+                    <p class="preview-title-rank" id="previewTitle"></p>
+                    <h2 class="preview-name-cursive" id="previewName"></h2>
+                    <div class="preview-dates-qr">
+                        <span id="previewBirth"></span>
+                        <div class="qr-small" id="qrSmall">QR</div>
+                        <span id="previewPassing"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="dash-footer">
+                <p>DASH © 2025 dashqrcodes.com dashqrcodes,llc. Redondo Beach, CA.</p>
+            </div>
+        </div>
+
+        <!-- Step 8: Final Page Preview -->
+        <div class="preview-section">
+            <h2>Inside Preview</h2>
+            <div class="program-preview-inside">
+                <div class="preview-left-inside">
+                    <h3 class="preview-name-large" id="previewInsideName"></h3>
+                    <div id="previewBio1"></div>
+                    <div id="previewBio2"></div>
+                    <div id="previewBio3"></div>
+                    <div id="previewBio4"></div>
+                    <p class="survivors" id="previewSurvivors"></p>
+                    <p class="motto" id="previewMotto"></p>
+                </div>
+                <div class="preview-right-inside">
+                    <h3 class="preview-name-large">Celebration of Life</h3>
+                    <div id="previewProgram"></div>
+                    <div class="preview-dates-bottom">
+                        <span id="previewBirthBottom"></span>
+                        <div class="qr-small" id="qrBottom">QR</div>
+                        <span id="previewPassingBottom"></span>
+                    </div>
+                    <div class="emblems">
+                        <div class="emblem">US Navy</div>
+                        <div class="emblem">LAFD</div>
+                        <div class="emblem">Badge</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="submit-section">
+            <button class="submit-btn" onclick="generatePDF()">Approve, Add to Shopping Cart</button>
+        </div>
+    </div>
+
+    <script src="qr-generator.js"></script>
+    <script src="service-program-builder.js"></script>
+</body>
+</html>
