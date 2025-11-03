@@ -60,18 +60,17 @@ body {
     padding: 20px 0;
 }
 
-.signup-header h1 {
-    font-size: 2.5em;
-    font-weight: 700;
-    color: white;
-    margin: 0 0 10px 0;
-    line-height: 1.2;
+.signup-header {
+    text-align: center;
+    margin-bottom: 40px;
 }
 
-.signup-header p {
+.signup-header h1 {
+    font-size: 2em;
+    font-weight: 700;
     color: #c77dff;
-    font-size: 16px;
     margin: 0;
+    line-height: 1.2;
 }
 
 /* Form Styles */
@@ -607,18 +606,127 @@ input::placeholder {
     text-decoration: underline;
 }
 
-/* Phone Button */
-.phone-button {
-    background: linear-gradient(135deg, #9d4edd 0%, #c77dff 100%);
-    border: 1px solid #9d4edd;
-    color: white;
-    font-weight: 700;
+/* Phone Number Section */
+.phone-number-section {
+    margin-bottom: 30px;
 }
 
-.phone-button:hover {
-    background: linear-gradient(135deg, #c77dff 0%, #9d4edd 100%);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 15px rgba(157, 78, 221, 0.3);
+.phone-number-section label {
+    display: block;
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.phone-input-container {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.phone-input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: #ffffff;
+    font-size: 16px;
+    padding: 0;
+    outline: none;
+}
+
+.phone-input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* Verification Section */
+.verification-section {
+    margin-bottom: 30px;
+}
+
+.verification-section label {
+    display: block;
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.verification-hint {
+    color: #c77dff;
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
+.otp-container {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+.otp-input {
+    width: 50px;
+    height: 50px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    color: #ffffff;
+    font-size: 24px;
+    font-weight: bold;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.otp-input:focus {
+    outline: none;
+    border-color: #c77dff;
+    box-shadow: 0 0 0 2px rgba(199, 125, 255, 0.3);
+}
+
+.resend-link {
+    background: none;
+    border: none;
+    color: #c77dff;
+    font-size: 14px;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0;
+    margin: 0 auto;
+    display: block;
+    text-align: center;
+}
+
+.resend-link:hover {
+    color: #9d4edd;
+}
+
+/* GET STARTED Button - Gradient Pink to Teal */
+.get-started-btn {
+    width: 100%;
+    padding: 18px 30px;
+    border: none;
+    border-radius: 25px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    background: linear-gradient(90deg, #ff6b6b 0%, #4ecdc4 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+    margin-top: 30px;
+}
+
+.get-started-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+}
+
+.get-started-btn:active {
+    transform: translateY(0);
 }
 
 /* Email Link */

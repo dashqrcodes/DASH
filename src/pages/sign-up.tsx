@@ -5,9 +5,12 @@ import { useRouter } from 'next/router';
 
 const SignUpPage: React.FC = () => {
     const router = useRouter();
+    const [phoneNumber, setPhoneNumber] = useState('');
+    const [verificationCode, setVerificationCode] = useState(['', '', '', '', '']);
+    const [showVerification, setShowVerification] = useState(false);
+    const [termsAgreed, setTermsAgreed] = useState(false);
 
     const handleSpotifyLogin = () => {
-        // Redirect to Spotify OAuth
         router.push('/api/spotify/auth');
     };
 
@@ -19,15 +22,68 @@ const SignUpPage: React.FC = () => {
         alert('Apple sign-up integration coming soon!');
     };
 
-    const handlePhoneSignup = () => {
-        router.push('/sign-up-phone');
+    const handlePhoneSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (phoneNumber.length >= 10) {
+            setShowVerification(true);
+            // Simulate sending verification code
+            console.log('Verification code sent to:', phoneNumber);
+        }
+    };
+
+    const handleVerificationSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        const code = verificationCode.join('');
+        if (code.length === 5) {
+            // Verify code and proceed
+            console.log('Verifying code:', code);
+            router.push('/dashboard');
+        }
+    };
+
+    const handleCodeChange = (index: number, value: string) => {
+        if (value.length > 1) return;
+        const newCode = [...verificationCode];
+        newCode[index] = value;
+        setVerificationCode(newCode);
+
+        // Auto-focus next input
+        if (value && index < 4) {
+            const nextInput = document.getElementById(`otp-${index + 1}`);
+            if (nextInput) {
+                (nextInput as HTMLInputElement).focus();
+            }
+        }
+    };
+
+    const handleCodeKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Backspace' && !verificationCode[index] && index > 0) {
+            const prevInput = document.getElementById(`otp-${index - 1}`);
+            if (prevInput) {
+                (prevInput as HTMLInputElement).focus();
+            }
+        }
+    };
+
+    const handleGetStarted = () => {
+        if (!termsAgreed) {
+            alert('Please agree to the Terms of Service and Privacy Policy');
+            return;
+        }
+        if (!showVerification) {
+            handlePhoneSubmit(new Event('submit') as any);
+        } else {
+            handleVerificationSubmit(new Event('submit') as any);
+        }
     };
 
     return (
         <>
             <Head>
                 <link rel="stylesheet" href="/signup.css" />
+                <title>Sign Up - DASH</title>
             </Head>
+
             <div className="status-bar">
                 <div className="status-left">
                     <span className="time">9:41</span>
@@ -41,28 +97,135 @@ const SignUpPage: React.FC = () => {
 
             <div className="mobile-container">
                 <div className="signup-header">
-                    <h1>Create an account</h1>
-                    <p>Let's build memories</p>
+                    <h1>Let&apos;s build memories</h1>
                 </div>
 
-                <div className="alternative-signup">
-                    <button className="social-button phone-button" onClick={handlePhoneSignup}>
-                        Sign up with phone number
-                    </button>
-                    <div className="divider">
-                        <span>or</span>
-                    </div>
-                    
-                    <div className="terms-agreement">
-                        <label className="checkbox-label">
-                            <input type="checkbox" id="termsCheckbox" />
-                            <span className="checkmark"></span>
-                            <span className="terms-text">I agree to the <a href="#" className="terms-link">Terms of Service</a> and <a href="#" className="terms-link">Privacy Policy</a></span>
-                        </label>
-                    </div>
-                    
-                    <Link href="#" className="email-link">Sign up with email</Link>
+                {!showVerification ? (
+                    <form onSubmit={handlePhoneSubmit} className="signup-form">
+                        {/* Phone Number Section */}
+                        <div className="phone-number-section">
+                            <label htmlFor="phoneNumber">Phone Number</label>
+                            <div className="phone-input-container">
+                                <input
+                                    type="tel"
+                                    id="phoneNumber"
+                                    value={phoneNumber}
+                                    onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
+                                    placeholder="Phone number"
+                                    required
+                                    className="phone-input"
+                                />
+                            </div>
+                        </div>
 
+                        {/* Verification Code Section (hidden initially) */}
+                        <div className="verification-section" style={{ display: 'none' }}>
+                            <label>Enter verification code</label>
+                            <p className="verification-hint">We sent a 5-digit code to your phone number</p>
+                            <div className="otp-container">
+                                {[0, 1, 2, 3, 4].map((index) => (
+                                    <input
+                                        key={index}
+                                        id={`otp-${index}`}
+                                        type="text"
+                                        className="otp-input"
+                                        maxLength={1}
+                                        value={verificationCode[index]}
+                                        onChange={(e) => handleCodeChange(index, e.target.value)}
+                                        onKeyDown={(e) => handleCodeKeyDown(index, e)}
+                                        required
+                                    />
+                                ))}
+                            </div>
+                            <button type="button" className="resend-link">Resend Code</button>
+                        </div>
+
+                        {/* Terms Agreement */}
+                        <div className="terms-agreement">
+                            <label className="checkbox-label">
+                                <input 
+                                    type="checkbox" 
+                                    checked={termsAgreed}
+                                    onChange={(e) => setTermsAgreed(e.target.checked)}
+                                />
+                                <span className="checkmark"></span>
+                                <span className="terms-text">
+                                    I agree to the{' '}
+                                    <a href="#" className="terms-link">Terms of Service</a>
+                                    {' '}and{' '}
+                                    <a href="#" className="terms-link">Privacy Policy</a>
+                                </span>
+                            </label>
+                        </div>
+
+                        {/* LET'S GET STARTED Button */}
+                        <button 
+                            type="submit" 
+                            className="get-started-btn"
+                            onClick={handleGetStarted}
+                        >
+                            LET&apos;S GET STARTED
+                        </button>
+                    </form>
+                ) : (
+                    <form onSubmit={handleVerificationSubmit} className="signup-form">
+                        {/* Verification Code Section */}
+                        <div className="verification-section">
+                            <label>Enter verification code</label>
+                            <p className="verification-hint">We sent a 5-digit code to your phone number</p>
+                            <div className="otp-container">
+                                {[0, 1, 2, 3, 4].map((index) => (
+                                    <input
+                                        key={index}
+                                        id={`otp-${index}`}
+                                        type="text"
+                                        className="otp-input"
+                                        maxLength={1}
+                                        value={verificationCode[index]}
+                                        onChange={(e) => handleCodeChange(index, e.target.value)}
+                                        onKeyDown={(e) => handleCodeKeyDown(index, e)}
+                                        required
+                                    />
+                                ))}
+                            </div>
+                            <button type="button" className="resend-link">Resend Code</button>
+                        </div>
+
+                        {/* Terms Agreement */}
+                        <div className="terms-agreement">
+                            <label className="checkbox-label">
+                                <input 
+                                    type="checkbox" 
+                                    checked={termsAgreed}
+                                    onChange={(e) => setTermsAgreed(e.target.checked)}
+                                />
+                                <span className="checkmark"></span>
+                                <span className="terms-text">
+                                    I agree to the{' '}
+                                    <a href="#" className="terms-link">Terms of Service</a>
+                                    {' '}and{' '}
+                                    <a href="#" className="terms-link">Privacy Policy</a>
+                                </span>
+                            </label>
+                        </div>
+
+                        {/* LET'S GET STARTED Button */}
+                        <button 
+                            type="submit" 
+                            className="get-started-btn"
+                        >
+                            LET&apos;S GET STARTED
+                        </button>
+                    </form>
+                )}
+
+                {/* Divider */}
+                <div className="divider">
+                    <span>or</span>
+                </div>
+
+                {/* Social Sign Up Options */}
+                <div className="alternative-signup">
                     <button className="social-button spotify-button" onClick={handleSpotifyLogin}>
                         Sign Up with Spotify
                     </button>
@@ -87,6 +250,14 @@ const SignUpPage: React.FC = () => {
                         </span>
                         Sign Up with Apple
                     </button>
+                </div>
+
+                {/* Sign In Link */}
+                <div className="login-link">
+                    <p>
+                        Already have an account?{' '}
+                        <Link href="/sign-in" className="login-text">Sign In</Link>
+                    </p>
                 </div>
             </div>
         </>
