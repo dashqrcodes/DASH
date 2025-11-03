@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - DASH</title>
+    <link rel="stylesheet" href="checkout.css">
+</head>
+<body>
+    <div class="status-bar">
+        <div class="status-left"><span class="time">9:41</span></div>
+        <div class="status-right">
+            <span class="signal">●●●●●</span>
+            <span class="wifi">📶</span>
+            <span class="battery">🔋</span>
+        </div>
+    </div>
+
+    <div class="mobile-container">
+        <div class="checkout-header">
+            <h1>Complete Your Order</h1>
+            <p class="order-summary">Memorial slideshow & cards</p>
+        </div>
+
+        <div class="order-details">
+            <div class="item">
+                <span>Memorial slideshow with QR code</span>
+                <span class="price">$180.00</span>
+            </div>
+            <div class="item">
+                <span>Memorial cards (100 count)</span>
+                <span class="price">$50.00</span>
+            </div>
+            <div class="item">
+                <span>Portrait enlargement (20x30)</span>
+                <span class="price">$70.00</span>
+            </div>
+            <div class="total">
+                <span>Total</span>
+                <span class="total-price">$300.00</span>
+            </div>
+        </div>
+
+        <div class="payment-options">
+            <h2>Choose how to pay</h2>
+            
+            <button class="payment-option" id="payFull">
+                <span class="option-label">Pay in full</span>
+                <span class="option-price">$300.00</span>
+            </button>
+
+            <button class="payment-option klarna" id="payKlarna">
+                <span class="option-label">4 interest-free payments</span>
+                <span class="option-price">$75.00/mo</span>
+                <span class="klarna-logo">Powered by Klarna</span>
+            </button>
+
+            <button class="payment-option affirm" id="payAffirm">
+                <span class="option-label">Monthly payments</span>
+                <span class="option-price">Starting at $30/mo</span>
+                <span class="affirm-logo">with Affirm</span>
+            </button>
+        </div>
+
+        <div class="checkout-footer">
+            <p class="secure-notice">🔒 Secure checkout powered by Stripe</p>
+        </div>
+    </div>
+
+    <script src="https://js.stripe.com/v3/"></script>
+    <script src="checkout.js"></script>
+</body>
+</html>

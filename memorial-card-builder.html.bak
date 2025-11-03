@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memorial Card Builder - DASH</title>
+    <link rel="stylesheet" href="memorial-card-builder.css">
+</head>
+<body>
+    <div class="status-bar">
+        <div class="status-left"><span class="time">9:41</span></div>
+        <div class="status-right">
+            <span class="signal">●●●●●</span>
+            <span class="wifi">📶</span>
+            <span class="battery">🔋</span>
+        </div>
+    </div>
+
+    <div class="mobile-container">
+        <div class="header">
+            <h1>Memorial Card Builder</h1>
+            <p>Design your memorial card</p>
+        </div>
+
+        <!-- Information Form -->
+        <div class="form-section">
+            <h2>Information</h2>
+            <div class="form-group">
+                <label>Loved One's Full Name</label>
+                <input type="text" id="lovedOneName" placeholder="Maria Guadalupe Jimenez">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Sunrise (Birth)</label>
+                    <input type="text" id="sunriseDate" placeholder="June 28, 1965">
+                </div>
+                <div class="form-group">
+                    <label>Sunset (Passing)</label>
+                    <input type="text" id="sunsetDate" placeholder="Oct 11, 2025">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Upload Portrait Photo</label>
+                <input type="file" id="photoUpload" accept="image/*">
+            </div>
+        </div>
+
+        <!-- Front Card Preview -->
+        <div class="preview-section">
+            <h2>Front Side</h2>
+            <div class="card-preview front-card">
+                <h3 class="card-title">En memoria de</h3>
+                <div class="photo-display">
+                    <img id="previewPhoto" src="" alt="Portrait">
+                </div>
+                <div class="card-footer">
+                    <p class="loved-name" id="previewName">Maria Guadalupe Jimenez</p>
+                    <p class="loved-dates" id="previewDates">June 28, 1965 - Oct 11, 2025</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Back Card Preview -->
+        <div class="preview-section">
+            <h2>Back Side</h2>
+            <div class="card-preview back-card">
+                <h3 class="card-title">Siempre en nuestros corazones</h3>
+                <div class="psalm-text">
+                    <p>El Señor es mi pastor; nada me faltará.</p>
+                    <p>En lugares de delicados pastos me hará descansar;</p>
+                    <p>Junto a aguas de reposo me pastoreará.</p>
+                    <p>Confortará mi alma; me guiará por sendas de justicia por amor de su nombre.</p>
+                    <p>Aunque ande en valle de sombra de muerte, no temeré mal alguno,</p>
+                    <p>porque tú estarás conmigo; tu vara y tu cayado me infundirán aliento.</p>
+                    <p>Aderezarás mesa delante de mí en presencia de mis angustiadores;</p>
+                    <p>Ungirás mi cabeza con aceite; mi copa está rebosando.</p>
+                    <p>Ciertamente el bien y la misericordia me seguirán todos los días de mi vida,</p>
+                    <p>y en la casa del Señor moraré por largos días.</p>
+                    <p class="psalm-reference">- Salmo 23</p>
+                </div>
+                <div class="bottom-row">
+                    <div class="date-box">
+                        <p class="date-value" id="backSunriseDate">June 28, 1965</p>
+                        <p class="date-label">Sunrise</p>
+                    </div>
+                    <div class="qr-code-box">
+                        <div class="qr-code" id="qrCodePlaceholder">QR</div>
+                        <p class="qr-name">DASH</p>
+                    </div>
+                    <div class="date-box">
+                        <p class="date-value" id="backSunsetDate">Oct 11, 2025</p>
+                        <p class="date-label">Sunset</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="submit-section">
+            <button class="submit-btn" onclick="generateCard()">Generate Print-Ready PDF</button>
+        </div>
+    </div>
+
+    <script src="memorial-card-builder.js"></script>
+</body>
+</html>
+        <!-- Back Side Text Options -->
+        <div class="preview-section">
+            <h2>Back Side Text Options</h2>
+            <div class="text-options">
+                <button class="text-option-btn active" data-text="psalm23" onclick="selectText('psalm23')">
+                    <span class="option-title">Psalm 23 (Spanish)</span>
+                    <span class="option-preview">El Señor es mi pastor...</span>
+                </button>
+                <button class="text-option-btn" data-text="prayer" onclick="selectText('prayer')">
+                    <span class="option-title">Memorial Prayer</span>
+                    <span class="option-preview">In loving memory of...</span>
+                </button>
+                <button class="text-option-btn" data-text="poem" onclick="selectText('poem')">
+                    <span class="option-title">Poem</span>
+                    <span class="option-preview">Do not stand at my grave...</span>
+                </button>
+                <button class="text-option-btn" data-text="custom" onclick="selectText('custom')">
+                    <span class="option-title">Custom Text</span>
+                    <span class="option-preview">Write your own...</span>
+                </button>
+            </div>
+            
+            <!-- Custom Text Editor -->
+            <div class="custom-text-editor" id="customTextEditor" style="display: none;">
+                <textarea id="customTextInput" placeholder="Type your custom text here..." rows="8"></textarea>
+            </div>
+        </div>
