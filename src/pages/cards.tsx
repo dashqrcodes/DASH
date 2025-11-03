@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Head from 'next/head';
+import Script from 'next/script';
 import { useRouter } from 'next/router';
 
 const CardsPage: React.FC = () => {
@@ -112,6 +113,12 @@ const CardsPage: React.FC = () => {
                 <link rel="stylesheet" href="/cards.css" />
                 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Open+Sans:wght@300;400;600&family=Crimson+Text:wght@400;600&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet" />
             </Head>
+            
+            {/* Load helper JavaScript classes */}
+            <Script src="/qr-generator.js" strategy="beforeInteractive" />
+            <Script src="/auto-contrast.js" strategy="beforeInteractive" />
+            <Script src="/print-shop-delivery.js" strategy="beforeInteractive" />
+            <Script src="/memorial-card-builder.js" strategy="lazyOnload" />
             <div className="status-bar">
                 <div className="status-left"><span className="time">9:41</span></div>
                 <div className="status-right">
