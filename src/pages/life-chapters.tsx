@@ -2,11 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import Script from 'next/script';
+import { enhanceImage, enhanceImages } from '../utils/image-enhancement';
 
 const LifeChaptersPage: React.FC = () => {
     const router = useRouter();
     const [lovedOneName, setLovedOneName] = useState('Name...');
     const [showOtpModal, setShowOtpModal] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [processedImages, setProcessedImages] = useState<Array<{ original: string; enhanced: string; chapter: string }>>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
@@ -75,12 +78,53 @@ const LifeChaptersPage: React.FC = () => {
         }
     };
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
         const chapter = e.target.dataset.chapter;
-        if (files && chapter) {
-            console.log(`Selected ${files.length} files for chapter: ${chapter}`);
-            // Handle file upload logic here
+        if (files && chapter && files.length > 0) {
+            setIsProcessing(true);
+            try {
+                // Convert FileList to Array
+                const fileArray = Array.from(files);
+                
+                // Enhance all images
+                const enhanced = await enhanceImages(fileArray, {
+                    autoRotate: true,
+                    detectBackground: true,
+                    edgeCrop: true,
+                    removeGlare: true,
+                    centerFace: true,
+                    autoZoom: true,
+                    targetAspectRatio: 16 / 9
+                });
+
+                // Store processed images
+                const processed = enhanced.map((img, idx) => ({
+                    original: img.original,
+                    enhanced: img.enhanced,
+                    chapter: chapter
+                }));
+
+                setProcessedImages(prev => [...prev, ...processed]);
+                
+                // Store in localStorage for slideshow
+                if (typeof window !== 'undefined') {
+                    const existing = JSON.parse(localStorage.getItem(`slideshow_${chapter}`) || '[]');
+                    const updated = [...existing, ...processed.map(p => p.enhanced)];
+                    localStorage.setItem(`slideshow_${chapter}`, JSON.stringify(updated));
+                }
+
+                alert(`✅ Enhanced ${files.length} photo(s) for ${chapter} chapter!\n\nFeatures applied:\n• Auto-rotation\n• Background detection\n• Edge cropping\n• Glare removal\n• Face centering\n• 16:9 auto-zoom`);
+            } catch (error) {
+                console.error('Error processing images:', error);
+                alert('Error processing images. Please try again.');
+            } finally {
+                setIsProcessing(false);
+                // Reset input
+                if (fileInputRef.current) {
+                    fileInputRef.current.value = '';
+                }
+            }
         }
     };
 
@@ -147,15 +191,49 @@ const LifeChaptersPage: React.FC = () => {
                 {/* Video Playback Screen (16:9) */}
                 <div className="video-playback-container">
                     <div className="video-screen">
-                        {/* Placeholder for video content */}
-                        <div className="video-placeholder">
-                            <div className="play-icon">
-                                <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M8 5V19L19 12L8 5Z" fill="currentColor"/>
-                                </svg>
+                        {/* Show processed images if available */}
+                        {processedImages.length > 0 ? (
+                            <div style={{
+                                width: '100%',
+                                height: '100%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                flexWrap: 'wrap',
+                                gap: '10px',
+                                padding: '10px',
+                                overflow: 'auto'
+                            }}>
+                                {processedImages.map((img, idx) => (
+                                    <img
+                                        key={idx}
+                                        src={img.enhanced}
+                                        alt={`Enhanced ${img.chapter}`}
+                                        style={{
+                                            width: '45%',
+                                            height: 'auto',
+                                            borderRadius: '8px',
+                                            objectFit: 'cover',
+                                            aspectRatio: '16/9'
+                                        }}
+                                    />
+                                ))}
                             </div>
-                            <p className="slideshow-text">Create slideshow</p>
-                        </div>
+                        ) : (
+                            <div className="video-placeholder">
+                                <div className="play-icon">
+                                    <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M8 5V19L19 12L8 5Z" fill="currentColor"/>
+                                    </svg>
+                                </div>
+                                <p className="slideshow-text">Create slideshow</p>
+                                {isProcessing && (
+                                    <p style={{ color: 'white', marginTop: '10px', fontSize: '14px' }}>
+                                        Processing images...
+                                    </p>
+                                )}
+                            </div>
+                        )}
                     </div>
                     
                     {/* Life Chapters Overlay Buttons */}

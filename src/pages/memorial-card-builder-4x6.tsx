@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 
-const PosterBuilderPage: React.FC = () => {
+const MemorialCardBuilder4x6Page: React.FC = () => {
   const router = useRouter();
   const [photo, setPhoto] = useState<string | null>(null);
   const [name, setName] = useState('');
@@ -256,7 +256,7 @@ const PosterBuilderPage: React.FC = () => {
   // Generate QR code with color matching
   const generateQRCode = async () => {
     try {
-      const url = typeof window !== 'undefined' ? window.location.origin + '/poster-builder' : 'http://localhost:3000/poster-builder';
+      const url = typeof window !== 'undefined' ? window.location.origin + '/memorial-card-builder-4x6' : 'http://localhost:3000/memorial-card-builder-4x6';
       const response = await fetch('/api/generate-qr', {
         method: 'POST',
         headers: {
@@ -289,7 +289,7 @@ const PosterBuilderPage: React.FC = () => {
   return (
     <>
       <Head>
-        <title>Poster Builder - DASH</title>
+        <title>4"×6" Memorial Card Builder - DASH</title>
       </Head>
       <div style={{minHeight:'100vh',background:'#000000',fontFamily:'-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',color:'white',padding:'10px',paddingBottom:'90px',display:'flex',flexDirection:'column',maxWidth:'100vw',overflow:'hidden'}}>
         <div style={{display:'flex',justifyContent:'space-between',padding:'8px 16px',marginBottom:'10px',fontSize:'14px',alignItems:'center'}}>
@@ -349,8 +349,8 @@ const PosterBuilderPage: React.FC = () => {
             div::-webkit-scrollbar { display: none; }
           `}</style>
           <div style={{display:'flex',gap:'12px',paddingLeft:'10px',paddingRight:'10px',minWidth:'max-content'}}>
-            <button style={{background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.2)',borderRadius:'12px',padding:'12px 16px',color:'white',fontSize:'13px',fontWeight:'600',cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}} onClick={()=>router.push('/memorial-card-builder-4x6')}>{t.card}</button>
-            <button style={{background:'rgba(102,126,234,0.3)',border:'1px solid rgba(102,126,234,0.5)',borderRadius:'12px',padding:'12px 16px',color:'white',fontSize:'13px',fontWeight:'600',cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}}>{t.poster}</button>
+            <button style={{background:'rgba(102,126,234,0.3)',border:'1px solid rgba(102,126,234,0.5)',borderRadius:'12px',padding:'12px 16px',color:'white',fontSize:'13px',fontWeight:'600',cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}}>{t.card}</button>
+            <button style={{background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.2)',borderRadius:'12px',padding:'12px 16px',color:'white',fontSize:'13px',fontWeight:'600',cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}} onClick={()=>router.push('/poster-builder')}>{t.poster}</button>
             <button style={{background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.2)',borderRadius:'12px',padding:'12px 16px',color:'white',fontSize:'13px',fontWeight:'600',cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}}>{t.program}</button>
             <button style={{background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.2)',borderRadius:'12px',padding:'12px 16px',color:'white',fontSize:'13px',fontWeight:'600',cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}}>{t.metalQR}</button>
             <button style={{background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.2)',borderRadius:'12px',padding:'12px 16px',color:'white',fontSize:'13px',fontWeight:'600',cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}}>{t.acrylic57}</button>
@@ -359,7 +359,7 @@ const PosterBuilderPage: React.FC = () => {
         </div>
         
         <div style={{marginBottom:'10px',padding:'0 20px',display:'flex',justifyContent:'center',alignItems:'center',gap:'16px'}}>
-          <p style={{fontSize:'18px',color:'rgba(255,255,255,0.5)',margin:'0',fontWeight:'700'}}>{t.poster}</p>
+          <p style={{fontSize:'18px',color:'rgba(255,255,255,0.5)',margin:'0',fontWeight:'700'}}>{t.card}</p>
           {/* Date Inputs */}
           <div style={{display:'flex',gap:'8px',alignItems:'center',marginLeft:'auto'}}>
             <input 
@@ -407,7 +407,7 @@ const PosterBuilderPage: React.FC = () => {
             </button>
             <button onClick={()=>{
                 const cardData = {
-                    type: 'poster',
+                    type: '4x6-card',
                     front: {
                         name,
                         sunrise,
@@ -429,14 +429,15 @@ const PosterBuilderPage: React.FC = () => {
         </div>
         
         <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',position:'relative',minHeight:0}}>
-          <div style={{position:'relative',width:'min(calc(100vw - 60px), 90vw)',maxWidth:'600px',aspectRatio:'2/3'}}>
+          {/* 4:6 aspect ratio instead of 2:3 */}
+          <div style={{position:'relative',width:'min(calc(100vw - 60px), 90vw)',maxWidth:'400px',aspectRatio:'4/6'}}>
             <div onClick={handleBackgroundClick} style={{width:'100%',height:'100%',display:'flex',flexDirection:'column',position:'relative',cursor:'pointer',overflow:'hidden',background:backgrounds[currentBgIndex].startsWith('linear-gradient') ? backgrounds[currentBgIndex] : 'transparent'}}>
               {!backgrounds[currentBgIndex].startsWith('linear-gradient') && (
                 <img src={backgrounds[currentBgIndex]} alt="Person background" style={{width:'100%',height:'100%',objectFit:'cover',position:'absolute',top:0,left:0,zIndex:0,filter:backgrounds[currentBgIndex].includes('grayscale') ? 'grayscale(100%)' : 'none'}} />
               )}
               {/* Large profile icon CTA */}
               {!photo && (
-                <svg style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',width:'200px',height:'200px',zIndex:1,pointerEvents:'none'}} viewBox="0 0 24 24" fill="none" stroke={textColor === '#0A2463' ? 'rgba(10,36,99,0.3)' : 'rgba(255,255,255,0.3)'} strokeWidth="1">
+                <svg style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',width:'150px',height:'150px',zIndex:1,pointerEvents:'none'}} viewBox="0 0 24 24" fill="none" stroke={textColor === '#0A2463' ? 'rgba(10,36,99,0.3)' : 'rgba(255,255,255,0.3)'} strokeWidth="1">
                   <circle cx="12" cy="7" r="4"/>
                   <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                 </svg>
@@ -446,29 +447,29 @@ const PosterBuilderPage: React.FC = () => {
               )}
               
               {/* In Loving Memory text */}
-              <div style={{position:'absolute',top:'20px',left:'50%',transform:'translateX(-50%)',color:textColor,fontSize:'16px',fontFamily:'cursive',fontStyle:'italic',zIndex:10,textAlign:'center',fontWeight:'600'}}>
+              <div style={{position:'absolute',top:'15px',left:'50%',transform:'translateX(-50%)',color:textColor,fontSize:'14px',fontFamily:'cursive',fontStyle:'italic',zIndex:10,textAlign:'center',fontWeight:'600'}}>
                 {t.inLovingMemory}
               </div>
               
-              <input onClick={(e)=>{e.stopPropagation(); handleNameClick();}} type="text" value={name} onChange={(e)=>{e.stopPropagation(); setName(e.target.value);}} placeholder={t.fullName} style={{position:'absolute',bottom:'80px',left:'60px',right:'60px',background:photo ? `rgba(${textColor === '#FFFFFF' ? '255,255,255' : '0,0,0'},0.2)`:'rgba(255,255,255,0.1)',border:`1px solid ${textColor}`,borderRadius:'4px',padding:'8px',color:textColor,fontSize:'18px',outline:'none',textAlign:'center',fontFamily:fonts[currentFontIndex],zIndex:10,minHeight:'40px',cursor:'pointer',transition:'all 0.3s ease'}} />
+              <input onClick={(e)=>{e.stopPropagation(); handleNameClick();}} type="text" value={name} onChange={(e)=>{e.stopPropagation(); setName(e.target.value);}} placeholder={t.fullName} style={{position:'absolute',bottom:'60px',left:'40px',right:'40px',background:photo ? `rgba(${textColor === '#FFFFFF' ? '255,255,255' : '0,0,0'},0.2)`:'rgba(255,255,255,0.1)',border:`1px solid ${textColor}`,borderRadius:'4px',padding:'6px',color:textColor,fontSize:'16px',outline:'none',textAlign:'center',fontFamily:fonts[currentFontIndex],zIndex:10,minHeight:'35px',cursor:'pointer',transition:'all 0.3s ease'}} />
               
-              <div style={{position:'absolute',bottom:'20px',left:'60px',right:'60px',display:'flex',alignItems:'center',justifyContent:'center',gap:'12px',zIndex:10}}>
+              <div style={{position:'absolute',bottom:'15px',left:'40px',right:'40px',display:'flex',alignItems:'center',justifyContent:'center',gap:'10px',zIndex:10}}>
                 <div style={{display:'flex',flexDirection:'column',alignItems:'center'}}>
-                  <div style={{color:textColor,fontSize:'12px',textAlign:'center',marginBottom:'3px',fontFamily:'-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',fontWeight:'600'}}>{sunrise || 'Date'}</div>
-                  <span style={{color:textColor,opacity:0.6,fontSize:'8px'}}>{t.sunrise}</span>
+                  <div style={{color:textColor,fontSize:'11px',textAlign:'center',marginBottom:'2px',fontFamily:'-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',fontWeight:'600'}}>{sunrise || 'Date'}</div>
+                  <span style={{color:textColor,opacity:0.6,fontSize:'7px'}}>{t.sunrise}</span>
                 </div>
-                <div style={{width:'30px',height:'30px',borderRadius:'4px',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',position:'relative',overflow:'hidden',padding:'2px',background:qrBackgroundStyle.background || 'white',mixBlendMode:qrBackgroundStyle.mixBlendMode || 'normal'}}>
+                <div style={{width:'26px',height:'26px',borderRadius:'4px',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',position:'relative',overflow:'hidden',padding:'2px',background:qrBackgroundStyle.background || 'white',mixBlendMode:qrBackgroundStyle.mixBlendMode || 'normal'}}>
                   {qrCodeUrl ? (
                     <img src={qrCodeUrl} alt="QR Code" style={{width:'100%',height:'100%',objectFit:'cover',filter:qrBackgroundStyle.background === 'transparent' ? 'invert(1)' : 'none'}} />
                   ) : (
-                    <div style={{display:'grid',gridTemplateColumns:'repeat(8,1fr)',gap:'1px',width:'24px',height:'24px',background:'transparent',padding:'2px',borderRadius:'2px'}}>
+                    <div style={{display:'grid',gridTemplateColumns:'repeat(8,1fr)',gap:'1px',width:'20px',height:'20px',background:'transparent',padding:'2px',borderRadius:'2px'}}>
                       {qrPattern.map((isFilled,i)=>(<div key={i} style={{background:isFilled?'rgba(255,255,255,0.9)':'transparent'}} />))}
                     </div>
                   )}
                 </div>
                 <div style={{display:'flex',flexDirection:'column',alignItems:'center'}}>
-                  <div style={{color:textColor,fontSize:'12px',textAlign:'center',marginBottom:'3px',fontFamily:'-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',fontWeight:'600'}}>{sunset || 'Date'}</div>
-                  <span style={{color:textColor,opacity:0.6,fontSize:'8px'}}>{t.sunset}</span>
+                  <div style={{color:textColor,fontSize:'11px',textAlign:'center',marginBottom:'2px',fontFamily:'-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',fontWeight:'600'}}>{sunset || 'Date'}</div>
+                  <span style={{color:textColor,opacity:0.6,fontSize:'7px'}}>{t.sunset}</span>
                 </div>
               </div>
             </div>
@@ -510,5 +511,5 @@ const PosterBuilderPage: React.FC = () => {
   );
 };
 
-export default PosterBuilderPage;
+export default MemorialCardBuilder4x6Page;
 

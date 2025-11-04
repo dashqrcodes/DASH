@@ -62,6 +62,12 @@ const POPULAR_VERSES: { en: BibleVerse[]; es: BibleVerse[] } = {
       text: "And God will wipe away every tear from their eyes, and there shall be no more death, nor sorrow, nor crying. There shall be no more pain, for the former things have passed away.",
       translation: "NKJV",
       language: 'en'
+    },
+    {
+      reference: "John 14:1-3",
+      text: "Let not your heart be troubled: ye believe in God, believe also in me. In my Father's house are many mansions: if it were not so, I would have told you. I go to prepare a place for you. And if I go and prepare a place for you, I will come again, and receive you unto myself; that where I am, there ye may be also.",
+      translation: "NKJV",
+      language: 'en'
     }
   ],
   es: [
@@ -85,6 +91,49 @@ const POPULAR_VERSES: { en: BibleVerse[]; es: BibleVerse[] } = {
     }
   ]
 };
+
+// Search Bible verses using free API (bible-api.com)
+export async function searchBibleVerse(query: string, translation: 'NIV' | 'NKJV' | 'Catholic', language: 'en' | 'es'): Promise<BibleVerse | null> {
+  try {
+    // Map translation codes for bible-api.com
+    const translationMap: Record<string, string> = {
+      'NIV': 'niv',
+      'NKJV': 'kjv',
+      'Catholic': language === 'es' ? 'rvr' : 'kjv' // Use KJV as closest for English Catholic
+    };
+    
+    const translationCode = translationMap[translation];
+    
+    // Parse query (e.g., "John 14:1-3" or "Psalm 23:1")
+    const bookMatch = query.match(/^(\d*\s*\w+)\s+(\d+):(\d+)(?:-(\d+))?/i);
+    if (!bookMatch) {
+      return null;
+    }
+    
+    const [, book, chapter, startVerse, endVerse] = bookMatch;
+    const bookName = book.trim();
+    
+    // Construct API URL
+    const apiUrl = `https://bible-api.com/${encodeURIComponent(bookName)} ${chapter}:${startVerse}${endVerse ? `-${endVerse}` : ''}?translation=${translationCode}`;
+    
+    const response = await fetch(apiUrl);
+    if (!response.ok) {
+      throw new Error('Failed to fetch verse');
+    }
+    
+    const data = await response.json();
+    
+    return {
+      reference: data.reference || query,
+      text: data.text || '',
+      translation: translation,
+      language: language
+    };
+  } catch (error) {
+    console.error('Error searching Bible verse:', error);
+    return null;
+  }
+}
 
 // Get popular verses or prayers based on language
 export function getPopularContent(language: 'en' | 'es'): Array<{ text: string; reference?: string; title?: string }> {

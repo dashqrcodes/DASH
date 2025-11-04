@@ -54,7 +54,7 @@ const Dashboard: React.FC = () => {
 
             <div className="mobile-container">
                 <div className="header">
-                    <h1>Create Your Memorial</h1>
+                    <h1>DASH Products</h1>
                     <p>Choose products to customize</p>
                 </div>
 
