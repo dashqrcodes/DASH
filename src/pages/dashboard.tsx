@@ -27,7 +27,7 @@ const Dashboard: React.FC = () => {
 
         // Redirect to appropriate builder
         if (selectedProduct === 'card') {
-            router.push('/design-carousel');
+            router.push('/memorial-card-builder');
         } else if (selectedProduct === 'enlargement') {
             router.push('/enlargement');
         } else if (selectedProduct === 'program') {

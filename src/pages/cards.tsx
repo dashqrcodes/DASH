@@ -14,6 +14,7 @@ const CardsPage: React.FC = () => {
     const [photoPreview, setPhotoPreview] = useState('');
     const [selectedText, setSelectedText] = useState('psalm23');
     const [customBackText, setCustomBackText] = useState('');
+    const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
     const photoInputRef = useRef<HTMLInputElement>(null);
 
     // Initialize design from URL or localStorage
@@ -27,6 +28,51 @@ const CardsPage: React.FC = () => {
             setSelectedBackground(designFromStorage);
         }
     }, [router.query]);
+
+    // Generate QR code as user types name
+    useEffect(() => {
+        const generateQRCode = async () => {
+            if (!lovedOneName || lovedOneName.trim() === '') {
+                setQrCodeUrl(null);
+                return;
+            }
+
+            try {
+                // Use the API route to generate QR code
+                const response = await fetch('/api/generate-qr', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        url: typeof window !== 'undefined' ? `${window.location.origin}/memorial/${encodeURIComponent(lovedOneName)}` : `https://dash.app/memorial/${encodeURIComponent(lovedOneName)}`,
+                        lovedOneName: lovedOneName
+                    }),
+                });
+
+                const data = await response.json();
+                if (data.success && data.qrCode) {
+                    setQrCodeUrl(data.qrCode);
+                } else {
+                    // Fallback to external API if our API fails
+                    const qrUrl = `https://dash.app/memorial/${encodeURIComponent(lovedOneName)}`;
+                    setQrCodeUrl(`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrUrl)}`);
+                }
+            } catch (error) {
+                console.error('QR generation error:', error);
+                // Fallback to external API
+                const qrUrl = `https://dash.app/memorial/${encodeURIComponent(lovedOneName)}`;
+                setQrCodeUrl(`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrUrl)}`);
+            }
+        };
+
+        // Debounce the QR code generation to avoid too many API calls
+        const timeoutId = setTimeout(() => {
+            generateQRCode();
+        }, 500); // Wait 500ms after user stops typing
+
+        return () => clearTimeout(timeoutId);
+    }, [lovedOneName]);
 
     // Live preview updates
     useEffect(() => {
@@ -81,15 +127,6 @@ const CardsPage: React.FC = () => {
         }
     };
 
-    // Simple QR code generation (placeholder - would use actual QR library in production)
-    const generateQRCode = (text: string) => {
-        // For now, return a placeholder. In production, use a QR code library
-        // This would generate a QR code that links to a memorial page
-        const qrUrl = `https://dash.app/memorial/${encodeURIComponent(text)}`;
-        // Using a QR code API service as placeholder
-        return `https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=${encodeURIComponent(qrUrl)}`;
-    };
-
     const handleGenerateCard = () => {
         if (!lovedOneName) {
             alert('Please enter the loved one\'s name');
@@ -100,11 +137,13 @@ const CardsPage: React.FC = () => {
             return;
         }
         
-        // Generate QR code
-        const qrUrl = generateQRCode(lovedOneName);
-        
-        console.log('Generating memorial card with QR:', qrUrl);
-        alert(`PDF generated!\nQR code links to: https://dash.app/memorial/${encodeURIComponent(lovedOneName)}`);
+        // QR code is already generated via useEffect
+        if (qrCodeUrl) {
+            console.log('Generating memorial card with QR:', qrCodeUrl);
+            alert(`PDF generated!\nQR code links to: https://dash.app/memorial/${encodeURIComponent(lovedOneName)}`);
+        } else {
+            alert('Please wait for QR code to generate...');
+        }
     };
 
     return (
@@ -303,14 +342,40 @@ const CardsPage: React.FC = () => {
                             </div>
                             <div className="qr-code-box">
                                 <div className="qr-code" id="qrCodePlaceholder">
-                                    {lovedOneName ? (
-                                        <img 
-                                            src={generateQRCode(lovedOneName)} 
-                                            alt="QR Code" 
-                                            style={{ width: '100%', height: '100%', borderRadius: '4px' }}
-                                        />
+                                    {qrCodeUrl ? (
+                                        <>
+                                            <img 
+                                                src={qrCodeUrl} 
+                                                alt="QR Code" 
+                                                className="qr-code-image"
+                                                style={{ width: '100%', height: '100%', borderRadius: '4px', objectFit: 'contain' }}
+                                            />
+                                            <div className="qr-brand-text">DASH</div>
+                                        </>
+                                    ) : lovedOneName ? (
+                                        <div style={{ 
+                                            display: 'flex', 
+                                            alignItems: 'center', 
+                                            justifyContent: 'center', 
+                                            width: '100%', 
+                                            height: '100%',
+                                            fontSize: '10px',
+                                            color: '#1a202c'
+                                        }}>
+                                            Generating...
+                                        </div>
                                     ) : (
-                                        'QR'
+                                        <div style={{ 
+                                            display: 'flex', 
+                                            alignItems: 'center', 
+                                            justifyContent: 'center', 
+                                            width: '100%', 
+                                            height: '100%',
+                                            fontSize: '10px',
+                                            color: '#1a202c'
+                                        }}>
+                                            QR
+                                        </div>
                                     )}
                                 </div>
                                 <p className="qr-name">DASH</p>
@@ -361,7 +426,30 @@ const CardsPage: React.FC = () => {
                 </div>
 
                 <div className="submit-section">
-                    <button className="submit-btn" onClick={handleGenerateCard}>
+                    <button 
+                        className="submit-btn" 
+                        onClick={() => {
+                            // Store card data
+                            const cardData = {
+                                name: lovedOneName,
+                                sunrise: sunriseDate,
+                                sunset: sunsetDate,
+                                font: selectedFont,
+                                background: selectedBackground,
+                                text: selectedText,
+                                customText: customBackText,
+                                photo: photoPreview
+                            };
+                            if (typeof window !== 'undefined') {
+                                localStorage.setItem('cardData', JSON.stringify(cardData));
+                            }
+                            // Navigate to preview with 3D flip
+                            router.push(`/card-preview?name=${encodeURIComponent(lovedOneName)}&sunrise=${encodeURIComponent(sunriseDate)}&sunset=${encodeURIComponent(sunsetDate)}`);
+                        }}
+                    >
+                        Preview Card →
+                    </button>
+                    <button className="submit-btn" onClick={handleGenerateCard} style={{ marginTop: '12px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.3)' }}>
                         Generate Print-Ready PDF
                     </button>
                 </div>

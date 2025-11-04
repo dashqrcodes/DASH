@@ -36,6 +36,8 @@ export default function App({ Component, pageProps }: AppProps) {
               margin: 0;
               padding: 0;
               overflow-x: hidden;
+              background: #000000;
+              color: #ffffff;
               /* Support for safe areas (notches, home indicators) */
               padding-bottom: env(safe-area-inset-bottom);
               padding-top: env(safe-area-inset-top);

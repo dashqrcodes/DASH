@@ -6,12 +6,8 @@ const Home = () => {
     const router = useRouter();
 
     useEffect(() => {
-        // Redirect to loading screen first, then to dashboard
-        const timer = setTimeout(() => {
-            router.push('/loading');
-        }, 100);
-
-        return () => clearTimeout(timer);
+        // Redirect directly to dashboard (skip loading screen)
+        router.push('/dashboard');
     }, [router]);
 
     return (
@@ -27,7 +23,7 @@ const Home = () => {
                 background: '#000000',
                 color: '#ffffff'
             }}>
-                <div>Loading...</div>
+                <div>Redirecting...</div>
             </div>
         </>
     );

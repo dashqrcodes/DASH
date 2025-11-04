@@ -255,6 +255,7 @@ h2 {
 .submit-btn:hover {
     transform: translateY(-2px);
 }
+
 /* Text Selection Options */
 .text-options {
     display: grid;
@@ -324,41 +325,7 @@ h2 {
     outline: none;
     border-color: #667eea;
 }
-/* QR Code Styling */
-.qr-code {
-    width: 60px;
-    height: 60px;
-    background: white;
-    margin: 0 auto 5px;
-    border-radius: 8px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 4px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-}
 
-.qr-code-image {
-    width: 100%;
-    height: auto;
-    border-radius: 4px;
-}
-
-.qr-brand-text {
-    font-size: 8px;
-    font-weight: 700;
-    color: #1a202c;
-    margin-top: 2px;
-    letter-spacing: 1px;
-}
-
-.qr-name {
-    font-size: 11px;
-    color: white;
-    font-weight: 600;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-}
 /* Enhanced QR Code Styling - Gradient with DASH Branding */
 .qr-code {
     width: 60px;
