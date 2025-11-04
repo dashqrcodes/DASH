@@ -358,7 +358,6 @@ const MemorialCardBackPage: React.FC = () => {
                             margin: '0',
                             fontWeight: '700',
                             cursor: 'pointer',
-                            display: 'inline-block',
                             padding: '8px clamp(10px, 3vw, 20px)',
                             borderRadius: '20px',
                             transition: 'all 0.3s ease',
