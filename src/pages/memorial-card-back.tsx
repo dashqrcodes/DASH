@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import { getPopularContent } from '../utils/bible-api';
+import { getPopularContent, searchBibleVerse } from '../utils/bible-api';
 
 const MemorialCardBackPage: React.FC = () => {
     const router = useRouter();
@@ -14,6 +14,11 @@ const MemorialCardBackPage: React.FC = () => {
     const [skyPhoto, setSkyPhoto] = useState<string | null>(null);
     const [textColor, setTextColor] = useState('#0A2463');
     const [isEditing, setIsEditing] = useState(false);
+    const [showBibleSearch, setShowBibleSearch] = useState(false);
+    const [bibleSearchQuery, setBibleSearchQuery] = useState('');
+    const [selectedTranslation, setSelectedTranslation] = useState<'NIV' | 'NKJV' | 'Catholic'>('NIV');
+    const [isSearching, setIsSearching] = useState(false);
+    const [searchResult, setSearchResult] = useState<{ reference: string; text: string } | null>(null);
     const [qrPattern, setQrPattern] = useState<boolean[]>([]);
     const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
     const [currentScriptureIndex, setCurrentScriptureIndex] = useState(0);
@@ -92,29 +97,33 @@ const MemorialCardBackPage: React.FC = () => {
         setTextColor('#0A2463');
     }, [skyPhoto]);
 
-    const generateQRCode = async () => {
-        try {
-            const url = typeof window !== 'undefined' ? window.location.origin + '/memorial-card-back' : 'http://localhost:3000/memorial-card-back';
-            const response = await fetch('/api/generate-qr', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ url, lovedOneName: name }),
-            });
-            const data = await response.json();
-            if (data.success && data.qrCode) {
-                setQrCodeUrl(data.qrCode);
-            }
-        } catch (error) {
-            console.error('Error generating QR code:', error);
-            setQrPattern(Array.from({ length: 64 }, () => Math.random() > 0.3));
-        }
-    };
+  const generateQRCode = async () => {
+    try {
+      const url = typeof window !== 'undefined' ? window.location.origin + '/memorial-card-back' : 'http://localhost:3000/memorial-card-back';
+      const response = await fetch('/api/generate-qr', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          url, 
+          lovedOneName: name,
+          color: textColor === '#FFFFFF' ? '#FFFFFF' : textColor // Match QR colors to text color
+        }),
+      });
+      const data = await response.json();
+      if (data.success && data.qrCode) {
+        setQrCodeUrl(data.qrCode);
+      }
+    } catch (error) {
+      console.error('Error generating QR code:', error);
+      setQrPattern(Array.from({ length: 64 }, () => Math.random() > 0.3));
+    }
+  };
 
-    useEffect(() => {
-        generateQRCode();
-    }, []);
+  useEffect(() => {
+    generateQRCode();
+  }, [name, textColor]); // Regenerate when name or text color changes
 
     const handleBackgroundCycle = () => {
         const nextIndex = (currentBgIndex + 1) % backgrounds.length;
@@ -123,15 +132,37 @@ const MemorialCardBackPage: React.FC = () => {
     };
 
     const handleScriptureCycle = () => {
-        const nextIndex = (currentScriptureIndex + 1) % scriptureOptions.length;
-        setCurrentScriptureIndex(nextIndex);
-        setPsalm23Text(scriptureOptions[nextIndex].text);
+        // Toggle Bible search modal
+        setShowBibleSearch(!showBibleSearch);
+    };
+
+    const handleBibleSearch = async () => {
+        if (!bibleSearchQuery.trim()) return;
+        
+        setIsSearching(true);
+        try {
+            const result = await searchBibleVerse(bibleSearchQuery, selectedTranslation, language);
+            if (result) {
+                setSearchResult(result);
+                setPsalm23Text(result.text);
+                setShowBibleSearch(false);
+            } else {
+                alert('Verse not found. Please check the format (e.g., "John 14:1-3" or "Psalm 23:1")');
+            }
+        } catch (error) {
+            console.error('Search error:', error);
+            alert('Error searching verse. Please try again.');
+        } finally {
+            setIsSearching(false);
+        }
     };
 
     const handleCustomUpload = () => {
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = 'image/*';
+        // Use capture attribute to bypass native menu on mobile
+        input.setAttribute('capture', 'environment');
         input.onchange = (e: any) => {
             const file = e.target.files[0];
             if (file) {
@@ -143,6 +174,7 @@ const MemorialCardBackPage: React.FC = () => {
                 reader.readAsDataURL(file);
             }
         };
+        // Trigger click immediately without showing menu
         input.click();
     };
 
@@ -150,12 +182,13 @@ const MemorialCardBackPage: React.FC = () => {
         setIsEditing(!isEditing);
     };
 
+    const [isFlipping, setIsFlipping] = useState(false);
+
     const handleFlip = () => {
-        const params = new URLSearchParams();
-        if (name) params.append('name', name);
-        if (sunrise) params.append('sunrise', sunrise);
-        if (sunset) params.append('sunset', sunset);
-        router.push(`/dashboard?${params.toString()}`);
+        setIsFlipping(true);
+        setTimeout(() => {
+            router.push(`/memorial-card-builder-4x6?name=${encodeURIComponent(name)}&sunrise=${encodeURIComponent(sunrise)}&sunset=${encodeURIComponent(sunset)}${frontPhoto ? `&photo=${encodeURIComponent(frontPhoto)}` : ''}`);
+        }, 300); // Match animation duration
     };
 
     return (
@@ -183,7 +216,7 @@ const MemorialCardBackPage: React.FC = () => {
                     fontSize: '14px'
                 }}>
                     <button
-                        onClick={() => router.back()}
+                        onClick={() => router.push(`/memorial-card-builder?name=${encodeURIComponent(name)}&sunrise=${encodeURIComponent(sunrise)}&sunset=${encodeURIComponent(sunset)}${frontPhoto ? `&photo=${encodeURIComponent(frontPhoto)}` : ''}`)}
                         style={{
                             background: 'transparent',
                             border: 'none',
@@ -362,7 +395,8 @@ const MemorialCardBackPage: React.FC = () => {
                         position: 'relative',
                         width: 'min(calc(100vw - 40px), 85vw)',
                         maxWidth: '400px',
-                        aspectRatio: '4/6'
+                        aspectRatio: '4/6',
+                        perspective: '1000px'
                     }}>
                         <div style={{
                             width: '100%',
@@ -372,7 +406,10 @@ const MemorialCardBackPage: React.FC = () => {
                             flexDirection: 'column',
                             position: 'relative',
                             overflow: 'hidden',
-                            background: 'white'
+                            background: 'white',
+                            transform: isFlipping ? 'rotateY(180deg)' : 'rotateY(0deg)',
+                            transformStyle: 'preserve-3d',
+                            transition: 'transform 0.3s ease-in-out'
                         }}>
                             {skyPhoto && (
                                 <img
@@ -417,8 +454,9 @@ const MemorialCardBackPage: React.FC = () => {
                                     }}
                                 >
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                                        <circle cx="12" cy="13" r="4" />
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                                        <path d="M21 15l-5-5L5 21"/>
                                     </svg>
                                 </button>
                                 <button
@@ -562,15 +600,16 @@ const MemorialCardBackPage: React.FC = () => {
                                 </div>
 
                                 <div style={{
-                                    width: '75px',
-                                    height: '75px',
+                                    width: '60px',
+                                    height: '60px',
                                     borderRadius: '4px',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     cursor: 'pointer',
                                     position: 'relative',
-                                    overflow: 'hidden'
+                                    overflow: 'hidden',
+                                    background: 'transparent'
                                 }}>
                                     {qrCodeUrl ? (
                                         <img
@@ -625,6 +664,204 @@ const MemorialCardBackPage: React.FC = () => {
                         </div>
                     </div>
                 </div>
+
+                {/* Bible Search Modal */}
+                {showBibleSearch && (
+                    <div style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'rgba(0,0,0,0.9)',
+                        zIndex: 1000,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '20px'
+                    }}
+                    onClick={() => setShowBibleSearch(false)}
+                    >
+                        <div style={{
+                            background: 'rgba(255,255,255,0.1)',
+                            backdropFilter: 'blur(20px)',
+                            border: '1px solid rgba(255,255,255,0.2)',
+                            borderRadius: '20px',
+                            padding: '30px',
+                            maxWidth: '500px',
+                            width: '100%',
+                            maxHeight: '90vh',
+                            overflowY: 'auto'
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        >
+                            <h2 style={{
+                                color: 'white',
+                                fontSize: '24px',
+                                marginBottom: '20px',
+                                textAlign: 'center',
+                                fontWeight: '700'
+                            }}>
+                                Search Bible Verse
+                            </h2>
+
+                            {/* Translation Selector */}
+                            <div style={{
+                                display: 'flex',
+                                gap: '8px',
+                                marginBottom: '20px',
+                                justifyContent: 'center'
+                            }}>
+                                {(['NIV', 'NKJV', 'Catholic'] as const).map((trans) => (
+                                    <button
+                                        key={trans}
+                                        onClick={() => setSelectedTranslation(trans)}
+                                        style={{
+                                            background: selectedTranslation === trans 
+                                                ? 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)' 
+                                                : 'rgba(255,255,255,0.1)',
+                                            border: '1px solid rgba(255,255,255,0.2)',
+                                            borderRadius: '8px',
+                                            padding: '8px 16px',
+                                            color: 'white',
+                                            fontSize: '14px',
+                                            fontWeight: '600',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s'
+                                        }}
+                                    >
+                                        {trans}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Search Input */}
+                            <input
+                                type="text"
+                                value={bibleSearchQuery}
+                                onChange={(e) => setBibleSearchQuery(e.target.value)}
+                                onKeyPress={(e) => e.key === 'Enter' && handleBibleSearch()}
+                                placeholder="e.g., John 14:1-3 or Psalm 23:1"
+                                style={{
+                                    width: '100%',
+                                    background: 'rgba(255,255,255,0.1)',
+                                    border: '1px solid rgba(255,255,255,0.2)',
+                                    borderRadius: '12px',
+                                    padding: '12px 16px',
+                                    color: 'white',
+                                    fontSize: '16px',
+                                    outline: 'none',
+                                    marginBottom: '20px'
+                                }}
+                            />
+
+                            {/* Search Button */}
+                            <button
+                                onClick={handleBibleSearch}
+                                disabled={isSearching || !bibleSearchQuery.trim()}
+                                style={{
+                                    width: '100%',
+                                    background: isSearching || !bibleSearchQuery.trim()
+                                        ? 'rgba(255,255,255,0.1)'
+                                        : 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
+                                    border: 'none',
+                                    borderRadius: '12px',
+                                    padding: '14px',
+                                    color: 'white',
+                                    fontSize: '16px',
+                                    fontWeight: '600',
+                                    cursor: isSearching || !bibleSearchQuery.trim() ? 'not-allowed' : 'pointer',
+                                    marginBottom: '20px',
+                                    opacity: isSearching || !bibleSearchQuery.trim() ? 0.5 : 1
+                                }}
+                            >
+                                {isSearching ? 'Searching...' : 'Search'}
+                            </button>
+
+                            {/* Popular Verses */}
+                            <div style={{
+                                marginTop: '20px',
+                                paddingTop: '20px',
+                                borderTop: '1px solid rgba(255,255,255,0.1)'
+                            }}>
+                                <h3 style={{
+                                    color: 'rgba(255,255,255,0.8)',
+                                    fontSize: '14px',
+                                    marginBottom: '12px',
+                                    fontWeight: '600'
+                                }}>
+                                    Popular Verses:
+                                </h3>
+                                <div style={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '8px'
+                                }}>
+                                    {scriptureOptions.slice(0, 3).map((option, index) => (
+                                        <button
+                                            key={index}
+                                            onClick={() => {
+                                                setPsalm23Text(option.text);
+                                                setShowBibleSearch(false);
+                                            }}
+                                            style={{
+                                                background: 'rgba(255,255,255,0.05)',
+                                                border: '1px solid rgba(255,255,255,0.1)',
+                                                borderRadius: '8px',
+                                                padding: '12px',
+                                                color: 'white',
+                                                fontSize: '13px',
+                                                textAlign: 'left',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s'
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                                            }}
+                                        >
+                                            <div style={{ fontWeight: '600', marginBottom: '4px' }}>
+                                                {option.reference || option.title}
+                                            </div>
+                                            <div style={{ 
+                                                fontSize: '11px', 
+                                                color: 'rgba(255,255,255,0.7)',
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                display: '-webkit-box',
+                                                WebkitLineClamp: 2,
+                                                WebkitBoxOrient: 'vertical'
+                                            }}>
+                                                {option.text.substring(0, 80)}...
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Close Button */}
+                            <button
+                                onClick={() => setShowBibleSearch(false)}
+                                style={{
+                                    width: '100%',
+                                    background: 'transparent',
+                                    border: '1px solid rgba(255,255,255,0.2)',
+                                    borderRadius: '12px',
+                                    padding: '12px',
+                                    color: 'white',
+                                    fontSize: '14px',
+                                    fontWeight: '600',
+                                    cursor: 'pointer',
+                                    marginTop: '20px'
+                                }}
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                )}
 
                 <div style={{
                     position: 'fixed',

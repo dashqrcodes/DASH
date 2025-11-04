@@ -1,24 +1,45 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Head from 'next/head';
+import { useRouter } from 'next/router';
+import { 
+    createConvaiCharacter, 
+    startConvaiConversation, 
+    sendMessageToConvai,
+    loadCharacterFromStorage,
+    saveCharacterToStorage,
+    extractAudioFromVideo
+} from '../utils/convai-integration';
 
 interface Chapter {
     id: string;
     name: string;
     photos: File[];
+    videos: File[];
 }
 
 const HeavenPage: React.FC = () => {
+    const router = useRouter();
     const [lovedOneName, setLovedOneName] = useState('Name...');
     const [chapters, setChapters] = useState<Chapter[]>([
-        { id: 'baby', name: 'Baby', photos: [] },
-        { id: 'childhood', name: 'Child', photos: [] },
-        { id: 'teenage', name: 'Teen', photos: [] },
-        { id: 'adult', name: 'Adult', photos: [] },
-        { id: 'recents', name: 'Recent', photos: [] },
+        { id: 'baby', name: 'Baby', photos: [], videos: [] },
+        { id: 'childhood', name: 'Child', photos: [], videos: [] },
+        { id: 'teenage', name: 'Teen', photos: [], videos: [] },
+        { id: 'adult', name: 'Adult', photos: [], videos: [] },
+        { id: 'recents', name: 'Recent', photos: [], videos: [] },
     ]);
     const [selectedChapter, setSelectedChapter] = useState<string | null>(null);
+    const [isInCall, setIsInCall] = useState(false);
+    const [isCreatingCharacter, setIsCreatingCharacter] = useState(false);
+    const [convaiCharacter, setConvaiCharacter] = useState<any>(null);
+    const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+    const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
+    const [message, setMessage] = useState('');
+    const [conversationHistory, setConversationHistory] = useState<Array<{ speaker: 'user' | 'ai', text: string }>>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const localVideoRef = useRef<HTMLVideoElement>(null);
+    const remoteVideoRef = useRef<HTMLVideoElement>(null);
+    const voiceInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         // Create floating stars effect
@@ -56,15 +77,30 @@ const HeavenPage: React.FC = () => {
         fileInputRef.current?.click();
     };
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
         if (!files || !selectedChapter) return;
 
         const fileArray = Array.from(files);
+        const photos: File[] = [];
+        const videos: File[] = [];
+
+        fileArray.forEach(file => {
+            if (file.type.startsWith('image/')) {
+                photos.push(file);
+            } else if (file.type.startsWith('video/')) {
+                videos.push(file);
+            }
+        });
+
         setChapters(prev =>
             prev.map(chapter =>
                 chapter.id === selectedChapter
-                    ? { ...chapter, photos: [...chapter.photos, ...fileArray] }
+                    ? { 
+                        ...chapter, 
+                        photos: [...chapter.photos, ...photos],
+                        videos: [...chapter.videos, ...videos]
+                    }
                     : chapter
             )
         );
@@ -75,9 +111,183 @@ const HeavenPage: React.FC = () => {
         }
     };
 
+    const handleStartCall = async () => {
+        if (!lovedOneName || lovedOneName === 'Name...') {
+            alert('Please enter a name first');
+            return;
+        }
+
+        setIsCreatingCharacter(true);
+        try {
+            // Collect all photos and videos from chapters
+            const allPhotos: string[] = [];
+            const allVideos: File[] = [];
+            let voiceSample: Blob | null = null;
+
+            chapters.forEach(chapter => {
+                chapter.photos.forEach(photo => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        allPhotos.push(reader.result as string);
+                    };
+                    reader.readAsDataURL(photo);
+                });
+                chapter.videos.forEach(video => {
+                    allVideos.push(video);
+                });
+            });
+
+            // Extract audio from first video if available
+            if (allVideos.length > 0) {
+                voiceSample = await extractAudioFromVideo(allVideos[0]);
+            }
+
+            // Load from storage first
+            let character = loadCharacterFromStorage(lovedOneName);
+            
+            if (!character) {
+                // Create new character
+                character = await createConvaiCharacter(
+                    lovedOneName,
+                    allPhotos,
+                    allVideos.map(v => URL.createObjectURL(v)),
+                    voiceSample || undefined
+                );
+
+                if (character) {
+                    saveCharacterToStorage(character);
+                    setConvaiCharacter(character);
+                }
+            } else {
+                setConvaiCharacter(character);
+            }
+
+            if (!character) {
+                throw new Error('Failed to create or load character');
+            }
+
+            // Start video call
+            await startVideoCall(character.characterId);
+        } catch (error) {
+            console.error('Error starting call:', error);
+            alert('Failed to start HEAVEN call. Please check Convai API configuration.');
+        } finally {
+            setIsCreatingCharacter(false);
+        }
+    };
+
+    const startVideoCall = async (characterId: string) => {
+        try {
+            // Get user's camera and microphone
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: true,
+                audio: true
+            });
+
+            setLocalStream(stream);
+            if (localVideoRef.current) {
+                localVideoRef.current.srcObject = stream;
+            }
+
+            // Start Convai conversation
+            const remoteStream = await startConvaiConversation(characterId);
+            
+            if (remoteStream && remoteVideoRef.current) {
+                setRemoteStream(remoteStream);
+                remoteVideoRef.current.srcObject = remoteStream;
+                setIsInCall(true);
+            } else {
+                // Fallback: Show message that call is starting
+                setIsInCall(true);
+                addToConversation('ai', 'Hello! I\'m here to talk with you. How are you doing today?');
+            }
+        } catch (error) {
+            console.error('Error starting video call:', error);
+            alert('Failed to start video call. Please check permissions.');
+        }
+    };
+
+    const handleEndCall = () => {
+        if (localStream) {
+            localStream.getTracks().forEach(track => track.stop());
+        }
+        if (remoteStream) {
+            remoteStream.getTracks().forEach(track => track.stop());
+        }
+        setIsInCall(false);
+        setLocalStream(null);
+        setRemoteStream(null);
+        setConversationHistory([]);
+    };
+
+    const handleSendMessage = async () => {
+        if (!message.trim() || !convaiCharacter) return;
+
+        const userMessage = message.trim();
+        setMessage('');
+        addToConversation('user', userMessage);
+
+        try {
+            const response = convaiCharacter ? await sendMessageToConvai(
+                convaiCharacter.characterId,
+                userMessage
+            ) : null;
+
+            if (response) {
+                addToConversation('ai', response.text);
+                
+                // Play audio if available
+                if (response.audioUrl && remoteVideoRef.current) {
+                    const audio = new Audio(response.audioUrl);
+                    audio.play();
+                }
+            } else {
+                addToConversation('ai', 'I\'m here listening. What would you like to talk about?');
+            }
+        } catch (error) {
+            console.error('Error sending message:', error);
+            addToConversation('ai', 'I\'m having trouble responding right now. Please try again.');
+        }
+    };
+
+    const addToConversation = (speaker: 'user' | 'ai', text: string) => {
+        setConversationHistory(prev => [...prev, { speaker, text }]);
+    };
+
+    const handleVoiceUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+
+        const voiceFile = files[0];
+        if (voiceFile.type.startsWith('audio/') || voiceFile.type.startsWith('video/')) {
+            // Extract audio if video
+            let audioBlob: Blob | null = null;
+            if (voiceFile.type.startsWith('video/')) {
+                audioBlob = await extractAudioFromVideo(voiceFile);
+            } else {
+                audioBlob = voiceFile;
+            }
+
+            if (audioBlob && convaiCharacter) {
+                // Update character with voice sample
+                const updated = await createConvaiCharacter(
+                    lovedOneName,
+                    [],
+                    [],
+                    audioBlob
+                );
+                if (updated) {
+                    saveCharacterToStorage(updated);
+                    setConvaiCharacter(updated);
+                    alert('Voice sample updated!');
+                }
+            }
+        }
+    };
+
     const getPhotoCount = (chapterId: string) => {
         const chapter = chapters.find(c => c.id === chapterId);
-        return chapter?.photos.length || 0;
+        return (chapter?.photos.length || 0) + (chapter?.videos.length || 0);
     };
 
     return (
@@ -162,11 +372,55 @@ const HeavenPage: React.FC = () => {
                 </div>
 
                 <div className="collaborate-section">
-                    <button className="collaborate-btn" id="collaborateBtn">
-                        <svg className="collaborate-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
-                            <path d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21M13 7C13 9.20914 11.2091 11 9 11C6.79086 11 5 9.20914 5 7C5 4.79086 6.79086 3 9 3C11.2091 3 13 4.79086 13 7ZM23 21V19C22.9993 18.1137 22.7044 17.2528 22.1614 16.5523C21.6184 15.8519 20.8581 15.3516 20 15.13M16 3.13C16.8604 15.3516 17.6206 15.8519 18.1636 16.5523C18.7066 17.2528 19.0015 18.1137 19 19V21M16 3.13C16.8604 3.3516 17.6206 3.8519 18.1636 4.5523C18.7066 5.2528 19.0015 6.1137 19 7C19 7.8863 18.7066 8.7472 18.1636 9.4477C17.6206 10.1481 16.8604 10.6484 16 10.87" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                        Collaborate with Family
+                    <button 
+                        className="collaborate-btn" 
+                        onClick={handleStartCall}
+                        disabled={isCreatingCharacter}
+                    >
+                        {isCreatingCharacter ? (
+                            <>
+                                <svg className="collaborate-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
+                                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" strokeDasharray="31.416" strokeDashoffset="31.416">
+                                        <animate attributeName="stroke-dasharray" dur="2s" values="0 31.416;15.708 15.708;0 31.416;0 31.416" repeatCount="indefinite"/>
+                                        <animate attributeName="stroke-dashoffset" dur="2s" values="0;-15.708;-31.416;-31.416" repeatCount="indefinite"/>
+                                    </circle>
+                                </svg>
+                                Creating Character...
+                            </>
+                        ) : (
+                            <>
+                                <svg className="collaborate-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
+                                    <path d="M17 10L22 5L17 0V4H7V6H17V10Z" fill="currentColor"/>
+                                    <path d="M18 16V20C18 20.5304 17.7893 21.0391 17.4142 21.4142C17.0391 21.7893 16.5304 22 16 22H4C3.46957 22 2.96086 21.7893 2.58579 21.4142C2.21071 21.0391 2 20.5304 2 20V8C2 7.46957 2.21071 6.96086 2.58579 6.58579C2.96086 6.21071 3.46957 6 4 6H8V8H4V20H16V16H18Z" fill="currentColor"/>
+                                </svg>
+                                Call to HEAVEN
+                            </>
+                        )}
+                    </button>
+                </div>
+
+                {/* Voice Upload Button */}
+                <div style={{ textAlign: 'center', marginTop: '10px' }}>
+                    <input
+                        ref={voiceInputRef}
+                        type="file"
+                        accept="audio/*,video/*"
+                        style={{ display: 'none' }}
+                        onChange={handleVoiceUpload}
+                    />
+                    <button
+                        onClick={() => voiceInputRef.current?.click()}
+                        style={{
+                            background: 'rgba(255,255,255,0.1)',
+                            border: '1px solid rgba(255,255,255,0.2)',
+                            borderRadius: '12px',
+                            padding: '8px 16px',
+                            color: 'white',
+                            fontSize: '12px',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        Upload Voice Sample
                     </button>
                 </div>
 
@@ -179,6 +433,198 @@ const HeavenPage: React.FC = () => {
                     style={{ display: 'none' }}
                     onChange={handleFileChange}
                 />
+
+                {/* Video Call Interface */}
+                {isInCall && (
+                    <div style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: '#000000',
+                        zIndex: 2000,
+                        display: 'flex',
+                        flexDirection: 'column'
+                    }}>
+                        {/* Remote Video (AI Character) */}
+                        <div style={{
+                            flex: 1,
+                            position: 'relative',
+                            background: 'linear-gradient(135deg, #1a1a2e, #16213e, #0f3460)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        }}>
+                            <video
+                                ref={remoteVideoRef}
+                                autoPlay
+                                playsInline
+                                style={{
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'contain'
+                                }}
+                            />
+                            {!remoteStream && (
+                                <div style={{
+                                    position: 'absolute',
+                                    color: 'white',
+                                    fontSize: '24px',
+                                    textAlign: 'center',
+                                    padding: '20px'
+                                }}>
+                                    <div style={{
+                                        width: '100px',
+                                        height: '100px',
+                                        borderRadius: '50%',
+                                        background: 'rgba(255,255,255,0.1)',
+                                        margin: '0 auto 20px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontSize: '48px'
+                                    }}>
+                                        👤
+                                    </div>
+                                    <p>{lovedOneName}</p>
+                                    <p style={{ fontSize: '14px', opacity: 0.7 }}>Connecting...</p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Local Video (User) */}
+                        <div style={{
+                            position: 'absolute',
+                            top: '20px',
+                            right: '20px',
+                            width: '120px',
+                            height: '160px',
+                            borderRadius: '12px',
+                            overflow: 'hidden',
+                            border: '2px solid rgba(255,255,255,0.3)',
+                            background: '#000'
+                        }}>
+                            <video
+                                ref={localVideoRef}
+                                autoPlay
+                                playsInline
+                                muted
+                                style={{
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'cover'
+                                }}
+                            />
+                        </div>
+
+                        {/* Conversation History */}
+                        <div style={{
+                            position: 'absolute',
+                            bottom: '120px',
+                            left: '20px',
+                            right: '20px',
+                            maxHeight: '200px',
+                            overflowY: 'auto',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '8px'
+                        }}>
+                            {conversationHistory.map((msg, idx) => (
+                                <div
+                                    key={idx}
+                                    style={{
+                                        background: msg.speaker === 'user' 
+                                            ? 'rgba(102,126,234,0.8)' 
+                                            : 'rgba(255,255,255,0.2)',
+                                        padding: '10px 16px',
+                                        borderRadius: '12px',
+                                        color: 'white',
+                                        fontSize: '14px',
+                                        maxWidth: '80%',
+                                        alignSelf: msg.speaker === 'user' ? 'flex-end' : 'flex-start'
+                                    }}
+                                >
+                                    {msg.text}
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Message Input */}
+                        <div style={{
+                            position: 'absolute',
+                            bottom: '20px',
+                            left: '20px',
+                            right: '20px',
+                            display: 'flex',
+                            gap: '10px',
+                            alignItems: 'center'
+                        }}>
+                            <input
+                                type="text"
+                                value={message}
+                                onChange={(e) => setMessage(e.target.value)}
+                                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                                placeholder="Say something..."
+                                style={{
+                                    flex: 1,
+                                    background: 'rgba(255,255,255,0.1)',
+                                    border: '1px solid rgba(255,255,255,0.2)',
+                                    borderRadius: '25px',
+                                    padding: '12px 20px',
+                                    color: 'white',
+                                    fontSize: '16px',
+                                    outline: 'none'
+                                }}
+                            />
+                            <button
+                                onClick={handleSendMessage}
+                                disabled={!message.trim()}
+                                style={{
+                                    background: 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
+                                    border: 'none',
+                                    borderRadius: '50%',
+                                    width: '50px',
+                                    height: '50px',
+                                    color: 'white',
+                                    cursor: message.trim() ? 'pointer' : 'not-allowed',
+                                    opacity: message.trim() ? 1 : 0.5,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                }}
+                            >
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <line x1="22" y1="2" x2="11" y2="13"/>
+                                    <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                                </svg>
+                            </button>
+                        </div>
+
+                        {/* End Call Button */}
+                        <button
+                            onClick={handleEndCall}
+                            style={{
+                                position: 'absolute',
+                                top: '20px',
+                                left: '20px',
+                                background: 'rgba(255,0,0,0.8)',
+                                border: 'none',
+                                borderRadius: '50%',
+                                width: '50px',
+                                height: '50px',
+                                color: 'white',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '24px'
+                            }}
+                        >
+                            📞
+                        </button>
+                    </div>
+                )}
             </div>
         </>
     );

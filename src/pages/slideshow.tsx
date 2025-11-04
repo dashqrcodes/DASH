@@ -1,10 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Head from 'next/head';
+import { useRouter } from 'next/router';
 
 const SlideshowPage: React.FC = () => {
+    const router = useRouter();
     const [lovedOneName, setLovedOneName] = useState('');
     const [showUploadModal, setShowUploadModal] = useState(false);
+    const [hasMusic, setHasMusic] = useState(false);
+    const [shouldBounceMusic, setShouldBounceMusic] = useState(false);
+    const [showSupportModal, setShowSupportModal] = useState(false);
+
+    useEffect(() => {
+        // Check if user has connected Spotify
+        const spotifyToken = typeof window !== 'undefined' ? localStorage.getItem('spotify_access_token') : null;
+        setHasMusic(!!spotifyToken);
+        
+        // Start bouncing if no music after 5 seconds
+        if (!spotifyToken) {
+            const timer = setTimeout(() => {
+                setShouldBounceMusic(true);
+            }, 5000);
+            return () => clearTimeout(timer);
+        }
+    }, []);
 
     return (
         <>
@@ -138,7 +157,7 @@ const SlideshowPage: React.FC = () => {
                                     <circle cx="12" cy="13" r="4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                 </svg>
                             </div>
-                            <button className="support-btn" title="Support with donation">
+                            <button className="support-btn" title="Support with donation" onClick={() => setShowSupportModal(true)}>
                                 <svg className="support-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                     <path d="M20.84 4.61C20.3292 4.099 19.7228 3.69364 19.0554 3.41708C18.3879 3.14052 17.6725 2.99817 16.95 2.99817C16.2275 2.99817 15.5121 3.14052 14.8446 3.41708C14.1772 3.69364 13.5708 4.099 13.06 4.61L12 5.67L10.94 4.61C9.9083 3.5783 8.50903 2.9987 7.05 2.9987C5.59096 2.9987 4.19169 3.5783 3.16 4.61C2.1283 5.6417 1.5487 7.04097 1.5487 8.5C1.5487 9.95903 2.1283 11.3583 3.16 12.39L12 21.23L20.84 12.39C21.351 11.8792 21.7563 11.2728 22.0329 10.6053C22.3095 9.93789 22.4518 9.22248 22.4518 8.5C22.4518 7.77752 22.3095 7.06211 22.0329 6.39467C21.7563 5.72723 21.351 5.1208 20.84 4.61Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                     <text x="12" y="16" textAnchor="middle" fontSize="8" fontWeight="bold" fill="currentColor">$</text>
@@ -176,8 +195,18 @@ const SlideshowPage: React.FC = () => {
                     </svg>
                 </div>
                 
-                <div className="nav-item">
-                    <svg className="nav-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <div className="nav-item" onClick={() => router.push('/spotify-callback')}>
+                    <svg 
+                        className="nav-icon" 
+                        width="24" 
+                        height="24" 
+                        viewBox="0 0 24 24" 
+                        fill="none" 
+                        xmlns="http://www.w3.org/2000/svg"
+                        style={{
+                            animation: shouldBounceMusic && !hasMusic ? 'bounce 1s infinite' : 'none'
+                        }}
+                    >
                         <path d="M9 18V5L21 3V16M9 18C9 19.6569 7.65685 21 6 21C4.34315 21 3 19.6569 3 18C3 16.3431 4.34315 15 6 15C7.65685 15 9 16.3431 9 18Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                         <path d="M21 16C21 17.6569 19.6569 19 18 19C16.3431 19 15 17.6569 15 16C15 14.3431 16.3431 13 18 13C19.6569 13 21 14.3431 21 16Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
@@ -195,6 +224,329 @@ const SlideshowPage: React.FC = () => {
                     </svg>
                 </div>
             </div>
+
+            {/* Support Modal */}
+            {showSupportModal && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0,0,0,0.9)',
+                    zIndex: 1000,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '20px'
+                }}
+                onClick={() => setShowSupportModal(false)}
+                >
+                    <div style={{
+                        background: 'rgba(255,255,255,0.1)',
+                        backdropFilter: 'blur(20px)',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        borderRadius: '20px',
+                        padding: '30px',
+                        maxWidth: '500px',
+                        width: '100%',
+                        maxHeight: '90vh',
+                        overflowY: 'auto'
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    >
+                        <h2 style={{
+                            color: 'white',
+                            fontSize: '24px',
+                            marginBottom: '20px',
+                            textAlign: 'center',
+                            fontWeight: '700'
+                        }}>
+                            Support the Family
+                        </h2>
+
+                        {/* Donations */}
+                        <div style={{
+                            marginBottom: '20px',
+                            padding: '20px',
+                            background: 'rgba(255,255,255,0.05)',
+                            borderRadius: '12px',
+                            border: '1px solid rgba(255,255,255,0.1)'
+                        }}>
+                            <h3 style={{
+                                color: 'white',
+                                fontSize: '18px',
+                                marginBottom: '16px',
+                                fontWeight: '600',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px'
+                            }}>
+                                <span>💝</span> Make a Donation
+                            </h3>
+                            <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: '1fr 1fr',
+                                gap: '12px',
+                                marginBottom: '16px'
+                            }}>
+                                {[25, 50, 100, 200].map((amount) => (
+                                    <button
+                                        key={amount}
+                                        onClick={() => {
+                                            // TODO: Integrate with payment processor
+                                            alert(`Donation of $${amount} - Payment integration coming soon`);
+                                        }}
+                                        style={{
+                                            background: 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
+                                            border: 'none',
+                                            borderRadius: '8px',
+                                            padding: '12px',
+                                            color: 'white',
+                                            fontSize: '16px',
+                                            fontWeight: '600',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        ${amount}
+                                    </button>
+                                ))}
+                            </div>
+                            <button
+                                onClick={() => {
+                                    const amount = prompt('Enter donation amount:');
+                                    if (amount) {
+                                        alert(`Donation of $${amount} - Payment integration coming soon`);
+                                    }
+                                }}
+                                style={{
+                                    width: '100%',
+                                    background: 'transparent',
+                                    border: '1px solid rgba(255,255,255,0.2)',
+                                    borderRadius: '8px',
+                                    padding: '12px',
+                                    color: 'white',
+                                    fontSize: '14px',
+                                    fontWeight: '600',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                Custom Amount
+                            </button>
+                        </div>
+
+                        {/* Food Delivery */}
+                        <div style={{
+                            marginBottom: '20px',
+                            padding: '20px',
+                            background: 'rgba(255,255,255,0.05)',
+                            borderRadius: '12px',
+                            border: '1px solid rgba(255,255,255,0.1)'
+                        }}>
+                            <h3 style={{
+                                color: 'white',
+                                fontSize: '18px',
+                                marginBottom: '16px',
+                                fontWeight: '600',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px'
+                            }}>
+                                <span>🍽️</span> Send Food
+                            </h3>
+                            <div style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '12px'
+                            }}>
+                                {[
+                                    { name: 'GrubHub', url: 'https://www.grubhub.com' },
+                                    { name: 'DoorDash', url: 'https://www.doordash.com' },
+                                    { name: 'Uber Eats', url: 'https://www.ubereats.com' }
+                                ].map((service) => (
+                                    <button
+                                        key={service.name}
+                                        onClick={() => window.open(service.url, '_blank')}
+                                        style={{
+                                            width: '100%',
+                                            background: 'rgba(255,255,255,0.1)',
+                                            border: '1px solid rgba(255,255,255,0.2)',
+                                            borderRadius: '8px',
+                                            padding: '14px',
+                                            color: 'white',
+                                            fontSize: '16px',
+                                            fontWeight: '600',
+                                            cursor: 'pointer',
+                                            textAlign: 'left',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between'
+                                        }}
+                                    >
+                                        <span>{service.name}</span>
+                                        <span>→</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Flowers */}
+                        <div style={{
+                            marginBottom: '20px',
+                            padding: '20px',
+                            background: 'rgba(255,255,255,0.05)',
+                            borderRadius: '12px',
+                            border: '1px solid rgba(255,255,255,0.1)'
+                        }}>
+                            <h3 style={{
+                                color: 'white',
+                                fontSize: '18px',
+                                marginBottom: '16px',
+                                fontWeight: '600',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px'
+                            }}>
+                                <span>🌸</span> Send Flowers
+                            </h3>
+                            <button
+                                onClick={() => window.open('https://www.1800flowers.com', '_blank')}
+                                style={{
+                                    width: '100%',
+                                    background: 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    padding: '14px',
+                                    color: 'white',
+                                    fontSize: '16px',
+                                    fontWeight: '600',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                Order Flowers
+                            </button>
+                        </div>
+
+                        {/* DASH Menu */}
+                        <div style={{
+                            marginBottom: '20px',
+                            padding: '20px',
+                            background: 'rgba(255,255,255,0.05)',
+                            borderRadius: '12px',
+                            border: '1px solid rgba(255,255,255,0.1)'
+                        }}>
+                            <h3 style={{
+                                color: 'white',
+                                fontSize: '18px',
+                                marginBottom: '16px',
+                                fontWeight: '600',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px'
+                            }}>
+                                <span>✨</span> DASH Products
+                            </h3>
+                            <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: '1fr 1fr',
+                                gap: '12px'
+                            }}>
+                                <button
+                                    onClick={() => {
+                                        router.push('/memorial-card-builder-4x6');
+                                        setShowSupportModal(false);
+                                    }}
+                                    style={{
+                                        background: 'rgba(255,255,255,0.1)',
+                                        border: '1px solid rgba(255,255,255,0.2)',
+                                        borderRadius: '8px',
+                                        padding: '12px',
+                                        color: 'white',
+                                        fontSize: '14px',
+                                        fontWeight: '600',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    4"×6" Card
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        router.push('/poster-builder');
+                                        setShowSupportModal(false);
+                                    }}
+                                    style={{
+                                        background: 'rgba(255,255,255,0.1)',
+                                        border: '1px solid rgba(255,255,255,0.2)',
+                                        borderRadius: '8px',
+                                        padding: '12px',
+                                        color: 'white',
+                                        fontSize: '14px',
+                                        fontWeight: '600',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    20"×30" Poster
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        router.push('/heaven');
+                                        setShowSupportModal(false);
+                                    }}
+                                    style={{
+                                        background: 'rgba(255,255,255,0.1)',
+                                        border: '1px solid rgba(255,255,255,0.2)',
+                                        borderRadius: '8px',
+                                        padding: '12px',
+                                        color: 'white',
+                                        fontSize: '14px',
+                                        fontWeight: '600',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    HEAVEN
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        router.push('/dashboard');
+                                        setShowSupportModal(false);
+                                    }}
+                                    style={{
+                                        background: 'rgba(255,255,255,0.1)',
+                                        border: '1px solid rgba(255,255,255,0.2)',
+                                        borderRadius: '8px',
+                                        padding: '12px',
+                                        color: 'white',
+                                        fontSize: '14px',
+                                        fontWeight: '600',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    All Products
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Close Button */}
+                        <button
+                            onClick={() => setShowSupportModal(false)}
+                            style={{
+                                width: '100%',
+                                background: 'transparent',
+                                border: '1px solid rgba(255,255,255,0.2)',
+                                borderRadius: '12px',
+                                padding: '12px',
+                                color: 'white',
+                                fontSize: '14px',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                marginTop: '20px'
+                            }}
+                        >
+                            Close
+                        </button>
+                    </div>
+                </div>
+            )}
         </>
     );
 };
