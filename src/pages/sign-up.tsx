@@ -6,10 +6,45 @@ import { useRouter } from 'next/router';
 const SignUpPage: React.FC = () => {
     const router = useRouter();
     const [phoneNumber, setPhoneNumber] = useState('');
-    const [verificationCode, setVerificationCode] = useState(['', '', '', '', '']);
+    const [verificationCode, setVerificationCode] = useState(['', '', '', '', '', '']); // 6-digit code
     const [showVerification, setShowVerification] = useState(false);
-    const [showPhoneOtpSection, setShowPhoneOtpSection] = useState(false);
-    const [termsAgreed, setTermsAgreed] = useState(false);
+    const [showPhoneOtpSection, setShowPhoneOtpSection] = useState(true); // Show phone section by default
+    const [isWaitingForOTP, setIsWaitingForOTP] = useState(false);
+
+    useEffect(() => {
+        // Set up Web OTP API for one-tap SMS code fill
+        if (typeof window !== 'undefined' && 'OTPCredential' in window && showVerification) {
+            const abortController = new AbortController();
+            
+            navigator.credentials.get({
+                otp: { transport: ['sms'] },
+                signal: abortController.signal
+            } as any).then((otp: any) => {
+                if (otp && otp.code) {
+                    // Auto-fill the code from SMS
+                    const code = otp.code.slice(0, 6); // Ensure 6 digits
+                    const codeArray = code.split('').slice(0, 6);
+                    setVerificationCode([...codeArray, ...Array(6 - codeArray.length).fill('')]);
+                    
+                    // Auto-verify after a short delay
+                    setTimeout(() => {
+                        const finalCode = [...codeArray, ...Array(6 - codeArray.length).fill('')].join('');
+                        if (finalCode.length === 6) {
+                            localStorage.setItem('userSignedUp', 'true');
+                            router.push('/face-id');
+                        }
+                    }, 500);
+                }
+            }).catch((err) => {
+                // Web OTP API not available or user dismissed
+                console.log('Web OTP API not available:', err);
+            });
+
+            return () => {
+                abortController.abort();
+            };
+        }
+    }, [showVerification, router]);
 
     // Format phone number as user types
     const formatPhoneNumber = (value: string) => {
@@ -27,17 +62,15 @@ const SignUpPage: React.FC = () => {
     const handlePhoneInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const formatted = formatPhoneNumber(e.target.value);
         setPhoneNumber(formatted);
-    };
-
-    const handlePhoneButtonClick = () => {
-        setShowPhoneOtpSection(true);
-        // Focus on first OTP input after a short delay
-        setTimeout(() => {
-            const firstInput = document.getElementById('otp-0');
-            if (firstInput) {
-                (firstInput as HTMLInputElement).focus();
-            }
-        }, 100);
+        
+        // Auto-send code when phone number is complete (10 digits)
+        const phoneValue = formatted.replace(/\D/g, '');
+        if (phoneValue.length === 10 && !showVerification) {
+            // Small delay to let user finish typing
+            setTimeout(() => {
+                handlePhoneSubmit(e as any);
+            }, 300);
+        }
     };
 
     const handleSpotifyLogin = () => {
@@ -56,23 +89,83 @@ const SignUpPage: React.FC = () => {
         alert('Email sign-up integration coming soon!');
     };
 
-    const handlePhoneSubmit = (e: React.FormEvent) => {
+    const handlePhoneSubmit = async (e: React.FormEvent | React.MouseEvent) => {
         e.preventDefault();
         const phoneValue = phoneNumber.replace(/\D/g, '');
         if (phoneValue.length === 10) {
-            setShowVerification(true);
-            // Simulate sending verification code
-            console.log('Verification code sent to:', phoneNumber);
+            setIsWaitingForOTP(true);
+            
+            try {
+                // Send SMS via API
+                const response = await fetch('/api/send-otp', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ phoneNumber: phoneValue }),
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    setShowVerification(true);
+                    console.log('Verification code sent to:', phoneNumber);
+                    // Focus on first OTP input after a short delay
+                    setTimeout(() => {
+                        const firstInput = document.getElementById('otp-0');
+                        if (firstInput) {
+                            (firstInput as HTMLInputElement).focus();
+                        }
+                    }, 300);
+                } else {
+                    alert(data.error || 'Failed to send verification code');
+                    setIsWaitingForOTP(false);
+                }
+            } catch (error) {
+                console.error('Error sending OTP:', error);
+                alert('Failed to send verification code. Please try again.');
+                setIsWaitingForOTP(false);
+            }
+        } else {
+            alert('Please enter a valid 10-digit phone number');
         }
     };
 
-    const handleVerificationSubmit = (e: React.FormEvent) => {
+    const handleVerificationSubmit = async (e: React.FormEvent | React.MouseEvent) => {
         e.preventDefault();
         const code = verificationCode.join('');
-        if (code.length === 5 && termsAgreed) {
-            // Verify code and proceed
-            console.log('Verifying code:', code);
-            router.push('/dashboard');
+        if (code.length === 6) {
+            try {
+                // Verify code via API
+                const phoneValue = phoneNumber.replace(/\D/g, '');
+                const response = await fetch('/api/verify-otp', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        phoneNumber: phoneValue,
+                        code: code 
+                    }),
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Code verified successfully
+                    console.log('Code verified:', code);
+                    localStorage.setItem('userSignedUp', 'true');
+                    localStorage.setItem('phoneNumber', phoneValue);
+                    router.push('/face-id');
+                } else {
+                    alert(data.error || 'Invalid verification code');
+                }
+            } catch (error) {
+                console.error('Error verifying code:', error);
+                alert('Failed to verify code. Please try again.');
+            }
+        } else {
+            alert('Please enter the complete 6-digit verification code');
         }
     };
 
@@ -82,23 +175,30 @@ const SignUpPage: React.FC = () => {
         
         if (value.length > 1) {
             // Handle paste: extract digits
-            const digits = value.replace(/\D/g, '').slice(0, 5);
+            const digits = value.replace(/\D/g, '').slice(0, 6); // 6-digit code
             const newCode = [...verificationCode];
             digits.split('').forEach((digit, i) => {
-                if (i < 5) {
+                if (i < 6) {
                     newCode[i] = digit;
                 }
             });
             setVerificationCode(newCode);
             
             // Focus the last filled input or next empty one
-            const lastFilledIndex = Math.min(digits.length - 1, 4);
+            const lastFilledIndex = Math.min(digits.length - 1, 5);
             setTimeout(() => {
                 const nextInput = document.getElementById(`otp-${lastFilledIndex + 1}`);
                 if (nextInput) {
                     (nextInput as HTMLInputElement).focus();
                 }
             }, 0);
+            
+            // Auto-verify if all 6 digits entered
+            if (digits.length === 6) {
+                setTimeout(() => {
+                    handleVerificationSubmit(new Event('submit') as any);
+                }, 300);
+            }
             return;
         }
         
@@ -107,13 +207,20 @@ const SignUpPage: React.FC = () => {
         setVerificationCode(newCode);
 
         // Auto-focus next input
-        if (value && index < 4) {
+        if (value && index < 5) {
             setTimeout(() => {
                 const nextInput = document.getElementById(`otp-${index + 1}`);
                 if (nextInput) {
                     (nextInput as HTMLInputElement).focus();
                 }
             }, 0);
+        }
+        
+        // Auto-verify if all 6 digits entered
+        if (value && newCode.filter(d => d).length === 6) {
+            setTimeout(() => {
+                handleVerificationSubmit(new Event('submit') as any);
+            }, 300);
         }
     };
 
@@ -131,23 +238,30 @@ const SignUpPage: React.FC = () => {
     const handleCodePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
         e.preventDefault();
         const pastedData = e.clipboardData.getData('text');
-        const digits = pastedData.replace(/\D/g, '').slice(0, 5);
+        const digits = pastedData.replace(/\D/g, '').slice(0, 6); // 6-digit code
         const newCode = [...verificationCode];
         digits.split('').forEach((digit, i) => {
-            if (i < 5) {
+            if (i < 6) {
                 newCode[i] = digit;
             }
         });
         setVerificationCode(newCode);
         
         // Focus the last filled input or next empty one
-        const lastFilledIndex = Math.min(digits.length - 1, 4);
+        const lastFilledIndex = Math.min(digits.length - 1, 5);
         setTimeout(() => {
             const nextInput = document.getElementById(`otp-${lastFilledIndex + 1}`);
             if (nextInput) {
                 (nextInput as HTMLInputElement).focus();
             }
         }, 0);
+        
+        // Auto-verify if all 6 digits entered
+        if (digits.length === 6) {
+            setTimeout(() => {
+                handleVerificationSubmit(new Event('submit') as any);
+            }, 300);
+        }
     };
 
     const handleResendCode = () => {
@@ -155,19 +269,23 @@ const SignUpPage: React.FC = () => {
     };
 
     const handleGetStarted = () => {
-        if (!termsAgreed) {
-            alert('Please agree to the Terms of Service and Privacy Policy');
-            return;
-        }
+        // This function is no longer needed, but keeping for compatibility
         if (showPhoneOtpSection) {
-            const code = verificationCode.join('');
-            if (code.length === 5) {
-                handleVerificationSubmit(new Event('submit') as any);
+            const phoneValue = phoneNumber.replace(/\D/g, '');
+            if (phoneValue.length === 10 && !showVerification) {
+                // Send code first
+                handlePhoneSubmit(new Event('submit') as any);
+            } else if (showVerification) {
+                // Verify code
+                const code = verificationCode.join('');
+                if (code.length === 6) {
+                    handleVerificationSubmit(new Event('submit') as any);
+                } else {
+                    alert('Please enter the complete 6-digit verification code');
+                }
             } else {
-                alert('Please enter the complete 5-digit verification code');
+                alert('Please enter a valid phone number');
             }
-        } else {
-            handlePhoneSubmit(new Event('submit') as any);
         }
     };
 
@@ -175,7 +293,20 @@ const SignUpPage: React.FC = () => {
         <>
             <Head>
                 <link rel="stylesheet" href="/signup.css" />
-                <title>Sign Up - DASH</title>
+                <title>Continue - DASH</title>
+                <style jsx>{`
+                    @keyframes gradientShift {
+                        0% {
+                            background-position: 0% 50%;
+                        }
+                        50% {
+                            background-position: 100% 50%;
+                        }
+                        100% {
+                            background-position: 0% 50%;
+                        }
+                    }
+                `}</style>
             </Head>
 
             <div className="status-bar">
@@ -192,114 +323,182 @@ const SignUpPage: React.FC = () => {
             <div className="mobile-container">
                 {/* Header */}
                 <div className="signup-header">
-                    <h1>Create an account</h1>
-                    <p>Let&apos;s build memories</p>
+                    <div style={{
+                        fontSize: 'clamp(48px, 12vw, 64px)',
+                        fontWeight: '900',
+                        letterSpacing: '2px',
+                        marginBottom: '8px',
+                        lineHeight: '1.1',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0'
+                    }}>
+                        <span style={{
+                            background: 'linear-gradient(90deg, #c77dff, #ff6b9d, #4ecdc4, #44a3ff, #c77dff)',
+                            backgroundSize: '200% 100%',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            backgroundClip: 'text',
+                            animation: 'gradientShift 3s ease infinite'
+                        }}>
+                            DASH
+                        </span>
+                    </div>
+                    <h1 style={{ fontSize: 'clamp(24px, 6vw, 28px)', fontWeight: '600', color: 'white', margin: '8px 0', letterSpacing: '0.5px' }}>Welcome to DASH</h1>
+                    <p style={{ fontSize: 'clamp(14px, 3.5vw, 16px)', color: 'rgba(255,255,255,0.7)', marginTop: '4px' }}>Let&apos;s build memories</p>
                 </div>
 
                 {/* Phone OTP Section (hidden initially) */}
                 {showPhoneOtpSection && (
                     <div className="phone-otp-section" style={{ display: 'block' }}>
                         <form onSubmit={handlePhoneSubmit} className="signup-form">
-                            {/* Phone Number Section */}
+                            {/* Phone Number Section with Colorful Border */}
                             <div className="phone-number-section">
-                                <label htmlFor="phoneNumber">Phone Number</label>
-                                <div className="phone-input-container">
+                                <label htmlFor="phoneNumber" style={{ fontSize: '14px', marginBottom: '8px', display: 'block', textAlign: 'center' }}>Continue with Phone</label>
+                                <div className="phone-input-container colorful-border" style={{ maxWidth: '280px', margin: '0 auto' }}>
                                     <input
                                         type="tel"
                                         id="phoneNumber"
                                         value={phoneNumber}
                                         onChange={handlePhoneInputChange}
-                                        placeholder="Phone number"
+                                        placeholder="(555) 123-4567"
                                         required
                                         className="phone-input"
+                                        style={{
+                                            borderRadius: '999px',
+                                            padding: '10px 18px',
+                                            fontSize: '16px',
+                                            height: 'auto',
+                                            width: '100%',
+                                            textAlign: 'center'
+                                        }}
                                     />
                                 </div>
                             </div>
 
-                            {/* Verification Code Section */}
+                            {/* Verification Code Section - Always Visible */}
+                            <div className="verification-section">
+                                {showVerification ? (
+                                    <>
+                                        {isWaitingForOTP && (
+                                            <p style={{
+                                                fontSize: '13px',
+                                                color: 'rgba(255,255,255,0.8)',
+                                                marginBottom: '10px',
+                                                textAlign: 'center'
+                                            }}>
+                                                📱 Tap code from SMS
+                                            </p>
+                                        )}
+                                        <div className="otp-container">
+                                            {[0, 1, 2, 3, 4, 5].map((index) => (
+                                                <input
+                                                    key={index}
+                                                    id={`otp-${index}`}
+                                                    type="text"
+                                                    inputMode="numeric"
+                                                    autoComplete="one-time-code"
+                                                    className="otp-input"
+                                                    maxLength={1}
+                                                    value={verificationCode[index]}
+                                                    onChange={(e) => handleCodeChange(index, e.target.value)}
+                                                    onKeyDown={(e) => handleCodeKeyDown(index, e)}
+                                                    onPaste={handleCodePaste}
+                                                    required
+                                                />
+                                            ))}
+                                        </div>
+                                        <button 
+                                            type="button" 
+                                            onClick={handleResendCode}
+                                            style={{
+                                                background: 'none',
+                                                border: 'none',
+                                                color: 'rgba(255,255,255,0.4)',
+                                                fontSize: '12px',
+                                                cursor: 'pointer',
+                                                padding: '8px',
+                                                margin: '0 auto',
+                                                display: 'block',
+                                                textAlign: 'center',
+                                                textDecoration: 'none'
+                                            }}
+                                        >
+                                            Resend code
+                                        </button>
+                                    </>
+                                ) : null}
+                            </div>
+
+                            {/* Verify Code Button - Only Visible After Code Sent */}
                             {showVerification && (
-                                <div className="verification-section">
-                                    <label>Enter verification code</label>
-                                    <p className="verification-hint">We sent a 5-digit code to your phone number</p>
-                                    <div className="otp-container">
-                                        {[0, 1, 2, 3, 4].map((index) => (
-                                            <input
-                                                key={index}
-                                                id={`otp-${index}`}
-                                                type="text"
-                                                className="otp-input"
-                                                maxLength={1}
-                                                value={verificationCode[index]}
-                                                onChange={(e) => handleCodeChange(index, e.target.value)}
-                                                onKeyDown={(e) => handleCodeKeyDown(index, e)}
-                                                onPaste={handleCodePaste}
-                                                required
-                                            />
-                                        ))}
-                                    </div>
-                                    <button type="button" className="resend-link" onClick={handleResendCode}>
-                                        Resend Code
-                                    </button>
-                                </div>
+                                <button 
+                                    type="button" 
+                                    className="get-started-btn"
+                                    onClick={handleVerificationSubmit}
+                                    disabled={verificationCode.join('').length !== 6}
+                                    style={{
+                                        opacity: verificationCode.join('').length === 6 ? 1 : 0.5,
+                                        cursor: verificationCode.join('').length === 6 ? 'pointer' : 'not-allowed',
+                                        width: '100%'
+                                    }}
+                                >
+                                    Verify Code
+                                </button>
                             )}
-
-                            {/* Terms Agreement */}
-                            <div className="terms-agreement">
-                                <label className="checkbox-label">
-                                    <input 
-                                        type="checkbox" 
-                                        checked={termsAgreed}
-                                        onChange={(e) => setTermsAgreed(e.target.checked)}
-                                    />
-                                    <span className="checkmark"></span>
-                                    <span className="terms-text">
-                                        I agree to the{' '}
-                                        <a href="#" className="terms-link">Terms of Service</a>
-                                        {' '}and{' '}
-                                        <a href="#" className="terms-link">Privacy Policy</a>
-                                    </span>
-                                </label>
-                            </div>
-
-                            {/* LET'S GET STARTED Button */}
-                            <button 
-                                type="submit" 
-                                className="get-started-btn"
-                                onClick={handleGetStarted}
-                            >
-                                LET&apos;S GET STARTED
-                            </button>
                         </form>
+                    </div>
+                )}
+
+                {/* Alternative Sign Up Options - Subtle */}
+                {showPhoneOtpSection && (
+                    <div style={{ marginTop: '15px', textAlign: 'center' }}>
+                        <div style={{
+                            color: 'rgba(255,255,255,0.4)',
+                            fontSize: '13px',
+                            marginBottom: '8px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '12px'
+                        }}>
+                            <div style={{ height: '1px', flex: 1, background: 'rgba(255,255,255,0.1)' }}></div>
+                            <span>or</span>
+                            <div style={{ height: '1px', flex: 1, background: 'rgba(255,255,255,0.1)' }}></div>
+                        </div>
+
+                        <a 
+                            href="#" 
+                            onClick={(e) => { e.preventDefault(); handleEmailLinkClick(); }}
+                            style={{
+                                color: 'rgba(255,255,255,0.5)',
+                                fontSize: '13px',
+                                textDecoration: 'none',
+                                marginBottom: '0',
+                                display: 'block'
+                            }}
+                        >
+                            Continue with email
+                        </a>
                     </div>
                 )}
 
                 {/* Alternative Sign Up Options */}
                 {!showPhoneOtpSection && (
                     <div className="alternative-signup">
-                        <button className="social-button phone-button" onClick={handlePhoneButtonClick}>
-                            Sign up with phone number
-                        </button>
-                        
                         <div className="divider">
                             <span>or</span>
                         </div>
                         
-                        {/* Terms and Conditions */}
+                        {/* Terms and Conditions - No Checkbox */}
                         <div className="terms-agreement">
-                            <label className="checkbox-label">
-                                <input 
-                                    type="checkbox" 
-                                    checked={termsAgreed}
-                                    onChange={(e) => setTermsAgreed(e.target.checked)}
-                                />
-                                <span className="checkmark"></span>
-                                <span className="terms-text">
-                                    I agree to the{' '}
-                                    <a href="#" className="terms-link">Terms of Service</a>
-                                    {' '}and{' '}
-                                    <a href="#" className="terms-link">Privacy Policy</a>
-                                </span>
-                            </label>
+                            <p className="terms-text">
+                                By signing up I agree to the{' '}
+                                <a href="#" className="terms-link">Terms of Service</a>
+                                {' '}and{' '}
+                                <a href="#" className="terms-link">Privacy Policy</a>
+                            </p>
                         </div>
                         
                         <a href="#" className="email-link" onClick={(e) => { e.preventDefault(); handleEmailLinkClick(); }}>
@@ -333,13 +532,25 @@ const SignUpPage: React.FC = () => {
                     </div>
                 )}
 
-                {/* Sign In Link */}
-                <div className="login-link">
+                {/* Terms Agreement - Moved to Bottom */}
+                {showPhoneOtpSection && (
+                    <div className="terms-agreement" style={{ marginTop: 'auto', paddingTop: '20px' }}>
+                        <p className="terms-text">
+                            By signing up I agree to the{' '}
+                            <a href="#" className="terms-link">Terms of Service</a>
+                            {' '}and{' '}
+                            <a href="#" className="terms-link">Privacy Policy</a>
+                        </p>
+                    </div>
+                )}
+
+                {/* Sign In Link - Removed for unified flow */}
+                {/* <div className="login-link">
                     <p>
                         Already have an account?{' '}
                         <Link href="/sign-in" className="login-text">Sign In</Link>
                     </p>
-                </div>
+                </div> */}
             </div>
         </>
     );

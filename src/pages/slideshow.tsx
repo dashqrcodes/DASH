@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
+import BottomNav from '../components/BottomNav';
 
 const SlideshowPage: React.FC = () => {
     const router = useRouter();
@@ -547,6 +548,9 @@ const SlideshowPage: React.FC = () => {
                     </div>
                 </div>
             )}
+            
+            {/* Bottom Navigation */}
+            <BottomNav activeTab="slideshow" />
         </>
     );
 };

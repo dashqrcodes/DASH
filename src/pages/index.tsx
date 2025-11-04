@@ -6,8 +6,20 @@ const Home = () => {
     const router = useRouter();
 
     useEffect(() => {
-        // Redirect directly to dashboard (skip loading screen)
-        router.push('/dashboard');
+        // Check if user is authenticated
+        const isAuthenticated = localStorage.getItem('userAuthenticated');
+        const hasSignedUp = localStorage.getItem('userSignedUp');
+        
+        if (isAuthenticated) {
+            // User is authenticated, go to dashboard
+            router.push('/dashboard');
+        } else if (hasSignedUp) {
+            // User signed up but hasn't completed Face ID yet
+            router.push('/face-id');
+        } else {
+            // New user, go to sign up
+            router.push('/sign-up');
+        }
     }, [router]);
 
     return (

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import PhotoScanner from '../components/PhotoScanner';
+import BottomNav from '../components/BottomNav';
 
 const LifeChaptersPage: React.FC = () => {
   const router = useRouter();
@@ -231,29 +232,115 @@ const LifeChaptersPage: React.FC = () => {
     <>
       <Head>
         <title>Life Chapters - DASH</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </Head>
-      <div style={{width:'100vw',height:'100dvh',background:'#000000',fontFamily:'-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',color:'white',padding:'6px',paddingBottom:'calc(env(safe-area-inset-bottom, 0px) + 70px)',display:'flex',flexDirection:'column',maxWidth:'100vw',overflow:'hidden',position:'fixed',top:0,left:0,right:0,bottom:0,aspectRatio:'9/16',WebkitTouchCallout:'none',WebkitUserSelect:'none',touchAction:'manipulation'}}>
+      <div style={{
+        width:'100vw',
+        height:'100dvh',
+        maxHeight:'100dvh',
+        background:'#000000',
+        fontFamily:'-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
+        color:'white',
+        padding:'0',
+        paddingBottom:'calc(env(safe-area-inset-bottom, 0px) + 80px)',
+        display:'flex',
+        flexDirection:'column',
+        maxWidth:'100vw',
+        overflow:'hidden',
+        position:'fixed',
+        top:0,
+        left:0,
+        right:0,
+        bottom:0,
+        WebkitTouchCallout:'none',
+        WebkitUserSelect:'none',
+        touchAction:'manipulation',
+        overscrollBehavior:'none'
+      }}>
         {/* Status Bar */}
-        <div style={{display:'flex',justifyContent:'space-between',paddingTop:'env(safe-area-inset-top, 6px)',paddingBottom:'6px',paddingLeft:'12px',paddingRight:'12px',marginBottom:'8px',fontSize:'11px',alignItems:'center'}}>
-          <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
-            <button onClick={()=>router.back()} style={{background:'transparent',border:'none',color:'white',fontSize:'16px',cursor:'pointer',padding:0,WebkitTapHighlightColor:'transparent'}}>←</button>
-            <div style={{fontSize:'13px',fontWeight:'600'}}>9:41</div>
+        <div style={{
+          display:'flex',
+          justifyContent:'space-between',
+          paddingTop:'env(safe-area-inset-top, 8px)',
+          paddingBottom:'8px',
+          paddingLeft:'16px',
+          paddingRight:'16px',
+          marginBottom:'4px',
+          fontSize:'11px',
+          alignItems:'center',
+          background:'rgba(0,0,0,0.5)',
+          backdropFilter:'blur(10px)',
+          position:'sticky',
+          top:0,
+          zIndex:10
+        }}>
+          <div style={{display:'flex',alignItems:'center',gap:'12px'}}>
+            <button 
+              onClick={()=>router.back()} 
+              style={{
+                background:'transparent',
+                border:'none',
+                color:'white',
+                fontSize:'20px',
+                cursor:'pointer',
+                padding:'4px 8px',
+                WebkitTapHighlightColor:'transparent',
+                touchAction:'manipulation',
+                borderRadius:'8px',
+                display:'flex',
+                alignItems:'center',
+                justifyContent:'center',
+                minWidth:'44px',
+                minHeight:'44px'
+              }}
+            >
+              ←
+            </button>
+            <div style={{fontSize:'14px',fontWeight:'600'}}>9:41</div>
           </div>
-          <div style={{display:'flex',alignItems:'center',gap:'4px'}}>
-            <span style={{fontSize:'11px'}}>●●●●● 📶 🔋</span>
+          <div style={{display:'flex',alignItems:'center',gap:'6px',fontSize:'12px'}}>
+            <span>●●●●●</span>
+            <span>📶</span>
+            <span>🔋</span>
           </div>
         </div>
 
         {/* Header */}
-        <div style={{textAlign:'center',marginBottom:'12px',padding:'0 16px'}}>
-          <div style={{fontSize:'clamp(18px, 5vw, 22px)',fontWeight:'700',marginBottom:'4px'}}>
+        <div style={{
+          textAlign:'center',
+          marginBottom:'16px',
+          padding:'0 20px',
+          paddingTop:'8px'
+        }}>
+          <div style={{
+            fontSize:'clamp(20px, 5vw, 24px)',
+            fontWeight:'700',
+            marginBottom:'6px',
+            letterSpacing:'-0.5px'
+          }}>
             {lovedOneName || t.createSlideshow}
           </div>
-          <div style={{fontSize:'clamp(12px, 3vw, 14px)',opacity:0.8,fontWeight:'500'}}>
+          <div style={{
+            fontSize:'clamp(13px, 3vw, 15px)',
+            opacity:0.8,
+            fontWeight:'500',
+            lineHeight:'1.4'
+          }}>
             {t.addPhotosChronological}
           </div>
           {(sunrise || sunset) && (
-            <div style={{display:'flex',justifyContent:'center',gap:'12px',marginTop:'8px',fontSize:'clamp(10px, 2.5vw, 12px)',opacity:0.7}}>
+            <div style={{
+              display:'flex',
+              justifyContent:'center',
+              gap:'12px',
+              marginTop:'10px',
+              fontSize:'clamp(11px, 2.5vw, 13px)',
+              opacity:0.7,
+              flexWrap:'wrap'
+            }}>
               {sunrise && <span>{t.born}: {sunrise}</span>}
               {sunrise && sunset && <span>•</span>}
               {sunset && <span>{t.passed}: {sunset}</span>}
@@ -263,21 +350,47 @@ const LifeChaptersPage: React.FC = () => {
 
         {/* Timeline Visualization */}
         {sunrise && sunset && (
-          <div style={{margin:'0 16px 12px',position:'relative',height:'4px',background:'rgba(255,255,255,0.2)',borderRadius:'2px',overflow:'visible'}}>
-            <div style={{position:'absolute',left:0,top:'-6px',fontSize:'9px',opacity:0.6}}>{t.birth}</div>
-            <div style={{position:'absolute',right:0,top:'-6px',fontSize:'9px',opacity:0.6}}>{t.present}</div>
+          <div style={{
+            margin:'0 20px 16px',
+            position:'relative',
+            height:'6px',
+            background:'rgba(255,255,255,0.15)',
+            borderRadius:'3px',
+            overflow:'visible'
+          }}>
+            <div style={{
+              position:'absolute',
+              left:0,
+              top:'-20px',
+              fontSize:'10px',
+              opacity:0.6,
+              fontWeight:'500'
+            }}>
+              {t.birth}
+            </div>
+            <div style={{
+              position:'absolute',
+              right:0,
+              top:'-20px',
+              fontSize:'10px',
+              opacity:0.6,
+              fontWeight:'500'
+            }}>
+              {t.present}
+            </div>
             {photos.map((photo, idx) => photo.date && (
               <div 
                 key={photo.id}
                 style={{
                   position:'absolute',
                   left:`${calculateTimelinePosition(photo.date)}%`,
-                  top:'-4px',
-                  width:'8px',
-                  height:'12px',
-                  background:'#667eea',
+                  top:'-6px',
+                  width:'12px',
+                  height:'18px',
+                  background:'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
                   borderRadius:'50%',
-                  transform:'translateX(-50%)'
+                  transform:'translateX(-50%)',
+                  boxShadow:'0 2px 8px rgba(102,126,234,0.5)'
                 }}
                 title={photo.date}
               />
@@ -286,21 +399,68 @@ const LifeChaptersPage: React.FC = () => {
         )}
 
         {/* Add Photos Buttons */}
-        <div style={{padding:'0 16px',marginBottom:'12px',display:'flex',flexDirection:'column',gap:'10px'}}>
+        <div style={{
+          padding:'0 20px',
+          marginBottom:'16px',
+          display:'flex',
+          flexDirection:'column',
+          gap:'12px'
+        }}>
           {/* Scan Physical Photo Button */}
           <button 
             onClick={() => setShowScanner(true)}
-            style={{padding:'14px',background:'rgba(102,126,234,0.2)',border:'2px solid rgba(102,126,234,0.5)',borderRadius:'12px',textAlign:'center',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px'}}
+            style={{
+              padding:'16px',
+              background:'rgba(102,126,234,0.15)',
+              border:'2px solid rgba(102,126,234,0.4)',
+              borderRadius:'16px',
+              textAlign:'center',
+              cursor:'pointer',
+              display:'flex',
+              alignItems:'center',
+              justifyContent:'flex-start',
+              gap:'12px',
+              transition:'all 0.2s',
+              WebkitTapHighlightColor:'transparent',
+              minHeight:'64px'
+            }}
+            onTouchStart={(e) => {
+              e.currentTarget.style.background = 'rgba(102,126,234,0.25)';
+            }}
+            onTouchEnd={(e) => {
+              e.currentTarget.style.background = 'rgba(102,126,234,0.15)';
+            }}
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M23 19C23 19.5304 22.7893 20.0391 22.4142 20.4142C22.0391 20.7893 21.5304 21 21 21H3C2.46957 21 1.96086 20.7893 1.58579 20.4142C1.21071 20.0391 1 19.5304 1 19V8C1 7.46957 1.21071 6.96086 1.58579 6.58579C1.96086 6.21071 2.46957 6 3 6H7L9 4H15L17 6H21C21.5304 6 22.0391 6.21071 22.4142 6.58579C22.7893 6.96086 23 7.46957 23 8V19Z"/>
-              <circle cx="12" cy="13" r="4"/>
-            </svg>
-            <div style={{display:'flex',flexDirection:'column',alignItems:'flex-start'}}>
-              <div style={{fontSize:'clamp(14px, 3.5vw, 16px)',fontWeight:'700',color:'white'}}>
+            <div style={{
+              width:'48px',
+              height:'48px',
+              borderRadius:'12px',
+              background:'rgba(102,126,234,0.3)',
+              display:'flex',
+              alignItems:'center',
+              justifyContent:'center',
+              flexShrink:0
+            }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M23 19C23 19.5304 22.7893 20.0391 22.4142 20.4142C22.0391 20.7893 21.5304 21 21 21H3C2.46957 21 1.96086 20.7893 1.58579 20.4142C1.21071 20.0391 1 19.5304 1 19V8C1 7.46957 1.21071 6.96086 1.58579 6.58579C1.96086 6.21071 2.46957 6 3 6H7L9 4H15L17 6H21C21.5304 6 22.0391 6.21071 22.4142 6.58579C22.7893 6.96086 23 7.46957 23 8V19Z"/>
+                <circle cx="12" cy="13" r="4"/>
+              </svg>
+            </div>
+            <div style={{display:'flex',flexDirection:'column',alignItems:'flex-start',flex:1}}>
+              <div style={{
+                fontSize:'clamp(15px, 3.5vw, 17px)',
+                fontWeight:'700',
+                color:'white',
+                marginBottom:'2px'
+              }}>
                 {t.scanPhysicalPhoto}
               </div>
-              <div style={{fontSize:'clamp(10px, 2.5vw, 12px)',opacity:0.8,color:'white'}}>
+              <div style={{
+                fontSize:'clamp(11px, 2.5vw, 13px)',
+                opacity:0.8,
+                color:'white',
+                lineHeight:'1.3'
+              }}>
                 {t.scanSubtitle}
               </div>
             </div>
@@ -316,11 +476,31 @@ const LifeChaptersPage: React.FC = () => {
               style={{display:'none'}}
               disabled={isProcessing}
             />
-            <div style={{padding:'16px',background:'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',borderRadius:'12px',textAlign:'center',cursor:'pointer',boxShadow:'0 4px 15px rgba(102,126,234,0.4)'}}>
-              <div style={{fontSize:'clamp(16px, 4vw, 18px)',fontWeight:'700',marginBottom:'4px'}}>
+            <div style={{
+              padding:'18px',
+              background:'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
+              borderRadius:'16px',
+              textAlign:'center',
+              cursor:'pointer',
+              boxShadow:'0 4px 20px rgba(102,126,234,0.4)',
+              transition:'all 0.2s',
+              minHeight:'64px',
+              display:'flex',
+              flexDirection:'column',
+              justifyContent:'center',
+              WebkitTapHighlightColor:'transparent'
+            }}>
+              <div style={{
+                fontSize:'clamp(16px, 4vw, 18px)',
+                fontWeight:'700',
+                marginBottom:'4px'
+              }}>
                 {isProcessing ? t.processing : photos.length === 0 ? t.addPhotosVideos : `${t.addMore} (${photos.length} ${t.memories})`}
               </div>
-              <div style={{fontSize:'clamp(11px, 3vw, 13px)',opacity:0.9}}>
+              <div style={{
+                fontSize:'clamp(12px, 3vw, 14px)',
+                opacity:0.95
+              }}>
                 {t.startFromEarliest}
               </div>
             </div>
@@ -337,33 +517,104 @@ const LifeChaptersPage: React.FC = () => {
         )}
 
         {/* Photo Grid - Chronological */}
-        <div style={{flex:1,overflowY:'auto',padding:'0 16px',marginBottom:'12px'}}>
+        <div style={{
+          flex:1,
+          overflowY:'auto',
+          padding:'0 20px',
+          marginBottom:'16px',
+          WebkitOverflowScrolling:'touch',
+          scrollbarWidth:'none',
+          msOverflowStyle:'none'
+        }}>
+          <style>{`
+            div::-webkit-scrollbar { display: none; }
+          `}</style>
           {photos.length === 0 ? (
-            <div style={{textAlign:'center',padding:'40px 20px',opacity:0.6}}>
-              <div style={{fontSize:'clamp(14px, 4vw, 16px)',marginBottom:'8px'}}>
+            <div style={{
+              textAlign:'center',
+              padding:'60px 20px',
+              opacity:0.6
+            }}>
+              <div style={{
+                fontSize:'clamp(16px, 4vw, 18px)',
+                marginBottom:'12px',
+                fontWeight:'600'
+              }}>
                 {t.storyBegins}
               </div>
-              <div style={{fontSize:'clamp(12px, 3vw, 14px)',lineHeight:'1.5'}}>
+              <div style={{
+                fontSize:'clamp(13px, 3vw, 15px)',
+                lineHeight:'1.6',
+                opacity:0.8
+              }}>
                 {t.addPhotosHelp}<br/>
                 {t.arrangeChronologically}
               </div>
             </div>
           ) : (
-            <div style={{display:'flex',flexDirection:'column',gap:'12px'}}>
+            <div style={{display:'flex',flexDirection:'column',gap:'14px',paddingBottom:'20px'}}>
               {photos.map((photo, index) => (
-                <div key={photo.id} style={{background:'rgba(255,255,255,0.05)',borderRadius:'12px',overflow:'hidden',position:'relative'}}>
-                  <div style={{display:'flex',gap:'12px',padding:'12px'}}>
+                <div 
+                  key={photo.id} 
+                  style={{
+                    background:'rgba(255,255,255,0.08)',
+                    borderRadius:'16px',
+                    overflow:'hidden',
+                    position:'relative',
+                    border:'1px solid rgba(255,255,255,0.1)',
+                    backdropFilter:'blur(10px)'
+                  }}
+                >
+                  <div style={{display:'flex',gap:'14px',padding:'14px'}}>
                     {/* Photo Preview */}
-                    <div style={{position:'relative',width:'80px',height:'80px',borderRadius:'8px',overflow:'hidden',flexShrink:0,background:'rgba(255,255,255,0.1)'}}>
-                      <img src={photo.preview || photo.url} alt={`Photo ${index + 1}`} style={{width:'100%',height:'100%',objectFit:'cover'}} />
-                      <div style={{position:'absolute',bottom:'4px',right:'4px',background:'rgba(0,0,0,0.6)',color:'white',fontSize:'10px',padding:'2px 6px',borderRadius:'4px',fontWeight:'600'}}>
+                    <div style={{
+                      position:'relative',
+                      width:'90px',
+                      height:'90px',
+                      borderRadius:'12px',
+                      overflow:'hidden',
+                      flexShrink:0,
+                      background:'rgba(255,255,255,0.1)',
+                      border:'2px solid rgba(255,255,255,0.15)'
+                    }}>
+                      <img 
+                        src={photo.preview || photo.url} 
+                        alt={`Photo ${index + 1}`} 
+                        style={{
+                          width:'100%',
+                          height:'100%',
+                          objectFit:'cover'
+                        }} 
+                      />
+                      <div style={{
+                        position:'absolute',
+                        bottom:'6px',
+                        right:'6px',
+                        background:'rgba(0,0,0,0.7)',
+                        color:'white',
+                        fontSize:'11px',
+                        padding:'3px 8px',
+                        borderRadius:'6px',
+                        fontWeight:'700',
+                        backdropFilter:'blur(10px)'
+                      }}>
                         #{index + 1}
                       </div>
                     </div>
 
                     {/* Photo Info & Controls */}
-                    <div style={{flex:1,display:'flex',flexDirection:'column',gap:'8px'}}>
-                      <div style={{fontSize:'clamp(13px, 3.5vw, 15px)',fontWeight:'600'}}>
+                    <div style={{
+                      flex:1,
+                      display:'flex',
+                      flexDirection:'column',
+                      gap:'10px',
+                      minWidth:0
+                    }}>
+                      <div style={{
+                        fontSize:'clamp(14px, 3.5vw, 16px)',
+                        fontWeight:'700',
+                        marginBottom:'2px'
+                      }}>
                         {t.memory} {index + 1}
                       </div>
                       
@@ -373,28 +624,82 @@ const LifeChaptersPage: React.FC = () => {
                         value={photo.date || ''} 
                         onChange={(e)=>handlePhotoDateChange(photo.id, e.target.value)}
                         placeholder={t.setDateOptional}
-                        style={{background:'rgba(255,255,255,0.1)',border:'1px solid rgba(255,255,255,0.2)',borderRadius:'6px',padding:'6px',color:'white',fontSize:'clamp(11px, 3vw, 13px)',outline:'none',width:'100%'}}
+                        style={{
+                          background:'rgba(255,255,255,0.12)',
+                          border:'1px solid rgba(255,255,255,0.25)',
+                          borderRadius:'10px',
+                          padding:'10px 12px',
+                          color:'white',
+                          fontSize:'clamp(12px, 3vw, 14px)',
+                          outline:'none',
+                          width:'100%',
+                          minHeight:'44px',
+                          WebkitTapHighlightColor:'transparent'
+                        }}
                       />
 
                       {/* Reorder Buttons */}
-                      <div style={{display:'flex',gap:'6px'}}>
+                      <div style={{display:'flex',gap:'8px',flexWrap:'wrap'}}>
                         <button 
                           onClick={()=>handleMovePhoto(photo.id, 'up')}
                           disabled={index === 0}
-                          style={{flex:1,padding:'6px',background:index === 0 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.1)',border:'none',borderRadius:'6px',color:'white',fontSize:'11px',cursor:index === 0 ? 'not-allowed' : 'pointer',opacity:index === 0 ? 0.5 : 1}}
+                          style={{
+                            flex:1,
+                            minWidth:'80px',
+                            padding:'10px',
+                            background:index === 0 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.12)',
+                            border:'1px solid rgba(255,255,255,0.2)',
+                            borderRadius:'10px',
+                            color:'white',
+                            fontSize:'clamp(12px, 3vw, 13px)',
+                            cursor:index === 0 ? 'not-allowed' : 'pointer',
+                            opacity:index === 0 ? 0.5 : 1,
+                            fontWeight:'600',
+                            minHeight:'44px',
+                            WebkitTapHighlightColor:'transparent',
+                            touchAction:'manipulation'
+                          }}
                         >
                           {t.earlier}
                         </button>
                         <button 
                           onClick={()=>handleMovePhoto(photo.id, 'down')}
                           disabled={index === photos.length - 1}
-                          style={{flex:1,padding:'6px',background:index === photos.length - 1 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.1)',border:'none',borderRadius:'6px',color:'white',fontSize:'11px',cursor:index === photos.length - 1 ? 'not-allowed' : 'pointer',opacity:index === photos.length - 1 ? 0.5 : 1}}
+                          style={{
+                            flex:1,
+                            minWidth:'80px',
+                            padding:'10px',
+                            background:index === photos.length - 1 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.12)',
+                            border:'1px solid rgba(255,255,255,0.2)',
+                            borderRadius:'10px',
+                            color:'white',
+                            fontSize:'clamp(12px, 3vw, 13px)',
+                            cursor:index === photos.length - 1 ? 'not-allowed' : 'pointer',
+                            opacity:index === photos.length - 1 ? 0.5 : 1,
+                            fontWeight:'600',
+                            minHeight:'44px',
+                            WebkitTapHighlightColor:'transparent',
+                            touchAction:'manipulation'
+                          }}
                         >
                           {t.later}
                         </button>
                         <button 
                           onClick={()=>handleRemovePhoto(photo.id)}
-                          style={{padding:'6px 12px',background:'rgba(255,59,48,0.2)',border:'none',borderRadius:'6px',color:'rgba(255,59,48,1)',fontSize:'11px',cursor:'pointer',fontWeight:'600'}}
+                          style={{
+                            padding:'10px 16px',
+                            background:'rgba(255,59,48,0.2)',
+                            border:'1px solid rgba(255,59,48,0.4)',
+                            borderRadius:'10px',
+                            color:'rgba(255,59,48,1)',
+                            fontSize:'clamp(12px, 3vw, 13px)',
+                            cursor:'pointer',
+                            fontWeight:'700',
+                            minHeight:'44px',
+                            minWidth:'80px',
+                            WebkitTapHighlightColor:'transparent',
+                            touchAction:'manipulation'
+                          }}
                         >
                           {t.remove}
                         </button>
@@ -409,10 +714,34 @@ const LifeChaptersPage: React.FC = () => {
 
         {/* Complete Button */}
         {photos.length > 0 && (
-          <div style={{padding:'0 16px',marginBottom:'12px'}}>
+          <div style={{
+            padding:'0 20px',
+            marginBottom:'20px',
+            position:'sticky',
+            bottom:0,
+            background:'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.85) 70%, transparent 100%)',
+            paddingTop:'16px',
+            paddingBottom:'16px',
+            zIndex:5
+          }}>
             <button 
               onClick={handleComplete}
-              style={{width:'100%',padding:'14px',background:'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',border:'none',borderRadius:'12px',color:'white',fontSize:'clamp(15px, 4vw, 17px)',fontWeight:'700',cursor:'pointer',boxShadow:'0 4px 15px rgba(102,126,234,0.4)'}}
+              style={{
+                width:'100%',
+                padding:'18px',
+                background:'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
+                border:'none',
+                borderRadius:'16px',
+                color:'white',
+                fontSize:'clamp(16px, 4vw, 18px)',
+                fontWeight:'700',
+                cursor:'pointer',
+                boxShadow:'0 4px 20px rgba(102,126,234,0.5)',
+                minHeight:'56px',
+                WebkitTapHighlightColor:'transparent',
+                touchAction:'manipulation',
+                letterSpacing:'0.5px'
+              }}
             >
               {t.completeSlideshow} ({photos.length} {t.memories})
             </button>
@@ -420,36 +749,7 @@ const LifeChaptersPage: React.FC = () => {
         )}
 
         {/* Bottom Navigation */}
-        <div style={{position:'fixed',bottom:0,left:0,right:0,background:'rgba(255,255,255,0.05)',backdropFilter:'blur(20px)',borderTop:'1px solid rgba(255,255,255,0.1)',paddingTop:'10px',paddingBottom:'calc(env(safe-area-inset-bottom, 0px) + 10px)',paddingLeft:'max(16px, env(safe-area-inset-left, 0px))',paddingRight:'max(16px, env(safe-area-inset-right, 0px))',display:'flex',justifyContent:'space-around',zIndex:100}}>
-          <button onClick={()=>router.push('/dashboard')} style={{background:'transparent',border:'none',color:'white',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:'4px'}}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-              <polyline points="9 22 9 12 15 12 15 22"/>
-            </svg>
-            <span style={{fontSize:'10px'}}>Home</span>
-          </button>
-          <button onClick={()=>router.push('/profile')} style={{background:'transparent',border:'none',color:'white',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:'4px'}}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polygon points="23 7 16 12 23 17 23 7"/>
-              <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
-            </svg>
-            <span style={{fontSize:'10px'}}>HEAVEN</span>
-          </button>
-          <button onClick={()=>router.push('/spotify-callback')} style={{background:'transparent',border:'none',color:'white',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:'4px'}}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M9 18V5l12-2v13"/>
-              <circle cx="6" cy="18" r="3"/>
-              <circle cx="18" cy="16" r="3"/>
-            </svg>
-            <span style={{fontSize:'10px'}}>Music</span>
-          </button>
-          <button onClick={()=>router.push('/slideshow')} style={{background:'transparent',border:'none',color:'white',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:'4px'}}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M8 5V19L19 12L8 5Z"/>
-            </svg>
-            <span style={{fontSize:'10px'}}>Slideshow</span>
-          </button>
-        </div>
+        <BottomNav activeTab="slideshow" />
       </div>
     </>
   );
