@@ -13,14 +13,14 @@ interface VerifyOTPResponse {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<VerifyOTPResponse>) {
     if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method not allowed' });
+        return res.status(405).json({ success: false, error: 'Method not allowed' });
     }
 
     try {
         const { phoneNumber, code } = req.body;
 
         if (!phoneNumber || !code) {
-            return res.status(400).json({ error: 'Phone number and code are required' });
+            return res.status(400).json({ success: false, error: 'Phone number and code are required' });
         }
 
         // Format phone number
@@ -35,18 +35,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         const storedData = (global as any).otpCodes?.[formattedPhone];
 
         if (!storedData) {
-            return res.status(400).json({ error: 'Code not found. Please request a new code.' });
+            return res.status(400).json({ success: false, error: 'Code not found. Please request a new code.' });
         }
 
         // Check expiration
         if (Date.now() > storedData.expiresAt) {
             delete (global as any).otpCodes[formattedPhone];
-            return res.status(400).json({ error: 'Code expired. Please request a new code.' });
+            return res.status(400).json({ success: false, error: 'Code expired. Please request a new code.' });
         }
 
         // Verify code
         if (storedData.code !== code) {
-            return res.status(400).json({ error: 'Invalid verification code' });
+            return res.status(400).json({ success: false, error: 'Invalid verification code' });
         }
 
         // Code verified successfully
