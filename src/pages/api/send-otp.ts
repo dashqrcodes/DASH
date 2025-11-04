@@ -21,7 +21,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         const { phoneNumber } = req.body;
 
         if (!phoneNumber) {
-            return res.status(400).json({ error: 'Phone number is required' });
+            return res.status(400).json({ success: false, error: 'Phone number is required' });
         }
 
         // Generate 6-digit code
