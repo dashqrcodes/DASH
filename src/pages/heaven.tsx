@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
+import BottomNav from '../components/BottomNav';
 import { 
     createConvaiCharacter, 
     startConvaiConversation, 
@@ -42,6 +43,12 @@ const HeavenPage: React.FC = () => {
     const voiceInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
+        // Check if call should be triggered from bottom nav
+        const shouldStartCall = router.query.call === 'true';
+        if (shouldStartCall && lovedOneName && lovedOneName !== 'Name...') {
+            handleStartCall();
+        }
+
         // Create floating stars effect
         const createStars = () => {
             const container = document.querySelector('.floating-stars');
@@ -70,7 +77,7 @@ const HeavenPage: React.FC = () => {
         };
 
         createStars();
-    }, []);
+    }, [router.query]);
 
     const handleChapterClick = (chapterId: string) => {
         setSelectedChapter(chapterId);
@@ -308,16 +315,15 @@ const HeavenPage: React.FC = () => {
             </div>
 
             <div className="top-icon-bar">
-                <div className="icon-item" onClick={() => window.history.back()}>
+                <div className="icon-item" onClick={() => router.push('/dashboard')}>
                     <svg className="top-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M19 12H5M12 19L5 12L12 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                 </div>
-                <div className="icon-item" title="Toggle Creator Mode">
+                <div className="icon-item" onClick={() => router.push('/scanner')} title="Photo Scanner">
                     <svg className="top-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M23 19C23 19.5304 22.7893 20.0391 22.4142 20.4142C22.0391 20.7893 21.5304 21 21 21H3C2.46957 21 1.96086 20.7893 1.58579 20.4142C1.21071 20.0391 1 19.5304 1 19V8C1 7.46957 1.21071 6.96086 1.58579 6.58579C1.96086 6.21071 2.46957 6 3 6H7L9 4H15L17 6H21C21.5304 6 22.0391 6.21071 22.4142 6.58579C22.7893 6.96086 23 7.46957 23 8V19Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <circle cx="12" cy="13" r="4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                 </div>
             </div>
@@ -344,63 +350,44 @@ const HeavenPage: React.FC = () => {
 
                 <div className="video-playback-container">
                     <div className="video-screen">
-                        <div className="video-placeholder">
-                            <div className="play-icon">
-                                <svg width="60" height="60" viewBox="0 0 24 24" fill="none">
-                                    <path d="M8 5V19L19 12L8 5Z" fill="currentColor"/>
-                                </svg>
+                        <div className="video-placeholder" style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            height: '100%',
+                            gap: '20px'
+                        }}>
+                            <div style={{
+                                fontSize: '64px',
+                                opacity: 0.7
+                            }}>
+                                👤
                             </div>
-                            <p className="slideshow-text">Create slideshow</p>
-                        </div>
-                        
-                        <div className="chapters-overlay">
-                            {chapters.map((chapter) => (
-                                <div
-                                    key={chapter.id}
-                                    className="chapter-card overlay-card"
-                                    data-chapter={chapter.id}
-                                    onClick={() => handleChapterClick(chapter.id)}
-                                >
-                                    <div className="add-icon">
-                                        {getPhotoCount(chapter.id) > 0 ? getPhotoCount(chapter.id) : '+'}
-                                    </div>
-                                    <h3>{chapter.name}</h3>
-                                </div>
-                            ))}
+                            <p className="slideshow-text" style={{
+                                fontSize: '18px',
+                                fontWeight: '600',
+                                color: 'rgba(255,255,255,0.9)',
+                                marginTop: '10px'
+                            }}>
+                                {lovedOneName && lovedOneName !== 'Name...' ? `Prepare to call ${lovedOneName}` : 'Enter name above to begin'}
+                            </p>
+                            <p style={{
+                                fontSize: '14px',
+                                color: 'rgba(255,255,255,0.6)',
+                                textAlign: 'center',
+                                maxWidth: '300px',
+                                marginTop: '10px'
+                            }}>
+                                Upload photos and videos using the scanner button above, then tap the bottom HEAVEN icon to start the call.
+                            </p>
                         </div>
                     </div>
                 </div>
 
-                <div className="collaborate-section">
-                    <button 
-                        className="collaborate-btn" 
-                        onClick={handleStartCall}
-                        disabled={isCreatingCharacter}
-                    >
-                        {isCreatingCharacter ? (
-                            <>
-                                <svg className="collaborate-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
-                                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" strokeDasharray="31.416" strokeDashoffset="31.416">
-                                        <animate attributeName="stroke-dasharray" dur="2s" values="0 31.416;15.708 15.708;0 31.416;0 31.416" repeatCount="indefinite"/>
-                                        <animate attributeName="stroke-dashoffset" dur="2s" values="0;-15.708;-31.416;-31.416" repeatCount="indefinite"/>
-                                    </circle>
-                                </svg>
-                                Creating Character...
-                            </>
-                        ) : (
-                            <>
-                                <svg className="collaborate-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
-                                    <path d="M17 10L22 5L17 0V4H7V6H17V10Z" fill="currentColor"/>
-                                    <path d="M18 16V20C18 20.5304 17.7893 21.0391 17.4142 21.4142C17.0391 21.7893 16.5304 22 16 22H4C3.46957 22 2.96086 21.7893 2.58579 21.4142C2.21071 21.0391 2 20.5304 2 20V8C2 7.46957 2.21071 6.96086 2.58579 6.58579C2.96086 6.21071 3.46957 6 4 6H8V8H4V20H16V16H18Z" fill="currentColor"/>
-                                </svg>
-                                Call to HEAVEN
-                            </>
-                        )}
-                    </button>
-                </div>
-
+                {/* Simplified: Upload photos/videos via scanner button in top bar */}
                 {/* Voice Upload Button */}
-                <div style={{ textAlign: 'center', marginTop: '10px' }}>
+                <div style={{ textAlign: 'center', marginTop: '20px', paddingBottom: '100px' }}>
                     <input
                         ref={voiceInputRef}
                         type="file"
@@ -414,14 +401,22 @@ const HeavenPage: React.FC = () => {
                             background: 'rgba(255,255,255,0.1)',
                             border: '1px solid rgba(255,255,255,0.2)',
                             borderRadius: '12px',
-                            padding: '8px 16px',
+                            padding: '10px 20px',
                             color: 'white',
-                            fontSize: '12px',
-                            cursor: 'pointer'
+                            fontSize: '14px',
+                            cursor: 'pointer',
+                            marginBottom: '10px'
                         }}
                     >
-                        Upload Voice Sample
+                        📞 Upload Voice Sample
                     </button>
+                    <p style={{
+                        fontSize: '12px',
+                        color: 'rgba(255,255,255,0.5)',
+                        marginTop: '10px'
+                    }}>
+                        Use scanner button above to add photos/videos
+                    </p>
                 </div>
 
                 <input
@@ -626,6 +621,9 @@ const HeavenPage: React.FC = () => {
                     </div>
                 )}
             </div>
+
+            {/* Bottom Navigation */}
+            <BottomNav activeTab="heaven" />
         </>
     );
 };

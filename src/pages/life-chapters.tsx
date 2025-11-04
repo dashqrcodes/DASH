@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import Script from 'next/script';
+import BottomNav from '../components/BottomNav';
 import { enhanceImage, enhanceImages } from '../utils/image-enhancement';
 
 const LifeChaptersPage: React.FC = () => {

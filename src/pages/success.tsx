@@ -7,9 +7,9 @@ const SuccessPage: React.FC = () => {
     const router = useRouter();
 
     useEffect(() => {
-        // Auto-redirect to slideshow after 3 seconds
+        // Auto-redirect to slideshow creator after 3 seconds
         const timer = setTimeout(() => {
-            router.push('/slideshow');
+            router.push('/life-chapters-oct31');
         }, 3000);
 
         return () => clearTimeout(timer);
@@ -69,6 +69,31 @@ const SuccessPage: React.FC = () => {
                     }}>
                         Redirecting to slideshow creator in 3 seconds...
                     </p>
+                    <div style={{
+                        marginTop: '20px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '12px',
+                        color: 'rgba(255,255,255,0.5)',
+                        fontSize: 'clamp(12px, 3vw, 14px)'
+                    }}>
+                        <div style={{
+                            width: '16px',
+                            height: '16px',
+                            border: '2px solid rgba(255,255,255,0.3)',
+                            borderTopColor: '#667eea',
+                            borderRadius: '50%',
+                            animation: 'spin 1s linear infinite'
+                        }} />
+                        <span>Preparing slideshow creator...</span>
+                    </div>
+                    <style jsx>{`
+                        @keyframes spin {
+                            0% { transform: rotate(0deg); }
+                            100% { transform: rotate(360deg); }
+                        }
+                    `}</style>
                 </div>
 
                 <div style={{ 

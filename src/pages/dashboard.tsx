@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
+import BottomNav from '../components/BottomNav';
 
 const Dashboard: React.FC = () => {
     const [showModal, setShowModal] = useState(false);
@@ -27,7 +28,11 @@ const Dashboard: React.FC = () => {
 
         // Redirect to appropriate builder
         if (selectedProduct === 'card') {
-            router.push('/memorial-card-builder');
+            router.push('/memorial-card-builder-4x6');
+        } else if (selectedProduct === 'poster') {
+            router.push('/poster-builder');
+        } else if (selectedProduct === 'slideshow') {
+            router.push('/life-chapters');
         } else if (selectedProduct === 'enlargement') {
             router.push('/enlargement');
         } else if (selectedProduct === 'program') {
@@ -69,14 +74,27 @@ const Dashboard: React.FC = () => {
                             </div>
                         </div>
                         <h3>4"×6" Memorial Card</h3>
-                        <p className="product-desc">Two-sided postcard</p>
+                        <p className="product-desc">Two-sided postcard with QR code</p>
                         <div className="features">
                             <span>✓ Photo</span>
                             <span>✓ QR Code</span>
+                            <span>✓ Bible Verse</span>
+                        </div>
+                        <div style={{
+                            marginTop: '12px',
+                            padding: '8px 16px',
+                            background: 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
+                            borderRadius: '8px',
+                            color: 'white',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            textAlign: 'center'
+                        }}>
+                            Get Started →
                         </div>
                     </div>
 
-                    <div className="product-card" onClick={() => handleProductClick('enlargement')} style={{ cursor: 'pointer' }}>
+                    <div className="product-card" onClick={() => handleProductClick('poster')} style={{ cursor: 'pointer' }}>
                         <div className="product-preview">
                             <div className="preview-mini-enlargement">
                                 <p className="mini-name-large">NAME</p>
@@ -84,15 +102,64 @@ const Dashboard: React.FC = () => {
                                 <p className="mini-dates-large">Dates</p>
                             </div>
                         </div>
-                        <h3>20"×30" Portrait</h3>
-                        <p className="product-desc">Mounted enlargement</p>
+                        <h3>20"×30" Poster</h3>
+                        <p className="product-desc">Large portrait enlargement</p>
                         <div className="features">
                             <span>✓ Large Print</span>
                             <span>✓ QR Code</span>
+                            <span>✓ Auto-Enhance</span>
+                        </div>
+                        <div style={{
+                            marginTop: '12px',
+                            padding: '8px 16px',
+                            background: 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
+                            borderRadius: '8px',
+                            color: 'white',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            textAlign: 'center'
+                        }}>
+                            Get Started →
                         </div>
                     </div>
 
-                    <div className="product-card" onClick={() => handleProductClick('program')} style={{ cursor: 'pointer' }}>
+                    <div className="product-card" onClick={() => handleProductClick('slideshow')} style={{ cursor: 'pointer' }}>
+                        <div className="product-preview">
+                            <div style={{
+                                width: '100%',
+                                height: '100%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                background: 'linear-gradient(135deg, #1a1a2e, #16213e, #0f3460)',
+                                borderRadius: '8px',
+                                fontSize: '48px'
+                            }}>
+                                🎬
+                            </div>
+                        </div>
+                        <h3>Slideshow Creator</h3>
+                        <p className="product-desc">Life chapters with music</p>
+                        <div className="features">
+                            <span>✓ Auto-Enhance</span>
+                            <span>✓ 16:9 Format</span>
+                            <span>✓ Music Sync</span>
+                        </div>
+                        <div style={{
+                            marginTop: '12px',
+                            padding: '8px 16px',
+                            background: 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
+                            borderRadius: '8px',
+                            color: 'white',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            textAlign: 'center'
+                        }}>
+                            Get Started →
+                        </div>
+                    </div>
+
+                    <div className="product-card" onClick={() => handleProductClick('enlargement')} style={{ cursor: 'pointer' }}>
                         <div className="product-preview">
                             <div className="preview-mini-program">
                                 <p className="mini-title">Program</p>
@@ -101,10 +168,22 @@ const Dashboard: React.FC = () => {
                             </div>
                         </div>
                         <h3>11"×8.5" Program</h3>
-                        <p className="product-desc">Half-fold service</p>
+                        <p className="product-desc">Half-fold service program</p>
                         <div className="features">
                             <span>✓ Half-fold</span>
                             <span>✓ Details</span>
+                        </div>
+                        <div style={{
+                            marginTop: '12px',
+                            padding: '8px 16px',
+                            background: 'rgba(255,255,255,0.1)',
+                            borderRadius: '8px',
+                            color: 'rgba(255,255,255,0.7)',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            textAlign: 'center'
+                        }}>
+                            Coming Soon
                         </div>
                     </div>
                 </div>
@@ -219,6 +298,9 @@ const Dashboard: React.FC = () => {
                     </div>
                 )}
             </div>
+
+            {/* Bottom Navigation */}
+            <BottomNav activeTab="home" />
         </>
     );
 };
