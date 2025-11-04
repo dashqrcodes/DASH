@@ -195,55 +195,83 @@ const MemorialCardBackPage: React.FC = () => {
         <>
             <Head>
                 <title>Memorial Card Back - DASH</title>
+                <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+                <meta name="mobile-web-app-capable" content="yes" />
+                <meta name="apple-mobile-web-app-capable" content="yes" />
+                <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
             </Head>
             <div style={{
                 minHeight: '100vh',
+                height: '100vh',
                 background: '#000000',
                 fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
                 color: 'white',
-                padding: '10px',
-                paddingBottom: '90px',
+                padding: '0',
+                paddingTop: 'env(safe-area-inset-top, 0px)',
+                paddingBottom: 'calc(90px + env(safe-area-inset-bottom, 0px))',
+                paddingLeft: 'env(safe-area-inset-left, 0px)',
+                paddingRight: 'env(safe-area-inset-right, 0px)',
                 display: 'flex',
                 flexDirection: 'column',
                 maxWidth: '100vw',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                position: 'relative',
+                WebkitOverflowScrolling: 'touch'
             }}>
                 <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',
-                    padding: '8px 16px',
-                    marginBottom: '10px',
-                    fontSize: '14px'
+                    padding: '8px 12px',
+                    marginBottom: '8px',
+                    fontSize: 'clamp(12px, 3.5vw, 14px)',
+                    alignItems: 'center',
+                    flexShrink: 0
                 }}>
-                    <button
-                        onClick={() => router.push(`/memorial-card-builder?name=${encodeURIComponent(name)}&sunrise=${encodeURIComponent(sunrise)}&sunset=${encodeURIComponent(sunset)}${frontPhoto ? `&photo=${encodeURIComponent(frontPhoto)}` : ''}`)}
-                        style={{
-                            background: 'transparent',
-                            border: 'none',
-                            color: 'white',
-                            fontSize: '20px',
-                            cursor: 'pointer',
-                            padding: 0
-                        }}
-                    >
-                        ←
-                    </button>
-                    <div>9:41</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <button
-                            onClick={() => router.push(`/memorial-card-preview?name=${encodeURIComponent(name)}&sunrise=${encodeURIComponent(sunrise)}&sunset=${encodeURIComponent(sunset)}`)}
+                            onClick={handleFlip}
+                            style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: 'white',
+                                fontSize: 'clamp(18px, 5vw, 20px)',
+                                cursor: 'pointer',
+                                padding: '8px',
+                                minWidth: '44px',
+                                minHeight: '44px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                WebkitTapHighlightColor: 'transparent'
+                            }}
+                        >
+                            ←
+                        </button>
+                        <div style={{ fontSize: 'clamp(12px, 3.5vw, 14px)' }}>9:41</div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                        <button
+                            onClick={() => router.push('/checkout')}
                             style={{
                                 background: 'transparent',
                                 border: 'none',
                                 color: 'white',
                                 cursor: 'pointer',
-                                padding: 0
+                                padding: '8px',
+                                minWidth: '44px',
+                                minHeight: '44px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                position: 'relative',
+                                WebkitTapHighlightColor: 'transparent'
                             }}
+                            title="Approve for print"
                         >
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <circle cx="9" cy="21" r="1" />
-                                <circle cx="20" cy="21" r="1" />
-                                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                                <polyline points="6 9 6 2 18 2 18 9"/>
+                                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                                <rect x="6" y="14" width="12" height="8"/>
                             </svg>
                         </button>
                         <span>●●●●● 📶 🔋</span>
@@ -254,52 +282,56 @@ const MemorialCardBackPage: React.FC = () => {
                     marginBottom: '8px',
                     overflowX: 'auto',
                     WebkitOverflowScrolling: 'touch',
-                    paddingBottom: '8px'
+                    paddingBottom: '8px',
+                    scrollbarWidth: 'none',
+                    msOverflowStyle: 'none',
+                    paddingLeft: 'env(safe-area-inset-left, 0px)',
+                    paddingRight: 'env(safe-area-inset-right, 0px)'
                 }}>
+                    <style>{`
+                        div::-webkit-scrollbar { display: none; }
+                    `}</style>
                     <div style={{
                         display: 'flex',
-                        gap: '12px',
-                        paddingLeft: '10px',
-                        paddingRight: '10px'
+                        gap: 'clamp(8px, 2.5vw, 12px)',
+                        paddingLeft: '12px',
+                        paddingRight: '12px',
+                        minWidth: 'max-content'
                     }}>
                         <button style={{
                             background: 'rgba(102,126,234,0.3)',
                             border: '1px solid rgba(102,126,234,0.5)',
                             borderRadius: '12px',
-                            padding: '12px 20px',
+                            padding: 'clamp(10px, 3vw, 12px) clamp(12px, 4vw, 16px)',
                             color: 'white',
-                            fontSize: '14px',
+                            fontSize: 'clamp(11px, 3.2vw, 13px)',
                             fontWeight: '600',
                             cursor: 'pointer',
-                            whiteSpace: 'nowrap'
+                            whiteSpace: 'nowrap',
+                            flexShrink: 0,
+                            minHeight: '44px',
+                            WebkitTapHighlightColor: 'transparent'
                         }}>
-                            4"×6" Card
+                            {t.card}
                         </button>
-                        <button style={{
-                            background: 'rgba(255,255,255,0.05)',
-                            border: '1px solid rgba(255,255,255,0.2)',
-                            borderRadius: '12px',
-                            padding: '12px 20px',
-                            color: 'white',
-                            fontSize: '14px',
-                            fontWeight: '600',
-                            cursor: 'pointer',
-                            whiteSpace: 'nowrap'
-                        }}>
-                            20"×30" Poster
-                        </button>
-                        <button style={{
-                            background: 'rgba(255,255,255,0.05)',
-                            border: '1px solid rgba(255,255,255,0.2)',
-                            borderRadius: '12px',
-                            padding: '12px 20px',
-                            color: 'white',
-                            fontSize: '14px',
-                            fontWeight: '600',
-                            cursor: 'pointer',
-                            whiteSpace: 'nowrap'
-                        }}>
-                            11"×8.5" Program
+                        <button 
+                            style={{
+                                background: 'rgba(255,255,255,0.05)',
+                                border: '1px solid rgba(255,255,255,0.2)',
+                                borderRadius: '12px',
+                                padding: 'clamp(10px, 3vw, 12px) clamp(12px, 4vw, 16px)',
+                                color: 'white',
+                                fontSize: 'clamp(11px, 3.2vw, 13px)',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                whiteSpace: 'nowrap',
+                                flexShrink: 0,
+                                minHeight: '44px',
+                                WebkitTapHighlightColor: 'transparent'
+                            }}
+                            onClick={() => router.push('/poster-builder')}
+                        >
+                            {t.poster}
                         </button>
                     </div>
                 </div>
@@ -308,35 +340,51 @@ const MemorialCardBackPage: React.FC = () => {
                     display: 'flex',
                     justifyContent: 'center',
                     alignItems: 'center',
-                    gap: '16px',
-                    marginBottom: '10px',
-                    padding: '0 20px',
-                    position: 'relative'
+                    gap: 'clamp(12px, 3vw, 16px)',
+                    marginBottom: 'clamp(8px, 2vw, 10px)',
+                    padding: '0 clamp(12px, 4vw, 20px)',
+                    position: 'relative',
+                    flexShrink: 0
                 }}>
                     <p
                         onClick={handleFlip}
                         style={{
-                            fontSize: '14px',
+                            fontSize: 'clamp(14px, 4vw, 18px)',
                             color: 'rgba(255,255,255,0.5)',
                             margin: '0',
                             fontWeight: '700',
                             cursor: 'pointer',
                             display: 'inline-block',
-                            padding: '8px 20px',
+                            padding: '8px clamp(10px, 3vw, 20px)',
                             borderRadius: '20px',
-                            transition: 'all 0.3s ease'
+                            transition: 'all 0.3s ease',
+                            minHeight: '44px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            WebkitTapHighlightColor: 'transparent'
                         }}
-                        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                        onTouchStart={(e) => {
+                            e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                        }}
+                        onTouchEnd={(e) => {
+                            e.currentTarget.style.background = 'transparent';
+                        }}
+                        onMouseEnter={(e) => { 
+                            e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; 
+                        }}
+                        onMouseLeave={(e) => { 
+                            e.currentTarget.style.background = 'transparent'; 
+                        }}
                     >
                         {t.back}
                     </p>
                     <div style={{
                         display: 'flex',
-                        gap: '8px',
+                        gap: 'clamp(6px, 2vw, 8px)',
                         alignItems: 'center',
                         position: 'absolute',
-                        right: '20px'
+                        right: 'clamp(12px, 4vw, 20px)'
                     }}>
                         <button
                             onClick={() => {
@@ -357,20 +405,23 @@ const MemorialCardBackPage: React.FC = () => {
                                     language,
                                 };
                                 localStorage.setItem('cardDesign', JSON.stringify(cardData));
-                                router.push('/dashboard');
+                                router.push('/checkout');
                             }}
                             style={{
                                 position: 'relative',
                                 background: 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
                                 border: 'none',
                                 borderRadius: '50%',
-                                width: '36px',
-                                height: '36px',
+                                width: 'clamp(44px, 11vw, 48px)',
+                                height: 'clamp(44px, 11vw, 48px)',
+                                minWidth: '44px',
+                                minHeight: '44px',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 cursor: 'pointer',
-                                boxShadow: '0 2px 10px rgba(102,126,234,0.4)'
+                                boxShadow: '0 2px 10px rgba(102,126,234,0.4)',
+                                WebkitTapHighlightColor: 'transparent'
                             }}
                             title="Approve for print"
                         >
@@ -386,17 +437,22 @@ const MemorialCardBackPage: React.FC = () => {
                 <div style={{
                     flex: 1,
                     display: 'flex',
+                    flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
                     position: 'relative',
-                    minHeight: 0
+                    minHeight: 0,
+                    width: '100%',
+                    padding: '8px 16px',
+                    overflow: 'hidden'
                 }}>
                     <div style={{
                         position: 'relative',
-                        width: 'min(calc(100vw - 40px), 85vw)',
-                        maxWidth: '400px',
+                        width: 'min(calc(100vw - 32px), calc((100vh - 200px) * 0.4), 320px)',
+                        maxWidth: '320px',
                         aspectRatio: '4/6',
-                        perspective: '1000px'
+                        perspective: '1000px',
+                        margin: '0 auto'
                     }}>
                         <div style={{
                             width: '100%',
@@ -871,13 +927,15 @@ const MemorialCardBackPage: React.FC = () => {
                     background: 'rgba(255,255,255,0.05)',
                     backdropFilter: 'blur(20px)',
                     borderTop: '1px solid rgba(255,255,255,0.1)',
-                    padding: '12px 20px',
+                    padding: 'clamp(10px, 3vw, 12px) clamp(12px, 4vw, 20px)',
+                    paddingBottom: 'calc(clamp(10px, 3vw, 12px) + env(safe-area-inset-bottom, 0px))',
                     display: 'flex',
                     justifyContent: 'space-around',
-                    zIndex: 100
+                    zIndex: 100,
+                    WebkitOverflowScrolling: 'touch'
                 }}>
-                    <button
-                        onClick={() => router.push('/dashboard')}
+                    <button 
+                        onClick={() => router.push('/dashboard')} 
                         style={{
                             background: 'transparent',
                             border: 'none',
@@ -887,17 +945,21 @@ const MemorialCardBackPage: React.FC = () => {
                             flexDirection: 'column',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            gap: '4px'
+                            gap: '4px',
+                            minWidth: '44px',
+                            minHeight: '44px',
+                            padding: '8px',
+                            WebkitTapHighlightColor: 'transparent'
                         }}
                     >
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                            <polyline points="9 22 9 12 15 12 15 22" />
+                        <svg width="clamp(20px, 5vw, 24px)" height="clamp(20px, 5vw, 24px)" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                            <polyline points="9 22 9 12 15 12 15 22"/>
                         </svg>
-                        <span style={{ fontSize: '10px' }}>Home</span>
+                        <span style={{ fontSize: 'clamp(9px, 2.5vw, 10px)' }}>Home</span>
                     </button>
-                    <button
-                        onClick={() => router.push('/heaven')}
+                    <button 
+                        onClick={() => router.push('/profile')} 
                         style={{
                             background: 'transparent',
                             border: 'none',
@@ -907,17 +969,21 @@ const MemorialCardBackPage: React.FC = () => {
                             flexDirection: 'column',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            gap: '4px'
+                            gap: '4px',
+                            minWidth: '44px',
+                            minHeight: '44px',
+                            padding: '8px',
+                            WebkitTapHighlightColor: 'transparent'
                         }}
                     >
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <polygon points="23 7 16 12 23 17 23 7" />
-                            <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+                        <svg width="clamp(20px, 5vw, 24px)" height="clamp(20px, 5vw, 24px)" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <polygon points="23 7 16 12 23 17 23 7"/>
+                            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
                         </svg>
-                        <span style={{ fontSize: '10px' }}>HEAVEN</span>
+                        <span style={{ fontSize: 'clamp(9px, 2.5vw, 10px)' }}>HEAVEN</span>
                     </button>
-                    <button
-                        onClick={() => router.push('/dashboard')}
+                    <button 
+                        onClick={() => router.push('/spotify-callback')} 
                         style={{
                             background: 'transparent',
                             border: 'none',
@@ -927,18 +993,22 @@ const MemorialCardBackPage: React.FC = () => {
                             flexDirection: 'column',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            gap: '4px'
+                            gap: '4px',
+                            minWidth: '44px',
+                            minHeight: '44px',
+                            padding: '8px',
+                            WebkitTapHighlightColor: 'transparent'
                         }}
                     >
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M9 18V5l12-2v13" />
-                            <circle cx="6" cy="18" r="3" />
-                            <circle cx="18" cy="16" r="3" />
+                        <svg width="clamp(20px, 5vw, 24px)" height="clamp(20px, 5vw, 24px)" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M9 18V5l12-2v13"/>
+                            <circle cx="6" cy="18" r="3"/>
+                            <circle cx="18" cy="16" r="3"/>
                         </svg>
-                        <span style={{ fontSize: '10px' }}>Music</span>
+                        <span style={{ fontSize: 'clamp(9px, 2.5vw, 10px)' }}>Music</span>
                     </button>
-                    <button
-                        onClick={() => router.push('/slideshow')}
+                    <button 
+                        onClick={() => router.push('/slideshow')} 
                         style={{
                             background: 'transparent',
                             border: 'none',
@@ -948,13 +1018,17 @@ const MemorialCardBackPage: React.FC = () => {
                             flexDirection: 'column',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            gap: '4px'
+                            gap: '4px',
+                            minWidth: '44px',
+                            minHeight: '44px',
+                            padding: '8px',
+                            WebkitTapHighlightColor: 'transparent'
                         }}
                     >
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M8 5V19L19 12L8 5Z" />
+                        <svg width="clamp(20px, 5vw, 24px)" height="clamp(20px, 5vw, 24px)" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M8 5V19L19 12L8 5Z"/>
                         </svg>
-                        <span style={{ fontSize: '10px' }}>Slideshow</span>
+                        <span style={{ fontSize: 'clamp(9px, 2.5vw, 10px)' }}>Slideshow</span>
                     </button>
                 </div>
             </div>

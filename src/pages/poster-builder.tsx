@@ -416,7 +416,7 @@ const PosterBuilderPage: React.FC = () => {
                     },
                     language,
                 };
-                localStorage.setItem('cardDesign', JSON.stringify(cardData));
+                localStorage.setItem('posterDesign', JSON.stringify(cardData));
                 router.push('/checkout');
             }} style={{position:'relative',background:'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',border:'none',borderRadius:'50%',width:'36px',height:'36px',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',boxShadow:'0 2px 10px rgba(102,126,234,0.4)'}} title="Approve for print">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">

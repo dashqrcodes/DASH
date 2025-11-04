@@ -8,28 +8,14 @@ const FaceIDPage: React.FC = () => {
     const [showAnimation, setShowAnimation] = useState(true);
 
     useEffect(() => {
-        // Simulate Face ID authentication after 2 seconds
-        const timer = setTimeout(() => {
-            setIsAuthenticating(true);
-            
-            // Complete authentication after another 2 seconds
-            setTimeout(() => {
-                // Save authentication status
-                localStorage.setItem('faceIdAuthenticated', 'true');
-                localStorage.setItem('userAuthenticated', 'true');
-                
-                // Redirect to account created screen
-                router.push('/account-created');
-            }, 2000);
-        }, 2000);
-
-        return () => clearTimeout(timer);
+        // Don't auto-start - wait for user tap
+        // Timer removed - user must tap to start Face ID
     }, [router]);
 
     return (
         <>
             <Head>
-                <title>Face ID - DASH</title>
+                <title>Allow Face ID - DASH</title>
                 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
             </Head>
             <div style={{
@@ -83,95 +69,155 @@ const FaceIDPage: React.FC = () => {
                     gap: '30px',
                     flex: 1
                 }}>
-                    {/* Face ID Icon */}
-                    <div style={{
-                        width: '120px',
-                        height: '120px',
-                        borderRadius: '60px',
-                        background: isAuthenticating 
-                            ? 'linear-gradient(135deg, rgba(76, 175, 80, 0.3), rgba(102, 126, 234, 0.3))' 
-                            : 'rgba(255,255,255,0.1)',
-                        border: `3px solid ${isAuthenticating ? '#4caf50' : 'rgba(255,255,255,0.3)'}`,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        position: 'relative',
-                        transition: 'all 0.3s',
-                        animation: isAuthenticating ? 'pulse 1s ease-in-out infinite' : 'none'
-                    }}>
-                        <svg 
-                            width="60" 
-                            height="60" 
-                            viewBox="0 0 24 24" 
-                            fill="none" 
-                            stroke="currentColor" 
-                            strokeWidth="2"
-                            style={{
-                                color: isAuthenticating ? '#4caf50' : 'rgba(255,255,255,0.8)',
-                                transition: 'all 0.3s'
-                            }}
-                        >
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                            <circle cx="12" cy="7" r="4"/>
-                        </svg>
-                        {isAuthenticating && (
-                            <div style={{
-                                position: 'absolute',
-                                width: '100%',
-                                height: '100%',
-                                borderRadius: '50%',
-                                border: '3px solid #4caf50',
-                                borderTopColor: 'transparent',
-                                animation: 'spin 1s linear infinite'
-                            }} />
-                        )}
-                    </div>
-
-                    {/* Text */}
-                    <div style={{
-                        textAlign: 'center',
-                        maxWidth: '300px'
-                    }}>
-                        <h1 style={{
-                            fontSize: 'clamp(24px, 6vw, 28px)',
-                            fontWeight: '700',
-                            marginBottom: '12px',
-                            color: isAuthenticating ? '#4caf50' : 'white'
-                        }}>
-                            {isAuthenticating ? 'Authenticating...' : 'Face ID'}
-                        </h1>
-                        <p style={{
-                            fontSize: 'clamp(14px, 3.5vw, 16px)',
-                            color: 'rgba(255,255,255,0.7)',
-                            lineHeight: '1.5'
-                        }}>
-                            {isAuthenticating 
-                                ? 'Please position your face in the frame' 
-                                : 'Position your face in the frame to continue'}
-                        </p>
-                    </div>
-
-                    {/* Scanning Lines Animation */}
-                    {showAnimation && (
+                    {/* Face ID Button - Only shown when NOT authenticating */}
+                    {!isAuthenticating && (
                         <div style={{
-                            position: 'absolute',
-                            width: '200px',
-                            height: '200px',
-                            top: '50%',
-                            left: '50%',
-                            transform: 'translate(-50%, -50%)',
-                            pointerEvents: 'none',
-                            opacity: isAuthenticating ? 1 : 0.3,
-                            transition: 'opacity 0.3s'
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: '20px',
+                            maxWidth: '280px',
+                            width: '100%'
                         }}>
+                            <h1 style={{
+                                fontSize: 'clamp(24px, 6vw, 28px)',
+                                fontWeight: '700',
+                                marginBottom: '8px',
+                                color: 'white',
+                                textAlign: 'center'
+                            }}>
+                                Fast Sign In
+                            </h1>
+                            <p style={{
+                                fontSize: 'clamp(14px, 3.5vw, 16px)',
+                                color: 'rgba(255,255,255,0.7)',
+                                lineHeight: '1.5',
+                                textAlign: 'center',
+                                marginBottom: '10px'
+                            }}>
+                                Use Face ID for quick authentication
+                            </p>
+                            
+                            {/* Pill Button */}
+                            <button
+                                onClick={() => {
+                                    setIsAuthenticating(true);
+                                    setTimeout(() => {
+                                        localStorage.setItem('faceIdAuthenticated', 'true');
+                                        localStorage.setItem('userAuthenticated', 'true');
+                                        router.push('/account-created');
+                                    }, 2000);
+                                }}
+                                style={{
+                                    width: '100%',
+                                    maxWidth: '280px',
+                                    padding: '18px 30px',
+                                    border: 'none',
+                                    borderRadius: '30px',
+                                    fontSize: '16px',
+                                    fontWeight: '700',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s ease',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '1px',
+                                    background: 'linear-gradient(135deg, #ff6b6b 0%, #4ecdc4 100%)',
+                                    color: 'white',
+                                    boxShadow: '0 4px 15px rgba(255, 107, 107, 0.3)',
+                                    minHeight: '56px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '10px'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                    e.currentTarget.style.boxShadow = '0 6px 20px rgba(255, 107, 107, 0.4)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = '0 4px 15px rgba(255, 107, 107, 0.3)';
+                                }}
+                            >
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                    <circle cx="12" cy="7" r="4"/>
+                                </svg>
+                                Allow Face ID
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Face ID Icon (shown during authentication) */}
+                    {isAuthenticating && (
+                        <div style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: '20px',
+                            position: 'relative'
+                        }}>
+                            {/* Scanning Lines Animation */}
                             <div style={{
                                 position: 'absolute',
-                                width: '100%',
-                                height: '2px',
-                                background: 'linear-gradient(to bottom, transparent, rgba(76, 175, 80, 0.8), transparent)',
-                                animation: 'scanLine 2s linear infinite',
-                                top: '0%'
-                            }} />
+                                width: '200px',
+                                height: '200px',
+                                top: '50%',
+                                left: '50%',
+                                transform: 'translate(-50%, -50%)',
+                                pointerEvents: 'none',
+                                opacity: 1
+                            }}>
+                                <div style={{
+                                    position: 'absolute',
+                                    width: '100%',
+                                    height: '2px',
+                                    background: 'linear-gradient(to bottom, transparent, rgba(76, 175, 80, 0.8), transparent)',
+                                    animation: 'scanLine 2s linear infinite',
+                                    top: '0%'
+                                }} />
+                            </div>
+                            
+                            <div style={{
+                                width: '120px',
+                                height: '120px',
+                                borderRadius: '60px',
+                                background: 'linear-gradient(135deg, rgba(76, 175, 80, 0.3), rgba(102, 126, 234, 0.3))',
+                                border: '3px solid #4caf50',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                position: 'relative',
+                                animation: 'pulse 1s ease-in-out infinite',
+                                zIndex: 10
+                            }}>
+                                <svg 
+                                    width="60" 
+                                    height="60" 
+                                    viewBox="0 0 24 24" 
+                                    fill="none" 
+                                    stroke="#4caf50" 
+                                    strokeWidth="2"
+                                >
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                    <circle cx="12" cy="7" r="4"/>
+                                </svg>
+                                <div style={{
+                                    position: 'absolute',
+                                    width: '100%',
+                                    height: '100%',
+                                    borderRadius: '50%',
+                                    border: '3px solid #4caf50',
+                                    borderTopColor: 'transparent',
+                                    animation: 'spin 1s linear infinite'
+                                }} />
+                            </div>
+                            <p style={{
+                                fontSize: 'clamp(14px, 3.5vw, 16px)',
+                                color: '#4caf50',
+                                fontWeight: '600'
+                            }}>
+                                Authenticating...
+                            </p>
                         </div>
                     )}
                 </div>

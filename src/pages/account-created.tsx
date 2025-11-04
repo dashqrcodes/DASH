@@ -27,10 +27,10 @@ const AccountCreatedPage: React.FC = () => {
             }, 2000);
         }, 1000);
 
-        // Auto-redirect to dashboard after 5 seconds (even if Spotify fails)
+        // Auto-redirect to 4"x6" card builder after 3 seconds to start creating card order
         const redirectTimer = setTimeout(() => {
-            router.push('/dashboard');
-        }, 5000);
+            router.push('/memorial-card-builder-4x6');
+        }, 3000);
 
         return () => {
             clearTimeout(spotifyTimer);
@@ -228,10 +228,21 @@ const AccountCreatedPage: React.FC = () => {
                         fontSize: 'clamp(18px, 4.5vw, 24px)',
                         fontWeight: '600',
                         color: 'white',
-                        marginBottom: '20px',
+                        marginBottom: '10px',
                         letterSpacing: '0.5px'
                     }}>
                         account created!
+                    </div>
+
+                    {/* Next Step Prompt */}
+                    <div style={{
+                        fontSize: 'clamp(14px, 3.5vw, 16px)',
+                        fontWeight: '400',
+                        color: 'rgba(255,255,255,0.7)',
+                        marginBottom: '20px',
+                        letterSpacing: '0.3px'
+                    }}>
+                        Let&apos;s create your memorial card
                     </div>
 
                     {/* Spotify Connection Status */}
