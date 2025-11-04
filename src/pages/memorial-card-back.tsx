@@ -40,12 +40,16 @@ const MemorialCardBackPage: React.FC = () => {
             foreverInOurHearts: 'Forever in Our Hearts',
             sunrise: 'Sunrise',
             sunset: 'Sunset',
+            card: 'Cards',
+            poster: 'Poster',
         },
         es: {
             back: 'Atrás',
             foreverInOurHearts: 'Por Siempre en Nuestros Corazones',
             sunrise: 'Amanecer',
             sunset: 'Atardecer',
+            card: 'Tarjetas',
+            poster: 'Póster',
         },
     };
 
