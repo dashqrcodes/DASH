@@ -9,6 +9,13 @@ const SignInPage: React.FC = () => {
     const [showOtp, setShowOtp] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const otpInputs = useRef<(HTMLInputElement | null)[]>([]);
+    
+    // Initialize array with correct length
+    useEffect(() => {
+        if (otpInputs.current.length !== 5) {
+            otpInputs.current = Array(5).fill(null);
+        }
+    }, []);
     const router = useRouter();
 
     const formatPhoneNumber = (value: string) => {
@@ -157,7 +164,9 @@ const SignInPage: React.FC = () => {
                                 {otp.map((digit, index) => (
                                     <input
                                         key={index}
-                                        ref={(el) => { otpInputs.current[index] = el; }}
+                                        ref={(el) => {
+                                            otpInputs.current[index] = el;
+                                        }}
                                         type="text"
                                         className="otp-input"
                                         maxLength={1}

@@ -104,10 +104,10 @@ const SpotifyCallbackPage: React.FC = () => {
                 console.log('User\'s Top Tracks:', trackNames);
             }
 
-            // Redirect to dashboard after delay
+            // Redirect to dashboard after delay (matching HTML version timing)
             setTimeout(() => {
                 router.push('/dashboard');
-            }, 3000);
+            }, 2000);
 
         } catch (error: any) {
             console.error('Spotify API error:', error);
@@ -172,7 +172,7 @@ const SpotifyCallbackPage: React.FC = () => {
                                 : '0 0 30px rgba(157, 78, 221, 0.5)'
                         }}>
                             <div className="logo-inner">
-                                <div className="logo-text" style={{ fontSize: '32px' }}>🎵</div>
+                                <span className="logo-text" style={{ fontSize: '32px' }}>🎵</span>
                             </div>
                         </div>
                         <div className="loading-dots">
@@ -198,6 +198,12 @@ const SpotifyCallbackPage: React.FC = () => {
                         }}>
                             {message}
                         </div>
+                        {status === 'loading' && (
+                            <>
+                                <div className="message">Loading your music library...</div>
+                                <div className="message">Almost ready...</div>
+                            </>
+                        )}
                     </div>
 
                     {status === 'error' && (
@@ -264,9 +270,15 @@ const SpotifyCallbackPage: React.FC = () => {
                     )}
                 </div>
             </div>
+
+            <style jsx>{`
+                .retry-button:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 6px 20px rgba(29, 185, 84, 0.4);
+                }
+            `}</style>
         </>
     );
 };
 
 export default SpotifyCallbackPage;
-
