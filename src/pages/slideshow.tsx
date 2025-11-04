@@ -1,558 +1,792 @@
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
+import PhotoScanner from '../components/PhotoScanner';
 import BottomNav from '../components/BottomNav';
 
 const SlideshowPage: React.FC = () => {
-    const router = useRouter();
-    const [lovedOneName, setLovedOneName] = useState('');
-    const [showUploadModal, setShowUploadModal] = useState(false);
-    const [hasMusic, setHasMusic] = useState(false);
-    const [shouldBounceMusic, setShouldBounceMusic] = useState(false);
-    const [showSupportModal, setShowSupportModal] = useState(false);
+  const router = useRouter();
+  const [photos, setPhotos] = useState<Array<{id: string, url: string, file: File | null, date?: string, preview?: string}>>([]);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
+  const [language, setLanguage] = useState<'en' | 'es'>('en');
+  const [lovedOneName, setLovedOneName] = useState('');
+  const [sunrise, setSunrise] = useState('');
+  const [sunset, setSunset] = useState('');
 
-    useEffect(() => {
-        // Check if user has connected Spotify
-        const spotifyToken = typeof window !== 'undefined' ? localStorage.getItem('spotify_access_token') : null;
-        setHasMusic(!!spotifyToken);
-        
-        // Start bouncing if no music after 5 seconds
-        if (!spotifyToken) {
-            const timer = setTimeout(() => {
-                setShouldBounceMusic(true);
-            }, 5000);
-            return () => clearTimeout(timer);
+  useEffect(() => {
+    // Load language preference from localStorage
+    const savedLanguage = localStorage.getItem('appLanguage') as 'en' | 'es' | null;
+    if (savedLanguage) {
+      setLanguage(savedLanguage);
+    }
+    
+    // Load saved slideshow photos
+    const savedMedia = localStorage.getItem('slideshowMedia');
+    if (savedMedia) {
+      try {
+        const mediaItems = JSON.parse(savedMedia);
+        const loadedPhotos = mediaItems.map((item: any, index: number) => ({
+          id: `saved-${index}`,
+          url: item.url,
+          file: null,
+          date: undefined,
+          preview: item.url
+        }));
+        setPhotos(loadedPhotos);
+      } catch (e) {
+        console.error('Error loading saved photos:', e);
+      }
+    }
+  }, []);
+
+  const translations = {
+    en: {
+      createSlideshow: 'Create Slideshow',
+      addPhotosChronological: 'Add photos in chronological order',
+      born: 'Born',
+      passed: 'Passed',
+      birth: 'Birth',
+      present: 'Present',
+      scanPhysicalPhoto: 'Scan Physical Photo',
+      scanSubtitle: 'Auto-crop, remove glare, enhance',
+      addPhotosVideos: 'Add Photos & Videos',
+      addMore: 'Add More',
+      processing: 'Processing...',
+      startFromEarliest: 'Start from earliest memories',
+      storyBegins: '📸 Your story begins here',
+      addPhotosHelp: 'Add photos from birth to present',
+      arrangeChronologically: 'We\'ll help you arrange them chronologically',
+      memory: 'Memory',
+      setDateOptional: 'Set date (optional)',
+      earlier: '↑ Earlier',
+      later: '↓ Later',
+      remove: 'Remove',
+      completeSlideshow: 'Complete Slideshow',
+      memories: 'memories'
+    },
+    es: {
+      createSlideshow: 'Crear Presentación',
+      addPhotosChronological: 'Agregar fotos en orden cronológico',
+      born: 'Nacido',
+      passed: 'Fallecido',
+      birth: 'Nacimiento',
+      present: 'Presente',
+      scanPhysicalPhoto: 'Escanear Foto Física',
+      scanSubtitle: 'Recortar automáticamente, eliminar resplandor, mejorar',
+      addPhotosVideos: 'Agregar Fotos y Videos',
+      addMore: 'Agregar Más',
+      processing: 'Procesando...',
+      startFromEarliest: 'Comienza desde los primeros recuerdos',
+      storyBegins: '📸 Tu historia comienza aquí',
+      addPhotosHelp: 'Agrega fotos desde el nacimiento hasta el presente',
+      arrangeChronologically: 'Te ayudaremos a organizarlas cronológicamente',
+      memory: 'Recuerdo',
+      setDateOptional: 'Establecer fecha (opcional)',
+      earlier: '↑ Antes',
+      later: '↓ Después',
+      remove: 'Eliminar',
+      completeSlideshow: 'Completar Presentación',
+      memories: 'recuerdos'
+    }
+  };
+
+  const t = translations[language];
+
+  useEffect(() => {
+    // Load FD data
+    const urlName = router.query.name as string;
+    const urlSunrise = router.query.sunrise as string;
+    const urlSunset = router.query.sunset as string;
+    
+    if (urlName) setLovedOneName(urlName);
+    if (urlSunrise) setSunrise(urlSunrise);
+    if (urlSunset) setSunset(urlSunset);
+    
+    // Load from localStorage
+    const savedName = localStorage.getItem('lovedOneName');
+    const savedSunrise = localStorage.getItem('sunrise');
+    const savedSunset = localStorage.getItem('sunset');
+    
+    // Load from cardDesign if available
+    const cardData = localStorage.getItem('cardDesign');
+    if (cardData) {
+      try {
+        const data = JSON.parse(cardData);
+        if (data.front) {
+          if (!lovedOneName && data.front.name) setLovedOneName(data.front.name);
+          if (!sunrise && data.front.sunrise) setSunrise(data.front.sunrise);
+          if (!sunset && data.front.sunset) setSunset(data.front.sunset);
         }
-    }, []);
+      } catch (e) {
+        console.error('Error parsing card data:', e);
+      }
+    }
+    
+    if (!lovedOneName && savedName) setLovedOneName(savedName);
+    if (!sunrise && savedSunrise) setSunrise(savedSunrise);
+    if (!sunset && savedSunset) setSunset(savedSunset);
+  }, [router.query]);
 
-    return (
-        <>
-            <Head>
-                <link rel="stylesheet" href="/slideshow.css" />
-            </Head>
-            
-            <div className="status-bar">
-                <div className="status-left">
-                    <span className="time">9:41</span>
-                </div>
-                <div className="status-right">
-                    <span className="signal">●●●●●</span>
-                    <span className="wifi">📶</span>
-                    <span className="battery">🔋</span>
-                </div>
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    setIsProcessing(true);
+    const newPhotos: Array<{id: string, url: string, file: File | null, date?: string, preview?: string}> = [];
+
+    // Process each file
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const id = `${Date.now()}-${i}`;
+      const preview = URL.createObjectURL(file);
+      
+      // Try to extract date from file metadata
+      const fileDate = await extractDateFromFile(file);
+      
+      newPhotos.push({
+        id,
+        url: preview,
+        file,
+        date: fileDate,
+        preview
+      });
+    }
+
+    // Sort chronologically and merge with existing photos
+    const allPhotos = [...photos, ...newPhotos].sort((a, b) => {
+      if (!a.date && !b.date) return 0;
+      if (!a.date) return 1;
+      if (!b.date) return -1;
+      return new Date(a.date).getTime() - new Date(b.date).getTime();
+    });
+
+    setPhotos(allPhotos);
+    setIsProcessing(false);
+    
+    // Save to localStorage
+    const mediaItems = allPhotos.map(p => ({ type: 'photo' as const, url: p.url }));
+    localStorage.setItem('slideshowMedia', JSON.stringify(mediaItems));
+  };
+
+  const handleScannedPhoto = async (scannedFile: File) => {
+    // Process scanned photo same as uploaded photos
+    const id = `${Date.now()}-scanned`;
+    const preview = URL.createObjectURL(scannedFile);
+    
+    const newPhoto = {
+      id,
+      url: preview,
+      file: scannedFile,
+      date: undefined, // User will set date manually
+      preview
+    };
+
+    // Add to photos array
+    const allPhotos = [...photos, newPhoto].sort((a, b) => {
+      if (!a.date && !b.date) return 0;
+      if (!a.date) return 1;
+      if (!b.date) return -1;
+      return new Date(a.date).getTime() - new Date(b.date).getTime();
+    });
+
+    setPhotos(allPhotos);
+    setShowScanner(false);
+    
+    // Save to localStorage
+    const mediaItems = allPhotos.map(p => ({ type: 'photo' as const, url: p.url }));
+    localStorage.setItem('slideshowMedia', JSON.stringify(mediaItems));
+  };
+
+  const extractDateFromFile = async (file: File): Promise<string | undefined> => {
+    try {
+      // Try to read EXIF data from image
+      // For now, return undefined - we'll let user set dates manually
+      return undefined;
+    } catch (e) {
+      return undefined;
+    }
+  };
+
+  const handlePhotoDateChange = (photoId: string, date: string) => {
+    setPhotos(prev => {
+      const updated = prev.map(p => 
+        p.id === photoId ? { ...p, date } : p
+      );
+      // Re-sort chronologically
+      return updated.sort((a, b) => {
+        if (!a.date && !b.date) return 0;
+        if (!a.date) return 1;
+        if (!b.date) return -1;
+        return new Date(a.date).getTime() - new Date(b.date).getTime();
+      });
+    });
+  };
+
+  const handleRemovePhoto = (photoId: string) => {
+    setPhotos(prev => prev.filter(p => p.id !== photoId));
+  };
+
+  const handleMovePhoto = (photoId: string, direction: 'up' | 'down') => {
+    setPhotos(prev => {
+      const index = prev.findIndex(p => p.id === photoId);
+      if (index === -1) return prev;
+      
+      const newIndex = direction === 'up' ? index - 1 : index + 1;
+      if (newIndex < 0 || newIndex >= prev.length) return prev;
+      
+      const newPhotos = [...prev];
+      [newPhotos[index], newPhotos[newIndex]] = [newPhotos[newIndex], newPhotos[index]];
+      return newPhotos;
+    });
+  };
+
+  const handleComplete = () => {
+    // Save final slideshow data
+    const mediaItems = photos.map(p => ({ type: 'photo' as const, url: p.url }));
+    localStorage.setItem('slideshowMedia', JSON.stringify(mediaItems));
+    // Stay on slideshow page instead of redirecting
+    alert(`✅ Slideshow complete with ${photos.length} ${t.memories}!`);
+  };
+
+  const calculateTimelinePosition = (photoDate?: string): number => {
+    if (!photoDate || !sunrise || !sunset) return 50; // Middle if no dates
+    
+    const start = new Date(sunrise).getTime();
+    const end = new Date(sunset).getTime();
+    const current = new Date(photoDate).getTime();
+    
+    if (current < start) return 0;
+    if (current > end) return 100;
+    
+    return ((current - start) / (end - start)) * 100;
+  };
+
+  return (
+    <>
+      <Head>
+        <title>Create Slideshow - DASH</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+      </Head>
+      <div style={{
+        width:'100vw',
+        height:'100dvh',
+        maxHeight:'100dvh',
+        background:'#000000',
+        fontFamily:'-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
+        color:'white',
+        padding:'0',
+        paddingBottom:'calc(env(safe-area-inset-bottom, 0px) + 80px)',
+        display:'flex',
+        flexDirection:'column',
+        maxWidth:'100vw',
+        overflow:'hidden',
+        position:'fixed',
+        top:0,
+        left:0,
+        right:0,
+        bottom:0,
+        WebkitTouchCallout:'none',
+        WebkitUserSelect:'none',
+        touchAction:'manipulation',
+        overscrollBehavior:'none'
+      }}>
+        {/* Status Bar */}
+        <div style={{
+          display:'flex',
+          justifyContent:'space-between',
+          paddingTop:'env(safe-area-inset-top, 8px)',
+          paddingBottom:'8px',
+          paddingLeft:'16px',
+          paddingRight:'16px',
+          marginBottom:'4px',
+          fontSize:'11px',
+          alignItems:'center',
+          background:'rgba(0,0,0,0.5)',
+          backdropFilter:'blur(10px)',
+          position:'sticky',
+          top:0,
+          zIndex:10
+        }}>
+          <div style={{display:'flex',alignItems:'center',gap:'12px'}}>
+            <button 
+              onClick={()=>router.back()} 
+              style={{
+                background:'transparent',
+                border:'none',
+                color:'white',
+                fontSize:'20px',
+                cursor:'pointer',
+                padding:'4px 8px',
+                WebkitTapHighlightColor:'transparent',
+                touchAction:'manipulation',
+                borderRadius:'8px',
+                display:'flex',
+                alignItems:'center',
+                justifyContent:'center',
+                minWidth:'44px',
+                minHeight:'44px'
+              }}
+            >
+              ←
+            </button>
+            <div style={{fontSize:'14px',fontWeight:'600'}}>9:41</div>
+          </div>
+          <div style={{display:'flex',alignItems:'center',gap:'6px',fontSize:'12px'}}>
+            <span>●●●●●</span>
+            <span>📶</span>
+            <span>🔋</span>
+          </div>
+        </div>
+
+        {/* Header */}
+        <div style={{
+          textAlign:'center',
+          marginBottom:'16px',
+          padding:'0 20px',
+          paddingTop:'8px'
+        }}>
+          <div style={{
+            fontSize:'clamp(20px, 5vw, 24px)',
+            fontWeight:'700',
+            marginBottom:'6px',
+            letterSpacing:'-0.5px'
+          }}>
+            {lovedOneName || t.createSlideshow}
+          </div>
+          <div style={{
+            fontSize:'clamp(13px, 3vw, 15px)',
+            opacity:0.8,
+            fontWeight:'500',
+            lineHeight:'1.4'
+          }}>
+            {t.addPhotosChronological}
+          </div>
+          {(sunrise || sunset) && (
+            <div style={{
+              display:'flex',
+              justifyContent:'center',
+              gap:'12px',
+              marginTop:'10px',
+              fontSize:'clamp(11px, 2.5vw, 13px)',
+              opacity:0.7,
+              flexWrap:'wrap'
+            }}>
+              {sunrise && <span>{t.born}: {sunrise}</span>}
+              {sunrise && sunset && <span>•</span>}
+              {sunset && <span>{t.passed}: {sunset}</span>}
             </div>
+          )}
+        </div>
 
-            <div className="top-icon-bar">
-                <div className="icon-item" onClick={() => window.history.back()}>
-                    <svg className="top-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M19 12H5M12 19L5 12L12 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                </div>
-                <div className="icon-item" title="Toggle Creator Mode">
-                    <svg className="top-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                </div>
+        {/* Timeline Visualization */}
+        {sunrise && sunset && (
+          <div style={{
+            margin:'0 20px 16px',
+            position:'relative',
+            height:'6px',
+            background:'rgba(255,255,255,0.15)',
+            borderRadius:'3px',
+            overflow:'visible'
+          }}>
+            <div style={{
+              position:'absolute',
+              left:0,
+              top:'-20px',
+              fontSize:'10px',
+              opacity:0.6,
+              fontWeight:'500'
+            }}>
+              {t.birth}
             </div>
-
-            <div className="mobile-container">
-                <div className="name-section">
-                    <div className="name-input-container">
-                        <input 
-                            type="text" 
-                            id="lovedOneName" 
-                            value={lovedOneName}
-                            onChange={(e) => setLovedOneName(e.target.value)}
-                            className="name-input" 
-                            placeholder="Type in name"
-                        />
-                        <svg className="edit-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13M18.5 2.5C18.8978 2.10218 19.4374 1.87868 20 1.87868C20.5626 1.87868 21.1022 2.10218 21.5 2.5C21.8978 2.89782 22.1213 3.43739 22.1213 4C22.1213 4.56261 21.8978 5.10218 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                    </div>
-                </div>
-
-                <div className="slideshow-player">
-                    <div className="slideshow-frame">
-                        <div className="slideshow-content" id="slideshowContent">
-                            <div className="placeholder-content">
-                                <div className="placeholder-subtitle">
-                                    <span className="upload-link" onClick={() => setShowUploadModal(true)}>I already have a slideshow</span>
-                                </div>
-                                <button className="create-slideshow-btn" onClick={() => window.location.href = '/heaven'}>Create slideshow</button>
-                            </div>
-                        </div>
-                        
-                        <div className="share-button-container">
-                            <button className="share-btn" title="Share with Friends & Family">
-                                <svg className="share-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M4 12V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                    <path d="M16 6L12 2L8 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                    <path d="M12 2V15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                
-                    <div className="playback-controls">
-                        <button className="control-btn" id="playPauseBtn">
-                            <svg className="control-icon" width="40" height="40" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M8 5V19L19 12L8 5Z"/>
-                            </svg>
-                        </button>
-                        
-                        <div className="progress-container">
-                            <div className="progress-bar">
-                                <div className="progress-fill" id="progressFill"></div>
-                            </div>
-                            <div className="time-display">
-                                <span id="currentTime">0:00</span>
-                                <span id="totalTime">20:00</span>
-                            </div>
-                        </div>
-                        
-                        <button className="control-btn" id="volumeBtn">
-                            <svg className="control-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M11 5L6 9H2V15H6L11 19V5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                <path d="M19.07 4.93C20.9441 6.80407 22 9.34784 22 12C22 14.6522 20.9441 17.1959 19.07 19.07M15.54 8.46C16.4774 9.39764 17 10.6692 17 12C17 13.3308 16.4774 14.6024 15.54 15.54" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                        </button>
-                        
-                        <button className="control-btn" id="loopBtn" title="Toggle Loop">
-                            <svg className="control-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M17 1L21 5L17 9M21 5H7C5.93913 5 4.92172 5.42143 4.17157 6.17157C3.42143 6.92172 3 7.93913 3 9V11M7 23L3 19L7 15M3 19H17C18.0609 19 19.0783 18.5786 19.8284 17.8284C20.5786 17.0783 21 16.0609 21 15V13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-
-                <div className="slideshow-header">
-                    <div className="header-banner">
-                        <span className="banner-text">FRIENDS & FAMILY COLLAB</span>
-                    </div>
-                </div>
-
-                <div className="social-wall">
-                    <div className="post-info">
-                        <div className="post-caption">
-                            "LIVE YOUR BEST DASH!"
-                        </div>
-                    </div>
-
-                    <div className="comments-section">
-                        <div className="comment-input">
-                            <div className="comment-profile-pic">
-                                <div className="user-avatar">
-                                    <svg className="user-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21M16 7C16 9.20914 14.2091 11 12 11C9.79086 11 8 9.20914 8 7C8 4.79086 9.79086 3 12 3C14.2091 3 16 4.79086 16 7Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                    </svg>
-                                </div>
-                            </div>
-                            <div className="comment-field-container">
-                                <input type="text" placeholder="Add a memory..." className="comment-field" />
-                                <svg className="camera-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M23 19C23 19.5304 22.7893 20.0391 22.4142 20.4142C22.0391 20.7893 21.5304 21 21 21H3C2.46957 21 1.96086 20.7893 1.58579 20.4142C1.21071 20.0391 1 19.5304 1 19V8C1 7.46957 1.21071 6.96086 1.58579 6.58579C1.96086 6.21071 2.46957 6 3 6H7L9 4H15L17 6H21C21.5304 6 22.0391 6.21071 22.4142 6.58579C22.7893 6.96086 23 7.46957 23 8V19Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                    <circle cx="12" cy="13" r="4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                </svg>
-                            </div>
-                            <button className="support-btn" title="Support with donation" onClick={() => setShowSupportModal(true)}>
-                                <svg className="support-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M20.84 4.61C20.3292 4.099 19.7228 3.69364 19.0554 3.41708C18.3879 3.14052 17.6725 2.99817 16.95 2.99817C16.2275 2.99817 15.5121 3.14052 14.8446 3.41708C14.1772 3.69364 13.5708 4.099 13.06 4.61L12 5.67L10.94 4.61C9.9083 3.5783 8.50903 2.9987 7.05 2.9987C5.59096 2.9987 4.19169 3.5783 3.16 4.61C2.1283 5.6417 1.5487 7.04097 1.5487 8.5C1.5487 9.95903 2.1283 11.3583 3.16 12.39L12 21.23L20.84 12.39C21.351 11.8792 21.7563 11.2728 22.0329 10.6053C22.3095 9.93789 22.4518 9.22248 22.4518 8.5C22.4518 7.77752 22.3095 7.06211 22.0329 6.39467C21.7563 5.72723 21.351 5.1208 20.84 4.61Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                    <text x="12" y="16" textAnchor="middle" fontSize="8" fontWeight="bold" fill="currentColor">$</text>
-                                </svg>
-                            </button>
-                        </div>
-                        
-                        <div className="memory-options" id="memoryOptions">
-                            <button className="memory-option-btn">
-                                <svg className="memory-option-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M23 19C23 19.5304 22.7893 20.0391 22.4142 20.4142C22.0391 20.7893 21.5304 21 21 21H3C2.46957 21 1.96086 20.7893 1.58579 20.4142C1.21071 20.0391 1 19.5304 1 19V8C1 7.46957 1.21071 6.96086 1.58579 6.58579C1.96086 6.21071 2.46957 6 3 6H7L9 4H15L17 6H21C21.5304 6 22.0391 6.21071 22.4142 6.58579C22.7893 6.96086 23 7.46957 23 8V19Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                    <circle cx="12" cy="13" r="4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                </svg>
-                                <span>Add Photo Memory</span>
-                            </button>
-                            <button className="memory-option-btn">
-                                <svg className="memory-option-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M23 7L16 12L23 17V7Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                    <rect x="1" y="5" width="15" height="14" rx="2" ry="2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                </svg>
-                                <span>Leave Video Message</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
+            <div style={{
+              position:'absolute',
+              right:0,
+              top:'-20px',
+              fontSize:'10px',
+              opacity:0.6,
+              fontWeight:'500'
+            }}>
+              {t.present}
             </div>
-
-            <div className="floating-stars" id="floatingStars"></div>
-
-            <div className="bottom-nav">
-                <div className="nav-item">
-                    <svg className="nav-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M9 22V12H15V22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                </div>
-                
-                <div className="nav-item" onClick={() => router.push('/spotify-callback')}>
-                    <svg 
-                        className="nav-icon" 
-                        width="24" 
-                        height="24" 
-                        viewBox="0 0 24 24" 
-                        fill="none" 
-                        xmlns="http://www.w3.org/2000/svg"
-                        style={{
-                            animation: shouldBounceMusic && !hasMusic ? 'bounce 1s infinite' : 'none'
-                        }}
-                    >
-                        <path d="M9 18V5L21 3V16M9 18C9 19.6569 7.65685 21 6 21C4.34315 21 3 19.6569 3 18C3 16.3431 4.34315 15 6 15C7.65685 15 9 16.3431 9 18Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M21 16C21 17.6569 19.6569 19 18 19C16.3431 19 15 17.6569 15 16C15 14.3431 16.3431 13 18 13C19.6569 13 21 14.3431 21 16Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                </div>
-                
-                <div className="nav-item active">
-                    <svg className="nav-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M8 5V19L19 12L8 5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                </div>
-                
-                <div className="nav-item">
-                    <svg className="nav-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21M16 7C16 9.20914 14.2091 11 12 11C9.79086 11 8 9.20914 8 7C8 4.79086 9.79086 3 12 3C14.2091 3 16 4.79086 16 7Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                </div>
-            </div>
-
-            {/* Support Modal */}
-            {showSupportModal && (
-                <div style={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    background: 'rgba(0,0,0,0.9)',
-                    zIndex: 1000,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '20px'
+            {photos.map((photo, idx) => photo.date && (
+              <div 
+                key={photo.id}
+                style={{
+                  position:'absolute',
+                  left:`${calculateTimelinePosition(photo.date)}%`,
+                  top:'-6px',
+                  width:'12px',
+                  height:'18px',
+                  background:'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
+                  borderRadius:'50%',
+                  transform:'translateX(-50%)',
+                  boxShadow:'0 2px 8px rgba(102,126,234,0.5)'
                 }}
-                onClick={() => setShowSupportModal(false)}
+                title={photo.date}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Add Photos Buttons */}
+        <div style={{
+          padding:'0 20px',
+          marginBottom:'16px',
+          display:'flex',
+          flexDirection:'column',
+          gap:'12px'
+        }}>
+          {/* Scan Physical Photo Button */}
+          <button 
+            onClick={() => setShowScanner(true)}
+            style={{
+              padding:'16px',
+              background:'rgba(102,126,234,0.15)',
+              border:'2px solid rgba(102,126,234,0.4)',
+              borderRadius:'16px',
+              textAlign:'center',
+              cursor:'pointer',
+              display:'flex',
+              alignItems:'center',
+              justifyContent:'flex-start',
+              gap:'12px',
+              transition:'all 0.2s',
+              WebkitTapHighlightColor:'transparent',
+              minHeight:'64px'
+            }}
+            onTouchStart={(e) => {
+              e.currentTarget.style.background = 'rgba(102,126,234,0.25)';
+            }}
+            onTouchEnd={(e) => {
+              e.currentTarget.style.background = 'rgba(102,126,234,0.15)';
+            }}
+          >
+            <div style={{
+              width:'48px',
+              height:'48px',
+              borderRadius:'12px',
+              background:'rgba(102,126,234,0.3)',
+              display:'flex',
+              alignItems:'center',
+              justifyContent:'center',
+              flexShrink:0
+            }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M23 19C23 19.5304 22.7893 20.0391 22.4142 20.4142C22.0391 20.7893 21.5304 21 21 21H3C2.46957 21 1.96086 20.7893 1.58579 20.4142C1.21071 20.0391 1 19.5304 1 19V8C1 7.46957 1.21071 6.96086 1.58579 6.58579C1.96086 6.21071 2.46957 6 3 6H7L9 4H15L17 6H21C21.5304 6 22.0391 6.21071 22.4142 6.58579C22.7893 6.96086 23 7.46957 23 8V19Z"/>
+                <circle cx="12" cy="13" r="4"/>
+              </svg>
+            </div>
+            <div style={{display:'flex',flexDirection:'column',alignItems:'flex-start',flex:1}}>
+              <div style={{
+                fontSize:'clamp(15px, 3.5vw, 17px)',
+                fontWeight:'700',
+                color:'white',
+                marginBottom:'2px'
+              }}>
+                {t.scanPhysicalPhoto}
+              </div>
+              <div style={{
+                fontSize:'clamp(11px, 2.5vw, 13px)',
+                opacity:0.8,
+                color:'white',
+                lineHeight:'1.3'
+              }}>
+                {t.scanSubtitle}
+              </div>
+            </div>
+          </button>
+
+          {/* Add Digital Photos Button */}
+          <label style={{display:'block',width:'100%'}}>
+            <input 
+              type="file" 
+              accept="image/*,video/*" 
+              multiple 
+              onChange={handlePhotoUpload}
+              style={{display:'none'}}
+              disabled={isProcessing}
+            />
+            <div style={{
+              padding:'18px',
+              background:'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
+              borderRadius:'16px',
+              textAlign:'center',
+              cursor:'pointer',
+              boxShadow:'0 4px 20px rgba(102,126,234,0.4)',
+              transition:'all 0.2s',
+              minHeight:'64px',
+              display:'flex',
+              flexDirection:'column',
+              justifyContent:'center',
+              WebkitTapHighlightColor:'transparent'
+            }}>
+              <div style={{
+                fontSize:'clamp(16px, 4vw, 18px)',
+                fontWeight:'700',
+                marginBottom:'4px'
+              }}>
+                {isProcessing ? t.processing : photos.length === 0 ? t.addPhotosVideos : `${t.addMore} (${photos.length} ${t.memories})`}
+              </div>
+              <div style={{
+                fontSize:'clamp(12px, 3vw, 14px)',
+                opacity:0.95
+              }}>
+                {t.startFromEarliest}
+              </div>
+            </div>
+          </label>
+        </div>
+
+        {/* Photo Scanner Modal */}
+        {showScanner && (
+          <PhotoScanner 
+            onScanComplete={handleScannedPhoto}
+            onClose={() => setShowScanner(false)}
+            language={language}
+          />
+        )}
+
+        {/* Photo Grid - Chronological */}
+        <div style={{
+          flex:1,
+          overflowY:'auto',
+          padding:'0 20px',
+          marginBottom:'16px',
+          WebkitOverflowScrolling:'touch',
+          scrollbarWidth:'none',
+          msOverflowStyle:'none'
+        }}>
+          <style>{`
+            div::-webkit-scrollbar { display: none; }
+          `}</style>
+          {photos.length === 0 ? (
+            <div style={{
+              textAlign:'center',
+              padding:'60px 20px',
+              opacity:0.6
+            }}>
+              <div style={{
+                fontSize:'clamp(16px, 4vw, 18px)',
+                marginBottom:'12px',
+                fontWeight:'600'
+              }}>
+                {t.storyBegins}
+              </div>
+              <div style={{
+                fontSize:'clamp(13px, 3vw, 15px)',
+                lineHeight:'1.6',
+                opacity:0.8
+              }}>
+                {t.addPhotosHelp}<br/>
+                {t.arrangeChronologically}
+              </div>
+            </div>
+          ) : (
+            <div style={{display:'flex',flexDirection:'column',gap:'14px',paddingBottom:'20px'}}>
+              {photos.map((photo, index) => (
+                <div 
+                  key={photo.id} 
+                  style={{
+                    background:'rgba(255,255,255,0.08)',
+                    borderRadius:'16px',
+                    overflow:'hidden',
+                    position:'relative',
+                    border:'1px solid rgba(255,255,255,0.1)',
+                    backdropFilter:'blur(10px)'
+                  }}
                 >
+                  <div style={{display:'flex',gap:'14px',padding:'14px'}}>
+                    {/* Photo Preview */}
                     <div style={{
-                        background: 'rgba(255,255,255,0.1)',
-                        backdropFilter: 'blur(20px)',
-                        border: '1px solid rgba(255,255,255,0.2)',
-                        borderRadius: '20px',
-                        padding: '30px',
-                        maxWidth: '500px',
-                        width: '100%',
-                        maxHeight: '90vh',
-                        overflowY: 'auto'
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                    >
-                        <h2 style={{
-                            color: 'white',
-                            fontSize: '24px',
-                            marginBottom: '20px',
-                            textAlign: 'center',
-                            fontWeight: '700'
-                        }}>
-                            Support the Family
-                        </h2>
-
-                        {/* Donations */}
-                        <div style={{
-                            marginBottom: '20px',
-                            padding: '20px',
-                            background: 'rgba(255,255,255,0.05)',
-                            borderRadius: '12px',
-                            border: '1px solid rgba(255,255,255,0.1)'
-                        }}>
-                            <h3 style={{
-                                color: 'white',
-                                fontSize: '18px',
-                                marginBottom: '16px',
-                                fontWeight: '600',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px'
-                            }}>
-                                <span>💝</span> Make a Donation
-                            </h3>
-                            <div style={{
-                                display: 'grid',
-                                gridTemplateColumns: '1fr 1fr',
-                                gap: '12px',
-                                marginBottom: '16px'
-                            }}>
-                                {[25, 50, 100, 200].map((amount) => (
-                                    <button
-                                        key={amount}
-                                        onClick={() => {
-                                            // TODO: Integrate with payment processor
-                                            alert(`Donation of $${amount} - Payment integration coming soon`);
-                                        }}
-                                        style={{
-                                            background: 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
-                                            border: 'none',
-                                            borderRadius: '8px',
-                                            padding: '12px',
-                                            color: 'white',
-                                            fontSize: '16px',
-                                            fontWeight: '600',
-                                            cursor: 'pointer'
-                                        }}
-                                    >
-                                        ${amount}
-                                    </button>
-                                ))}
-                            </div>
-                            <button
-                                onClick={() => {
-                                    const amount = prompt('Enter donation amount:');
-                                    if (amount) {
-                                        alert(`Donation of $${amount} - Payment integration coming soon`);
-                                    }
-                                }}
-                                style={{
-                                    width: '100%',
-                                    background: 'transparent',
-                                    border: '1px solid rgba(255,255,255,0.2)',
-                                    borderRadius: '8px',
-                                    padding: '12px',
-                                    color: 'white',
-                                    fontSize: '14px',
-                                    fontWeight: '600',
-                                    cursor: 'pointer'
-                                }}
-                            >
-                                Custom Amount
-                            </button>
-                        </div>
-
-                        {/* Food Delivery */}
-                        <div style={{
-                            marginBottom: '20px',
-                            padding: '20px',
-                            background: 'rgba(255,255,255,0.05)',
-                            borderRadius: '12px',
-                            border: '1px solid rgba(255,255,255,0.1)'
-                        }}>
-                            <h3 style={{
-                                color: 'white',
-                                fontSize: '18px',
-                                marginBottom: '16px',
-                                fontWeight: '600',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px'
-                            }}>
-                                <span>🍽️</span> Send Food
-                            </h3>
-                            <div style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '12px'
-                            }}>
-                                {[
-                                    { name: 'GrubHub', url: 'https://www.grubhub.com' },
-                                    { name: 'DoorDash', url: 'https://www.doordash.com' },
-                                    { name: 'Uber Eats', url: 'https://www.ubereats.com' }
-                                ].map((service) => (
-                                    <button
-                                        key={service.name}
-                                        onClick={() => window.open(service.url, '_blank')}
-                                        style={{
-                                            width: '100%',
-                                            background: 'rgba(255,255,255,0.1)',
-                                            border: '1px solid rgba(255,255,255,0.2)',
-                                            borderRadius: '8px',
-                                            padding: '14px',
-                                            color: 'white',
-                                            fontSize: '16px',
-                                            fontWeight: '600',
-                                            cursor: 'pointer',
-                                            textAlign: 'left',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'space-between'
-                                        }}
-                                    >
-                                        <span>{service.name}</span>
-                                        <span>→</span>
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Flowers */}
-                        <div style={{
-                            marginBottom: '20px',
-                            padding: '20px',
-                            background: 'rgba(255,255,255,0.05)',
-                            borderRadius: '12px',
-                            border: '1px solid rgba(255,255,255,0.1)'
-                        }}>
-                            <h3 style={{
-                                color: 'white',
-                                fontSize: '18px',
-                                marginBottom: '16px',
-                                fontWeight: '600',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px'
-                            }}>
-                                <span>🌸</span> Send Flowers
-                            </h3>
-                            <button
-                                onClick={() => window.open('https://www.1800flowers.com', '_blank')}
-                                style={{
-                                    width: '100%',
-                                    background: 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
-                                    border: 'none',
-                                    borderRadius: '8px',
-                                    padding: '14px',
-                                    color: 'white',
-                                    fontSize: '16px',
-                                    fontWeight: '600',
-                                    cursor: 'pointer'
-                                }}
-                            >
-                                Order Flowers
-                            </button>
-                        </div>
-
-                        {/* DASH Menu */}
-                        <div style={{
-                            marginBottom: '20px',
-                            padding: '20px',
-                            background: 'rgba(255,255,255,0.05)',
-                            borderRadius: '12px',
-                            border: '1px solid rgba(255,255,255,0.1)'
-                        }}>
-                            <h3 style={{
-                                color: 'white',
-                                fontSize: '18px',
-                                marginBottom: '16px',
-                                fontWeight: '600',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px'
-                            }}>
-                                <span>✨</span> DASH Products
-                            </h3>
-                            <div style={{
-                                display: 'grid',
-                                gridTemplateColumns: '1fr 1fr',
-                                gap: '12px'
-                            }}>
-                                <button
-                                    onClick={() => {
-                                        router.push('/memorial-card-builder-4x6');
-                                        setShowSupportModal(false);
-                                    }}
-                                    style={{
-                                        background: 'rgba(255,255,255,0.1)',
-                                        border: '1px solid rgba(255,255,255,0.2)',
-                                        borderRadius: '8px',
-                                        padding: '12px',
-                                        color: 'white',
-                                        fontSize: '14px',
-                                        fontWeight: '600',
-                                        cursor: 'pointer'
-                                    }}
-                                >
-                                    4"×6" Card
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        router.push('/poster-builder');
-                                        setShowSupportModal(false);
-                                    }}
-                                    style={{
-                                        background: 'rgba(255,255,255,0.1)',
-                                        border: '1px solid rgba(255,255,255,0.2)',
-                                        borderRadius: '8px',
-                                        padding: '12px',
-                                        color: 'white',
-                                        fontSize: '14px',
-                                        fontWeight: '600',
-                                        cursor: 'pointer'
-                                    }}
-                                >
-                                    20"×30" Poster
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        router.push('/heaven');
-                                        setShowSupportModal(false);
-                                    }}
-                                    style={{
-                                        background: 'rgba(255,255,255,0.1)',
-                                        border: '1px solid rgba(255,255,255,0.2)',
-                                        borderRadius: '8px',
-                                        padding: '12px',
-                                        color: 'white',
-                                        fontSize: '14px',
-                                        fontWeight: '600',
-                                        cursor: 'pointer'
-                                    }}
-                                >
-                                    HEAVEN
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        router.push('/dashboard');
-                                        setShowSupportModal(false);
-                                    }}
-                                    style={{
-                                        background: 'rgba(255,255,255,0.1)',
-                                        border: '1px solid rgba(255,255,255,0.2)',
-                                        borderRadius: '8px',
-                                        padding: '12px',
-                                        color: 'white',
-                                        fontSize: '14px',
-                                        fontWeight: '600',
-                                        cursor: 'pointer'
-                                    }}
-                                >
-                                    All Products
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Close Button */}
-                        <button
-                            onClick={() => setShowSupportModal(false)}
-                            style={{
-                                width: '100%',
-                                background: 'transparent',
-                                border: '1px solid rgba(255,255,255,0.2)',
-                                borderRadius: '12px',
-                                padding: '12px',
-                                color: 'white',
-                                fontSize: '14px',
-                                fontWeight: '600',
-                                cursor: 'pointer',
-                                marginTop: '20px'
-                            }}
-                        >
-                            Close
-                        </button>
+                      position:'relative',
+                      width:'90px',
+                      height:'90px',
+                      borderRadius:'12px',
+                      overflow:'hidden',
+                      flexShrink:0,
+                      background:'rgba(255,255,255,0.1)',
+                      border:'2px solid rgba(255,255,255,0.15)'
+                    }}>
+                      <img 
+                        src={photo.preview || photo.url} 
+                        alt={`Photo ${index + 1}`} 
+                        style={{
+                          width:'100%',
+                          height:'100%',
+                          objectFit:'cover'
+                        }} 
+                      />
+                      <div style={{
+                        position:'absolute',
+                        bottom:'6px',
+                        right:'6px',
+                        background:'rgba(0,0,0,0.7)',
+                        color:'white',
+                        fontSize:'11px',
+                        padding:'3px 8px',
+                        borderRadius:'6px',
+                        fontWeight:'700',
+                        backdropFilter:'blur(10px)'
+                      }}>
+                        #{index + 1}
+                      </div>
                     </div>
+
+                    {/* Photo Info & Controls */}
+                    <div style={{
+                      flex:1,
+                      display:'flex',
+                      flexDirection:'column',
+                      gap:'10px',
+                      minWidth:0
+                    }}>
+                      <div style={{
+                        fontSize:'clamp(14px, 3.5vw, 16px)',
+                        fontWeight:'700',
+                        marginBottom:'2px'
+                      }}>
+                        {t.memory} {index + 1}
+                      </div>
+                      
+                      {/* Date Input */}
+                      <input 
+                        type="date" 
+                        value={photo.date || ''} 
+                        onChange={(e)=>handlePhotoDateChange(photo.id, e.target.value)}
+                        placeholder={t.setDateOptional}
+                        style={{
+                          background:'rgba(255,255,255,0.12)',
+                          border:'1px solid rgba(255,255,255,0.25)',
+                          borderRadius:'10px',
+                          padding:'10px 12px',
+                          color:'white',
+                          fontSize:'clamp(12px, 3vw, 14px)',
+                          outline:'none',
+                          width:'100%',
+                          minHeight:'44px',
+                          WebkitTapHighlightColor:'transparent'
+                        }}
+                      />
+
+                      {/* Reorder Buttons */}
+                      <div style={{display:'flex',gap:'8px',flexWrap:'wrap'}}>
+                        <button 
+                          onClick={()=>handleMovePhoto(photo.id, 'up')}
+                          disabled={index === 0}
+                          style={{
+                            flex:1,
+                            minWidth:'80px',
+                            padding:'10px',
+                            background:index === 0 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.12)',
+                            border:'1px solid rgba(255,255,255,0.2)',
+                            borderRadius:'10px',
+                            color:'white',
+                            fontSize:'clamp(12px, 3vw, 13px)',
+                            cursor:index === 0 ? 'not-allowed' : 'pointer',
+                            opacity:index === 0 ? 0.5 : 1,
+                            fontWeight:'600',
+                            minHeight:'44px',
+                            WebkitTapHighlightColor:'transparent',
+                            touchAction:'manipulation'
+                          }}
+                        >
+                          {t.earlier}
+                        </button>
+                        <button 
+                          onClick={()=>handleMovePhoto(photo.id, 'down')}
+                          disabled={index === photos.length - 1}
+                          style={{
+                            flex:1,
+                            minWidth:'80px',
+                            padding:'10px',
+                            background:index === photos.length - 1 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.12)',
+                            border:'1px solid rgba(255,255,255,0.2)',
+                            borderRadius:'10px',
+                            color:'white',
+                            fontSize:'clamp(12px, 3vw, 13px)',
+                            cursor:index === photos.length - 1 ? 'not-allowed' : 'pointer',
+                            opacity:index === photos.length - 1 ? 0.5 : 1,
+                            fontWeight:'600',
+                            minHeight:'44px',
+                            WebkitTapHighlightColor:'transparent',
+                            touchAction:'manipulation'
+                          }}
+                        >
+                          {t.later}
+                        </button>
+                        <button 
+                          onClick={()=>handleRemovePhoto(photo.id)}
+                          style={{
+                            padding:'10px 16px',
+                            background:'rgba(255,59,48,0.2)',
+                            border:'1px solid rgba(255,59,48,0.4)',
+                            borderRadius:'10px',
+                            color:'rgba(255,59,48,1)',
+                            fontSize:'clamp(12px, 3vw, 13px)',
+                            cursor:'pointer',
+                            fontWeight:'700',
+                            minHeight:'44px',
+                            minWidth:'80px',
+                            WebkitTapHighlightColor:'transparent',
+                            touchAction:'manipulation'
+                          }}
+                        >
+                          {t.remove}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-            )}
-            
-            {/* Bottom Navigation */}
-            <BottomNav activeTab="slideshow" />
-        </>
-    );
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Complete Button */}
+        {photos.length > 0 && (
+          <div style={{
+            padding:'0 20px',
+            marginBottom:'20px',
+            position:'sticky',
+            bottom:0,
+            background:'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.85) 70%, transparent 100%)',
+            paddingTop:'16px',
+            paddingBottom:'16px',
+            zIndex:5
+          }}>
+            <button 
+              onClick={handleComplete}
+              style={{
+                width:'100%',
+                padding:'18px',
+                background:'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
+                border:'none',
+                borderRadius:'16px',
+                color:'white',
+                fontSize:'clamp(16px, 4vw, 18px)',
+                fontWeight:'700',
+                cursor:'pointer',
+                boxShadow:'0 4px 20px rgba(102,126,234,0.5)',
+                minHeight:'56px',
+                WebkitTapHighlightColor:'transparent',
+                touchAction:'manipulation',
+                letterSpacing:'0.5px'
+              }}
+            >
+              {t.completeSlideshow} ({photos.length} {t.memories})
+            </button>
+          </div>
+        )}
+
+        {/* Bottom Navigation */}
+        <BottomNav activeTab="slideshow" />
+      </div>
+    </>
+  );
 };
 
 export default SlideshowPage;

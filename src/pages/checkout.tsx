@@ -207,12 +207,66 @@ const CheckoutPage: React.FC = () => {
                             </div>
                         </>
                     ) : (
-                        <p style={{
+                        <div style={{
                             textAlign: 'center',
-                            color: 'rgba(255,255,255,0.6)'
+                            padding: '20px'
                         }}>
-                            No card design found. Please create a card first.
-                        </p>
+                            <p style={{
+                                color: 'rgba(255,255,255,0.6)',
+                                marginBottom: '20px',
+                                fontSize: '16px'
+                            }}>
+                                No items in cart. Create a design to get started!
+                            </p>
+                            <button
+                                onClick={() => router.push('/poster-builder')}
+                                style={{
+                                    width: '100%',
+                                    background: 'rgba(102,126,234,0.2)',
+                                    border: '1px solid rgba(102,126,234,0.5)',
+                                    borderRadius: '20px',
+                                    padding: '14px',
+                                    color: 'white',
+                                    fontSize: '16px',
+                                    fontWeight: '600',
+                                    cursor: 'pointer',
+                                    marginTop: '10px',
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.background = 'rgba(102,126,234,0.3)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.background = 'rgba(102,126,234,0.2)';
+                                }}
+                            >
+                                Create Poster
+                            </button>
+                            <button
+                                onClick={() => router.push('/memorial-card-builder-4x6')}
+                                style={{
+                                    width: '100%',
+                                    background: 'rgba(102,126,234,0.2)',
+                                    border: '1px solid rgba(102,126,234,0.5)',
+                                    borderRadius: '20px',
+                                    padding: '14px',
+                                    color: 'white',
+                                    fontSize: '16px',
+                                    fontWeight: '600',
+                                    cursor: 'pointer',
+                                    marginTop: '10px',
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.background = 'rgba(102,126,234,0.3)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.background = 'rgba(102,126,234,0.2)';
+                                }}
+                            >
+                                Create Card
+                            </button>
+                        </div>
                     )}
 
                     {/* Submit Button */}

@@ -1,5 +1,5 @@
 // Reusable Bottom Navigation Component
-// Used across all pages: Home, HEAVEN, Music, Slideshow
+// Used across all pages: Home, Profile, HEAVEN (center), Music, Slideshow
 
 import React from 'react';
 import { useRouter } from 'next/router';
@@ -22,57 +22,60 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab }) => {
             bottom: 0,
             left: 0,
             right: 0,
-            background: 'rgba(0, 0, 0, 0.95)',
+            background: 'rgba(255,255,255,0.05)',
             backdropFilter: 'blur(20px)',
             borderTop: '1px solid rgba(255, 255, 255, 0.1)',
             display: 'flex',
             justifyContent: 'space-around',
             alignItems: 'center',
-            padding: '12px 0',
+            padding: 'clamp(10px, 3vw, 12px) clamp(12px, 4vw, 20px)',
+            paddingBottom: 'calc(clamp(10px, 3vw, 12px) + env(safe-area-inset-bottom, 0px))',
             zIndex: 1000,
-            maxWidth: '414px',
-            margin: '0 auto',
-            boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.3)'
+            maxWidth: '100vw',
+            width: '100%',
+            WebkitOverflowScrolling: 'touch'
         }}>
             {/* Home */}
             <button
                 onClick={() => router.push('/dashboard')}
                 style={{
-                    background: 'transparent',
+                    background: activeTab === 'home' ? 'rgba(102,126,234,0.2)' : 'transparent',
                     border: 'none',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     gap: '4px',
                     cursor: 'pointer',
-                    padding: '8px 16px',
+                    minWidth: '44px',
+                    minHeight: '44px',
+                    padding: '8px',
                     borderRadius: '8px',
                     transition: 'all 0.2s',
-                    opacity: activeTab === 'home' ? 1 : 0.7
+                    WebkitTapHighlightColor: 'transparent'
                 }}
                 onMouseEnter={(e) => {
                     e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
                     e.currentTarget.style.opacity = '1';
                 }}
                 onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'transparent';
-                    e.currentTarget.style.opacity = activeTab === 'home' ? '1' : '0.7';
+                    e.currentTarget.style.background = activeTab === 'home' ? 'rgba(102,126,234,0.2)' : 'transparent';
+                    e.currentTarget.style.opacity = '1';
                 }}
             >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={activeTab === 'home' ? 'white' : 'rgba(255,255,255,0.7)'} strokeWidth="2">
+                <svg width="clamp(20px, 5vw, 24px)" height="clamp(20px, 5vw, 24px)" viewBox="0 0 24 24" fill="none" stroke={activeTab === 'home' ? 'white' : 'rgba(255,255,255,0.7)'} strokeWidth="2">
                     <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
                     <polyline points="9 22 9 12 15 12 15 22"/>
                 </svg>
                 <span style={{
-                    fontSize: '10px',
+                    fontSize: 'clamp(9px, 2.5vw, 10px)',
                     fontWeight: '500',
                     color: activeTab === 'home' ? 'white' : 'rgba(255,255,255,0.7)'
                 }}>Home</span>
             </button>
 
-            {/* HEAVEN (Video Call) */}
+            {/* Profile */}
             <button
-                onClick={handleHeavenCall}
+                onClick={() => router.push('/profile')}
                 style={{
                     background: 'transparent',
                     border: 'none',
@@ -81,10 +84,10 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab }) => {
                     alignItems: 'center',
                     gap: '4px',
                     cursor: 'pointer',
-                    padding: '8px 16px',
-                    borderRadius: '8px',
-                    transition: 'all 0.2s',
-                    opacity: activeTab === 'heaven' ? 1 : 0.7
+                    minWidth: '44px',
+                    minHeight: '44px',
+                    padding: '8px',
+                    WebkitTapHighlightColor: 'transparent'
                 }}
                 onMouseEnter={(e) => {
                     e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
@@ -92,17 +95,56 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab }) => {
                 }}
                 onMouseLeave={(e) => {
                     e.currentTarget.style.background = 'transparent';
-                    e.currentTarget.style.opacity = activeTab === 'heaven' ? '1' : '0.7';
+                    e.currentTarget.style.opacity = '1';
                 }}
             >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={activeTab === 'heaven' ? 'white' : 'rgba(255,255,255,0.7)'} strokeWidth="2">
+                <svg width="clamp(20px, 5vw, 24px)" height="clamp(20px, 5vw, 24px)" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                </svg>
+                <span style={{
+                    fontSize: 'clamp(9px, 2.5vw, 10px)',
+                    fontWeight: '500',
+                    color: 'rgba(255,255,255,0.7)'
+                }}>Profile</span>
+            </button>
+
+            {/* HEAVEN (Video Call) - Center */}
+            <button
+                onClick={handleHeavenCall}
+                style={{
+                    background: 'linear-gradient(135deg, rgba(0,255,255,0.2) 0%, rgba(255,0,255,0.2) 100%)',
+                    border: '2px solid rgba(0,255,255,0.4)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '4px',
+                    cursor: 'pointer',
+                    minWidth: '56px',
+                    minHeight: '56px',
+                    padding: '10px',
+                    borderRadius: '50%',
+                    WebkitTapHighlightColor: 'transparent',
+                    boxShadow: '0 4px 20px rgba(0,255,255,0.3)',
+                    transition: 'all 0.3s ease'
+                }}
+                onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'scale(1.1)';
+                    e.currentTarget.style.boxShadow = '0 6px 25px rgba(0,255,255,0.5)';
+                }}
+                onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,255,255,0.3)';
+                }}
+            >
+                <svg width="clamp(24px, 6vw, 28px)" height="clamp(24px, 6vw, 28px)" viewBox="0 0 24 24" fill="none" stroke={activeTab === 'heaven' ? 'white' : 'rgba(255,255,255,0.9)'} strokeWidth="2">
                     <path d="M23 7l-7 5 7 5V7z"/>
                     <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
                 </svg>
                 <span style={{
-                    fontSize: '10px',
-                    fontWeight: '500',
-                    color: activeTab === 'heaven' ? 'white' : 'rgba(255,255,255,0.7)'
+                    fontSize: 'clamp(8px, 2vw, 9px)',
+                    fontWeight: '600',
+                    color: 'white'
                 }}>HEAVEN</span>
             </button>
 
@@ -110,34 +152,36 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab }) => {
             <button
                 onClick={() => router.push('/spotify-callback')}
                 style={{
-                    background: 'transparent',
+                    background: activeTab === 'music' ? 'rgba(102,126,234,0.2)' : 'transparent',
                     border: 'none',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     gap: '4px',
                     cursor: 'pointer',
-                    padding: '8px 16px',
+                    minWidth: '44px',
+                    minHeight: '44px',
+                    padding: '8px',
                     borderRadius: '8px',
                     transition: 'all 0.2s',
-                    opacity: activeTab === 'music' ? 1 : 0.7
+                    WebkitTapHighlightColor: 'transparent'
                 }}
                 onMouseEnter={(e) => {
                     e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
                     e.currentTarget.style.opacity = '1';
                 }}
                 onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'transparent';
-                    e.currentTarget.style.opacity = activeTab === 'music' ? '1' : '0.7';
+                    e.currentTarget.style.background = activeTab === 'music' ? 'rgba(102,126,234,0.2)' : 'transparent';
+                    e.currentTarget.style.opacity = '1';
                 }}
             >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={activeTab === 'music' ? 'white' : 'rgba(255,255,255,0.7)'} strokeWidth="2">
+                <svg width="clamp(20px, 5vw, 24px)" height="clamp(20px, 5vw, 24px)" viewBox="0 0 24 24" fill="none" stroke={activeTab === 'music' ? 'white' : 'rgba(255,255,255,0.7)'} strokeWidth="2">
                     <path d="M9 18V5l12-2v13"/>
                     <circle cx="6" cy="18" r="3"/>
                     <circle cx="18" cy="16" r="3"/>
                 </svg>
                 <span style={{
-                    fontSize: '10px',
+                    fontSize: 'clamp(9px, 2.5vw, 10px)',
                     fontWeight: '500',
                     color: activeTab === 'music' ? 'white' : 'rgba(255,255,255,0.7)'
                 }}>Music</span>
@@ -147,32 +191,34 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab }) => {
             <button
                 onClick={() => router.push('/slideshow')}
                 style={{
-                    background: 'transparent',
+                    background: activeTab === 'slideshow' ? 'rgba(102,126,234,0.2)' : 'transparent',
                     border: 'none',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     gap: '4px',
                     cursor: 'pointer',
-                    padding: '8px 16px',
+                    minWidth: '44px',
+                    minHeight: '44px',
+                    padding: '8px',
                     borderRadius: '8px',
                     transition: 'all 0.2s',
-                    opacity: activeTab === 'slideshow' ? 1 : 0.7
+                    WebkitTapHighlightColor: 'transparent'
                 }}
                 onMouseEnter={(e) => {
                     e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
                     e.currentTarget.style.opacity = '1';
                 }}
                 onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'transparent';
-                    e.currentTarget.style.opacity = activeTab === 'slideshow' ? '1' : '0.7';
+                    e.currentTarget.style.background = activeTab === 'slideshow' ? 'rgba(102,126,234,0.2)' : 'transparent';
+                    e.currentTarget.style.opacity = '1';
                 }}
             >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={activeTab === 'slideshow' ? 'white' : 'rgba(255,255,255,0.7)'} strokeWidth="2">
+                <svg width="clamp(20px, 5vw, 24px)" height="clamp(20px, 5vw, 24px)" viewBox="0 0 24 24" fill="none" stroke={activeTab === 'slideshow' ? 'white' : 'rgba(255,255,255,0.7)'} strokeWidth="2">
                     <path d="M8 5v14l11-7z"/>
                 </svg>
                 <span style={{
-                    fontSize: '10px',
+                    fontSize: 'clamp(9px, 2.5vw, 10px)',
                     fontWeight: '500',
                     color: activeTab === 'slideshow' ? 'white' : 'rgba(255,255,255,0.7)'
                 }}>Slideshow</span>

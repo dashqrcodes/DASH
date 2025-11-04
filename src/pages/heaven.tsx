@@ -364,14 +364,16 @@ const HeavenPage: React.FC = () => {
                             }}>
                                 👤
                             </div>
-                            <p className="slideshow-text" style={{
-                                fontSize: '18px',
-                                fontWeight: '600',
-                                color: 'rgba(255,255,255,0.9)',
-                                marginTop: '10px'
-                            }}>
-                                {lovedOneName && lovedOneName !== 'Name...' ? `Prepare to call ${lovedOneName}` : 'Enter name above to begin'}
-                            </p>
+                            {lovedOneName && lovedOneName !== 'Name...' && (
+                                <p className="slideshow-text" style={{
+                                    fontSize: '18px',
+                                    fontWeight: '600',
+                                    color: 'rgba(255,255,255,0.9)',
+                                    marginTop: '10px'
+                                }}>
+                                    Prepare to call {lovedOneName}
+                                </p>
+                            )}
                             <p style={{
                                 fontSize: '14px',
                                 color: 'rgba(255,255,255,0.6)',

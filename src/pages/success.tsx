@@ -7,9 +7,9 @@ const SuccessPage: React.FC = () => {
     const router = useRouter();
 
     useEffect(() => {
-        // Auto-redirect to slideshow creator after 3 seconds
+        // Auto-redirect to dashboard for order tracking after 3 seconds
         const timer = setTimeout(() => {
-            router.push('/life-chapters-oct31');
+            router.push('/dashboard');
         }, 3000);
 
         return () => clearTimeout(timer);
@@ -67,7 +67,7 @@ const SuccessPage: React.FC = () => {
                         fontSize: '12px',
                         fontStyle: 'italic'
                     }}>
-                        Redirecting to slideshow creator in 3 seconds...
+                        Redirecting to order tracking in 3 seconds...
                     </p>
                     <div style={{
                         marginTop: '20px',
@@ -86,7 +86,7 @@ const SuccessPage: React.FC = () => {
                             borderRadius: '50%',
                             animation: 'spin 1s linear infinite'
                         }} />
-                        <span>Preparing slideshow creator...</span>
+                        <span>Loading order tracking...</span>
                     </div>
                     <style jsx>{`
                         @keyframes spin {
@@ -109,7 +109,7 @@ const SuccessPage: React.FC = () => {
                         marginBottom: '16px',
                         textAlign: 'center'
                     }}>
-                        🎬 Create Your Slideshow
+                        📦 Track Your Order
                     </h3>
                     <p style={{
                         color: 'rgba(255,255,255,0.7)',
@@ -117,10 +117,10 @@ const SuccessPage: React.FC = () => {
                         textAlign: 'center',
                         marginBottom: '20px'
                     }}>
-                        Continue to create a beautiful slideshow with photos, music, and memories
+                        View your order status and track production progress
                     </p>
                     <Link 
-                        href="/slideshow" 
+                        href="/dashboard" 
                         className="signup-button"
                         style={{ 
                             textAlign: 'center', 
@@ -129,7 +129,7 @@ const SuccessPage: React.FC = () => {
                             marginBottom: '12px'
                         }}
                     >
-                        Go to Slideshow Creator →
+                        Go to Order Tracking →
                     </Link>
                     <Link 
                         href="/profile" 
