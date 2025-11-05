@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import PhotoScanner from '../components/PhotoScanner';
 import BottomNav from '../components/BottomNav';
+import { initLazyLoading } from '../utils/lazy-loading';
+import { getMuxThumbnailUrl } from '../utils/mux-integration';
 
 const SlideshowPage: React.FC = () => {
   const router = useRouter();
@@ -10,7 +12,7 @@ const SlideshowPage: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [language, setLanguage] = useState<'en' | 'es'>('en');
-  const [lovedOneName, setLovedOneName] = useState('');
+    const [lovedOneName, setLovedOneName] = useState('');
   const [sunrise, setSunrise] = useState('');
   const [sunset, setSunset] = useState('');
 
@@ -38,6 +40,16 @@ const SlideshowPage: React.FC = () => {
         console.error('Error loading saved photos:', e);
       }
     }
+
+    // Initialize lazy loading for images
+    const cleanup = initLazyLoading('img[data-src]', {
+      rootMargin: '100px',
+      threshold: 0.1,
+    });
+
+    return () => {
+      cleanup();
+    };
   }, []);
 
   const translations = {
@@ -262,15 +274,15 @@ const SlideshowPage: React.FC = () => {
     return ((current - start) / (end - start)) * 100;
   };
 
-  return (
-    <>
-      <Head>
+    return (
+        <>
+            <Head>
         <title>Create Slideshow - DASH</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-      </Head>
+            </Head>
       <div style={{
         width:'100vw',
         height:'100dvh',
@@ -334,13 +346,13 @@ const SlideshowPage: React.FC = () => {
               ←
             </button>
             <div style={{fontSize:'14px',fontWeight:'600'}}>9:41</div>
-          </div>
+                </div>
           <div style={{display:'flex',alignItems:'center',gap:'6px',fontSize:'12px'}}>
             <span>●●●●●</span>
             <span>📶</span>
             <span>🔋</span>
-          </div>
-        </div>
+                </div>
+            </div>
 
         {/* Header */}
         <div style={{
@@ -356,7 +368,7 @@ const SlideshowPage: React.FC = () => {
             letterSpacing:'-0.5px'
           }}>
             {lovedOneName || t.createSlideshow}
-          </div>
+                </div>
           <div style={{
             fontSize:'clamp(13px, 3vw, 15px)',
             opacity:0.8,
@@ -364,7 +376,7 @@ const SlideshowPage: React.FC = () => {
             lineHeight:'1.4'
           }}>
             {t.addPhotosChronological}
-          </div>
+                </div>
           {(sunrise || sunset) && (
             <div style={{
               display:'flex',
@@ -380,7 +392,7 @@ const SlideshowPage: React.FC = () => {
               {sunset && <span>{t.passed}: {sunset}</span>}
             </div>
           )}
-        </div>
+                </div>
 
         {/* Timeline Visualization */}
         {sunrise && sunset && (
@@ -401,7 +413,7 @@ const SlideshowPage: React.FC = () => {
               fontWeight:'500'
             }}>
               {t.birth}
-            </div>
+                                </div>
             <div style={{
               position:'absolute',
               right:0,
@@ -411,7 +423,7 @@ const SlideshowPage: React.FC = () => {
               fontWeight:'500'
             }}>
               {t.present}
-            </div>
+                            </div>
             {photos.map((photo, idx) => photo.date && (
               <div 
                 key={photo.id}
@@ -429,7 +441,7 @@ const SlideshowPage: React.FC = () => {
                 title={photo.date}
               />
             ))}
-          </div>
+                        </div>
         )}
 
         {/* Add Photos Buttons */}
@@ -478,7 +490,7 @@ const SlideshowPage: React.FC = () => {
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M23 19C23 19.5304 22.7893 20.0391 22.4142 20.4142C22.0391 20.7893 21.5304 21 21 21H3C2.46957 21 1.96086 20.7893 1.58579 20.4142C1.21071 20.0391 1 19.5304 1 19V8C1 7.46957 1.21071 6.96086 1.58579 6.58579C1.96086 6.21071 2.46957 6 3 6H7L9 4H15L17 6H21C21.5304 6 22.0391 6.21071 22.4142 6.58579C22.7893 6.96086 23 7.46957 23 8V19Z"/>
                 <circle cx="12" cy="13" r="4"/>
-              </svg>
+                                </svg>
             </div>
             <div style={{display:'flex',flexDirection:'column',alignItems:'flex-start',flex:1}}>
               <div style={{
@@ -496,10 +508,10 @@ const SlideshowPage: React.FC = () => {
                 lineHeight:'1.3'
               }}>
                 {t.scanSubtitle}
-              </div>
-            </div>
-          </button>
-
+                        </div>
+                    </div>
+                        </button>
+                        
           {/* Add Digital Photos Button */}
           <label style={{display:'block',width:'100%'}}>
             <input 
@@ -530,17 +542,17 @@ const SlideshowPage: React.FC = () => {
                 marginBottom:'4px'
               }}>
                 {isProcessing ? t.processing : photos.length === 0 ? t.addPhotosVideos : `${t.addMore} (${photos.length} ${t.memories})`}
-              </div>
+                            </div>
               <div style={{
                 fontSize:'clamp(12px, 3vw, 14px)',
                 opacity:0.95
               }}>
                 {t.startFromEarliest}
-              </div>
+                            </div>
             </div>
           </label>
-        </div>
-
+                        </div>
+                        
         {/* Photo Scanner Modal */}
         {showScanner && (
           <PhotoScanner 
@@ -575,7 +587,7 @@ const SlideshowPage: React.FC = () => {
                 fontWeight:'600'
               }}>
                 {t.storyBegins}
-              </div>
+                    </div>
               <div style={{
                 fontSize:'clamp(13px, 3vw, 15px)',
                 lineHeight:'1.6',
@@ -583,8 +595,8 @@ const SlideshowPage: React.FC = () => {
               }}>
                 {t.addPhotosHelp}<br/>
                 {t.arrangeChronologically}
-              </div>
-            </div>
+                    </div>
+                </div>
           ) : (
             <div style={{display:'flex',flexDirection:'column',gap:'14px',paddingBottom:'20px'}}>
               {photos.map((photo, index) => (
@@ -612,8 +624,10 @@ const SlideshowPage: React.FC = () => {
                       border:'2px solid rgba(255,255,255,0.15)'
                     }}>
                       <img 
-                        src={photo.preview || photo.url} 
+                        data-src={photo.preview || photo.url}
+                        src={photo.preview ? undefined : photo.url}
                         alt={`Photo ${index + 1}`} 
+                        loading="lazy"
                         style={{
                           width:'100%',
                           height:'100%',
@@ -633,7 +647,7 @@ const SlideshowPage: React.FC = () => {
                         backdropFilter:'blur(10px)'
                       }}>
                         #{index + 1}
-                      </div>
+                        </div>
                     </div>
 
                     {/* Photo Info & Controls */}
@@ -650,8 +664,8 @@ const SlideshowPage: React.FC = () => {
                         marginBottom:'2px'
                       }}>
                         {t.memory} {index + 1}
-                      </div>
-                      
+                        </div>
+                        
                       {/* Date Input */}
                       <input 
                         type="date" 
@@ -717,7 +731,7 @@ const SlideshowPage: React.FC = () => {
                           }}
                         >
                           {t.later}
-                        </button>
+                            </button>
                         <button 
                           onClick={()=>handleRemovePhoto(photo.id)}
                           style={{
@@ -736,16 +750,16 @@ const SlideshowPage: React.FC = () => {
                           }}
                         >
                           {t.remove}
-                        </button>
-                      </div>
+                            </button>
+                        </div>
                     </div>
-                  </div>
                 </div>
-              ))}
             </div>
+              ))}
+                </div>
           )}
-        </div>
-
+                </div>
+                
         {/* Complete Button */}
         {photos.length > 0 && (
           <div style={{
@@ -779,14 +793,14 @@ const SlideshowPage: React.FC = () => {
             >
               {t.completeSlideshow} ({photos.length} {t.memories})
             </button>
-          </div>
+                </div>
         )}
 
         {/* Bottom Navigation */}
         <BottomNav activeTab="slideshow" />
-      </div>
-    </>
-  );
+            </div>
+        </>
+    );
 };
 
 export default SlideshowPage;

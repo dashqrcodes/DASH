@@ -141,7 +141,7 @@ const Dashboard: React.FC = () => {
                     <div style={{ fontSize: 'clamp(12px, 3.5vw, 14px)' }}>9:41</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <span>●●●●● 📶 🔋</span>
-                    </div>
+            </div>
                 </div>
 
                 {/* Scrollable Content */}
@@ -273,7 +273,7 @@ const Dashboard: React.FC = () => {
                         }}>
                             {t.customerName}
                         </h2>
-                        <input
+                                        <input 
                             type="text"
                             value={customerName}
                             onChange={(e) => setCustomerName(e.target.value)}
@@ -291,7 +291,7 @@ const Dashboard: React.FC = () => {
                                 fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif'
                             }}
                         />
-                        <input
+                                        <input 
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
@@ -309,7 +309,7 @@ const Dashboard: React.FC = () => {
                                 fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif'
                             }}
                         />
-                        <input
+                                        <input 
                             type="tel"
                             value={phone}
                             onChange={(e) => setPhone(e.target.value)}
@@ -326,7 +326,7 @@ const Dashboard: React.FC = () => {
                                 fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif'
                             }}
                         />
-                    </div>
+                            </div>
 
                     {/* Funeral Director Info Section */}
                     <div style={{
@@ -345,7 +345,7 @@ const Dashboard: React.FC = () => {
                         }}>
                             {t.funeralDirectorName}
                         </h2>
-                        <input
+                                        <input 
                             type="text"
                             value={funeralDirectorName}
                             onChange={(e) => setFuneralDirectorName(e.target.value)}
@@ -403,7 +403,7 @@ const Dashboard: React.FC = () => {
                                         fontSize: '20px'
                                     }}>
                                         💳
-                                    </div>
+                                        </div>
                                     <div>
                                         <div style={{ fontSize: 'clamp(14px, 4vw, 16px)', fontWeight: '600' }}>
                                             •••• •••• •••• {paymentMethod}
@@ -411,7 +411,7 @@ const Dashboard: React.FC = () => {
                                         <div style={{ fontSize: 'clamp(12px, 3.5vw, 14px)', color: 'rgba(255,255,255,0.6)' }}>
                                             Visa
                                         </div>
-                                    </div>
+                                        </div>
                                 </div>
                             </div>
                         ) : (
@@ -425,7 +425,7 @@ const Dashboard: React.FC = () => {
                                 fontSize: 'clamp(14px, 4vw, 16px)'
                             }}>
                                 No payment method added
-                            </div>
+                        </div>
                         )}
                         <button
                             onClick={handleAddPayment}
