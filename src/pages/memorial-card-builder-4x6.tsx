@@ -675,27 +675,19 @@ const MemorialCardBuilder4x6Page: React.FC = () => {
           
           {/* Product Label - Centered */}
           <div style={{
+            flex:1,
             display:'flex',
             alignItems:'center',
-            justifyContent:'center',
-            flex:1
+            justifyContent:'center'
           }}>
-            <div style={{
-              background:'rgba(102,126,234,0.3)',
-              border:'1px solid rgba(102,126,234,0.5)',
-              borderRadius:'10px',
-              padding:'clamp(6px, 2vw, 8px) clamp(10px, 3vw, 12px)',
-              color:'white',
-              fontSize:'clamp(10px, 3vw, 12px)',
+            <span style={{
+              color:'rgba(255,255,255,0.8)',
+              fontSize:'clamp(12px, 3.5vw, 14px)',
               fontWeight:'600',
-              whiteSpace:'nowrap',
-              minHeight:'32px',
-              display:'flex',
-              alignItems:'center',
-              justifyContent:'center'
+              letterSpacing:'0.6px'
             }}>
               {t.card}
-            </div>
+            </span>
           </div>
 
           {/* Spacer to balance layout */}
@@ -1078,8 +1070,8 @@ const MemorialCardBuilder4x6Page: React.FC = () => {
               maxWidth:'400px',
               background:'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
               border:'none',
-              borderRadius:'12px',
-              padding:'16px',
+              borderRadius:'9999px',
+              padding:'14px 22px',
               color:'white',
               fontSize:'16px',
               fontWeight:'600',
