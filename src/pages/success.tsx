@@ -7,10 +7,11 @@ const SuccessPage: React.FC = () => {
     const router = useRouter();
 
     useEffect(() => {
-        // Auto-redirect to dashboard for order tracking after 3 seconds
+        // Auto-redirect to slideshow after order approval (auto-open photo picker)
         const timer = setTimeout(() => {
-            router.push('/dashboard');
-        }, 3000);
+            // Redirect to slideshow with auto-open flag
+            router.push('/slideshow?autoOpen=true');
+        }, 2000);
 
         return () => clearTimeout(timer);
     }, [router]);
@@ -60,7 +61,7 @@ const SuccessPage: React.FC = () => {
                         fontSize: '14px',
                         marginBottom: '16px'
                     }}>
-                        Your order has been emailed to elartededavid@gmail.com
+                        Your order has been emailed to david@dashqrcodes.com
                     </p>
                     <p style={{
                         color: 'rgba(255,255,255,0.6)',

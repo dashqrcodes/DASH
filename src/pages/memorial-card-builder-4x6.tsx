@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { getPopularContent, searchBibleVerse } from '../utils/bible-api';
@@ -6,16 +6,28 @@ import { getPopularContent, searchBibleVerse } from '../utils/bible-api';
 const MemorialCardBuilder4x6Page: React.FC = () => {
   const router = useRouter();
   const [photo, setPhoto] = useState<string | null>(null);
+  const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]); // Up to 5 photos
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0); // Current photo being displayed
   const [name, setName] = useState('');
   const [sunrise, setSunrise] = useState('');
   const [sunset, setSunset] = useState('');
   const [textColor, setTextColor] = useState('#512DA8'); // Dark blue-purple
   const [language, setLanguage] = useState<'en' | 'es'>('en');
+  const isDataLoaded = useRef(false);
   const [qrPattern, setQrPattern] = useState<boolean[]>([]);
+  const [imageEnhancement, setImageEnhancement] = useState({
+    zoom: 1.35,
+    brightness: 1.05,
+    contrast: 1.1,
+    sharpness: 1.2,
+    saturation: 1.05,
+    facePosition: { x: 50, y: 40 } // Default to upper-center for portraits
+  });
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
   const [qrBackgroundStyle, setQrBackgroundStyle] = useState<React.CSSProperties>({});
   const [isFlipping, setIsFlipping] = useState(false);
   const [showBack, setShowBack] = useState(false);
+  const [showPhotoPicker, setShowPhotoPicker] = useState(false);
   
   // Back card states
   const [skyPhoto, setSkyPhoto] = useState<string | null>(null);
@@ -28,13 +40,88 @@ const MemorialCardBuilder4x6Page: React.FC = () => {
   const [searchResult, setSearchResult] = useState<{ reference: string; text: string } | null>(null);
   const [currentScriptureIndex, setCurrentScriptureIndex] = useState(0);
   
-  useEffect(() => {
+  // Function to load profile data
+  const loadProfileData = () => {
     // Load language preference from localStorage
     const savedLanguage = localStorage.getItem('appLanguage') as 'en' | 'es' | null;
     if (savedLanguage) {
       setLanguage(savedLanguage);
     }
+    
+    // Load saved profile data from profile page (one-time data entry)
+    if (typeof window !== 'undefined') {
+      const savedProfile = localStorage.getItem('profileData');
+      if (savedProfile) {
+        try {
+          const profile = JSON.parse(savedProfile);
+          if (profile.name) setName(profile.name);
+          if (profile.sunrise) setSunrise(profile.sunrise);
+          if (profile.sunset) setSunset(profile.sunset);
+          if (profile.photo) {
+            // Single photo from profile page
+            setSelectedPhotos([profile.photo]);
+            setPhoto(profile.photo);
+            // Trigger auto-enhancement
+            setTimeout(() => enhanceImage(profile.photo), 100);
+          }
+          
+          // Auto-generate QR code URL based on user's profile
+          // Format: dash.app/memorial/{name-slug}
+          if (profile.name) {
+            const nameSlug = profile.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+            const profileUrl = `https://dash.app/memorial/${nameSlug}`;
+            generateQRCode(profileUrl);
+          }
+        } catch (e) {
+          console.error('Error loading profile:', e);
+        }
+      }
+      // Mark data as loaded to prevent overwriting on initial render
+      isDataLoaded.current = true;
+    }
+  };
+
+  useEffect(() => {
+    // Load data on mount
+    loadProfileData();
+    
+    // Listen for route changes and reload data
+    const handleRouteChange = () => {
+      loadProfileData();
+    };
+    
+    router.events.on('routeChangeComplete', handleRouteChange);
+    
+    return () => {
+      router.events.off('routeChangeComplete', handleRouteChange);
+    };
   }, []);
+  
+  // Save profile data whenever name, dates, or photos change (sync back to profileData)
+  useEffect(() => {
+    // Only save if data has been loaded (prevent overwriting on initial render)
+    if (!isDataLoaded.current) return;
+    
+    if (typeof window !== 'undefined' && (name || sunrise || sunset || selectedPhotos.length > 0)) {
+      const profileData = {
+        name,
+        sunrise,
+        sunset,
+        photo: selectedPhotos.length > 0 ? selectedPhotos[0] : null,
+        updatedAt: new Date().toISOString()
+      };
+      localStorage.setItem('profileData', JSON.stringify(profileData));
+    }
+  }, [name, sunrise, sunset, selectedPhotos]);
+  
+  // Update displayed photo when currentPhotoIndex changes
+  useEffect(() => {
+    if (selectedPhotos.length > 0 && currentPhotoIndex < selectedPhotos.length) {
+      setPhoto(selectedPhotos[currentPhotoIndex]);
+      analyzeImageBrightness(selectedPhotos[currentPhotoIndex]);
+      enhanceImage(selectedPhotos[currentPhotoIndex]);
+    }
+  }, [currentPhotoIndex, selectedPhotos]);
   
   // Translations
   const translations = {
@@ -62,6 +149,110 @@ const MemorialCardBuilder4x6Page: React.FC = () => {
   
   const t = translations[language];
   
+  // Format date for display on card (abbreviate months except June/July)
+  const formatDateForCard = (dateStr: string) => {
+    if (!dateStr) return '';
+    
+    // Month abbreviations (3 letters except June/July)
+    const monthMap: { [key: string]: string } = {
+      'january': 'Jan',
+      'february': 'Feb',
+      'march': 'Mar',
+      'april': 'Apr',
+      'may': 'May',
+      'june': 'June',
+      'july': 'July',
+      'august': 'Aug',
+      'september': 'Sep',
+      'october': 'Oct',
+      'november': 'Nov',
+      'december': 'Dec'
+    };
+    
+    // Parse the date string and abbreviate the month
+    let result = dateStr;
+    Object.keys(monthMap).forEach(fullMonth => {
+      const regex = new RegExp(`\\b${fullMonth}\\b`, 'gi');
+      result = result.replace(regex, monthMap[fullMonth]);
+    });
+    
+    return result;
+  };
+  
+  // Automatic image enhancement with face detection
+  const enhanceImage = async (imageUrl: string) => {
+    try {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = imageUrl;
+      
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+      });
+      
+      // Create canvas for analysis
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+      
+      // Simple face detection using brightness analysis
+      // Faces are typically in the upper-center third of portraits
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      
+      // Find the brightest/most contrasted region (likely the face)
+      let maxBrightness = 0;
+      let faceX = 50;
+      let faceY = 40;
+      
+      // Scan upper 60% of image in a grid
+      const gridSize = 20;
+      for (let y = 0; y < canvas.height * 0.6; y += gridSize) {
+        for (let x = 0; x < canvas.width; x += gridSize) {
+          let totalBrightness = 0;
+          let pixelCount = 0;
+          
+          // Sample a small region
+          for (let dy = 0; dy < gridSize && y + dy < canvas.height; dy++) {
+            for (let dx = 0; dx < gridSize && x + dx < canvas.width; dx++) {
+              const idx = ((y + dy) * canvas.width + (x + dx)) * 4;
+              const brightness = (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
+              totalBrightness += brightness;
+              pixelCount++;
+            }
+          }
+          
+          const avgBrightness = totalBrightness / pixelCount;
+          if (avgBrightness > maxBrightness && avgBrightness < 240) { // Not pure white
+            maxBrightness = avgBrightness;
+            faceX = ((x + gridSize / 2) / canvas.width) * 100;
+            faceY = ((y + gridSize / 2) / canvas.height) * 100;
+          }
+        }
+      }
+      
+      // Apply smart enhancements
+      setImageEnhancement({
+        zoom: 1.4, // More zoom for better framing and focus
+        brightness: 1.08, // Brighten slightly
+        contrast: 1.12, // Increase contrast
+        sharpness: 1.3, // Sharpen for clarity
+        saturation: 1.08, // Boost colors slightly
+        facePosition: { x: faceX, y: faceY }
+      });
+      
+      console.log('✨ Image enhanced - Face detected at:', faceX, faceY);
+    } catch (error) {
+      console.error('Image enhancement error:', error);
+      // Use default enhancements
+    }
+  };
+  
   // Back card translations
   const backTranslations = {
     en: {
@@ -82,9 +273,6 @@ const MemorialCardBuilder4x6Page: React.FC = () => {
   // Sky backgrounds for back card
   const skyBackgrounds = [
     '/sky background front.jpg',
-    '/sky background rear.jpg',
-    'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=1200&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=800&h=1200&fit=crop&q=80&grayscale',
   ];
   const [currentSkyBgIndex, setCurrentSkyBgIndex] = useState(0);
   
@@ -137,7 +325,7 @@ const MemorialCardBuilder4x6Page: React.FC = () => {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
-    input.setAttribute('capture', 'environment');
+    // NO capture attribute = opens Photos directly, skips menu
     input.onchange = (e: any) => {
       const file = e.target.files[0];
       if (file) {
@@ -242,20 +430,6 @@ const MemorialCardBuilder4x6Page: React.FC = () => {
     return value;
   };
   
-  // Background cycling - People images (one person, mix of color and B&W)
-  const backgrounds = [
-    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=1200&fit=crop&q=80', // Person portrait color
-    'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=800&h=1200&fit=crop&q=80&grayscale', // Person portrait B&W
-    'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=800&h=1200&fit=crop&q=80', // Person portrait color
-    'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800&h=1200&fit=crop&q=80&grayscale', // Person portrait B&W
-    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&h=1200&fit=crop&q=80', // Person portrait color
-    'https://images.unsplash.com/photo-1506277886164-e25aa3f4ef7f?w=800&h=1200&fit=crop&q=80&grayscale', // Person portrait B&W
-    'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&h=1200&fit=crop&q=80', // Person portrait color
-    'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=800&h=1200&fit=crop&q=80&grayscale', // Person portrait B&W
-    'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=800&h=1200&fit=crop&q=80', // Person portrait color
-  ];
-  const [currentBgIndex, setCurrentBgIndex] = useState(0);
-  
   // Font cycling
   const fonts = [
     'Playfair Display, serif',
@@ -312,35 +486,70 @@ const MemorialCardBuilder4x6Page: React.FC = () => {
     img.src = imgSrc;
   };
 
-  const handlePhotoClick = () => {
+  // Handle photo picker - opens Photos app directly (no camera, no menu)
+  const handleCameraClick = () => {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
-    // Use capture attribute to bypass native menu on mobile
-    input.setAttribute('capture', 'environment');
+    input.multiple = true; // Allow multiple selection (up to 5)
+    // NO capture attribute = opens Photos directly, skips menu
+    
     input.onchange = (e: any) => {
-      const file = e.target.files[0];
-      if (file) {
+      const files = Array.from(e.target.files || []) as File[];
+      
+      if (files.length === 0) return;
+      
+      // Limit to 5 photos
+      const filesToProcess = files.slice(0, 5);
+      const newPhotos: string[] = [];
+      
+      // Process each file
+      let processedCount = 0;
+      filesToProcess.forEach((file) => {
         const reader = new FileReader();
         reader.onload = (e: any) => {
-          const imgSrc = e.target.result;
-          setPhoto(imgSrc);
-          analyzeImageBrightness(imgSrc);
+          newPhotos.push(e.target.result);
+          processedCount++;
+          
+          // When all photos are processed
+          if (processedCount === filesToProcess.length) {
+            setSelectedPhotos(newPhotos);
+            setCurrentPhotoIndex(0);
+            setPhoto(newPhotos[0]);
+            if (newPhotos[0]) {
+              analyzeImageBrightness(newPhotos[0]);
+            }
+            setShowPhotoPicker(false);
+          }
         };
         reader.readAsDataURL(file);
-      }
+      });
     };
+    
     // Trigger click immediately without showing menu
     input.click();
   };
   
-  const handleBackgroundClick = () => {
-    const nextIndex = (currentBgIndex + 1) % backgrounds.length;
-    setCurrentBgIndex(nextIndex);
-    // Analyze background brightness
-    if (backgrounds[nextIndex]) {
-      analyzeImageBrightness(backgrounds[nextIndex]);
+  // Handle photo click - cycle through selected photos
+  const handlePhotoClick = () => {
+    if (selectedPhotos.length > 1) {
+      // Cycle to next photo
+      const nextIndex = (currentPhotoIndex + 1) % selectedPhotos.length;
+      setCurrentPhotoIndex(nextIndex);
+    } else if (selectedPhotos.length === 0) {
+      // No photos selected, open picker
+      handleCameraClick();
     }
+  };
+  
+  const handleBackgroundClick = () => {
+    // If photos are selected, cycle through photos instead of backgrounds
+    if (selectedPhotos.length > 0) {
+      handlePhotoClick();
+      return;
+    }
+    
+    // No background cycling - backgrounds removed
   };
   
   const handleNameClick = () => {
@@ -362,29 +571,28 @@ const MemorialCardBuilder4x6Page: React.FC = () => {
     // Analyze photo brightness when photo changes
     if (photo && photo.startsWith('data:')) {
       analyzeImageBrightness(photo);
-    } else if (!photo && backgrounds[currentBgIndex]) {
-      // Analyze background brightness when no photo
-      if (backgrounds[currentBgIndex].startsWith('linear-gradient')) {
-        // Gradients are typically light, use dark text
-        setTextColor('#512DA8');
-        setQrBackgroundStyle({ background: 'transparent', mixBlendMode: 'darken' });
-      } else {
-        analyzeImageBrightness(backgrounds[currentBgIndex]);
-      }
+    } else if (!photo) {
+      // No photo - use default text color
+      setTextColor('#512DA8');
+      setQrBackgroundStyle({ background: 'transparent', mixBlendMode: 'darken' });
     }
-  }, [photo, currentBgIndex]);
+  }, [photo]);
   
   // Generate QR code with color matching
-  const generateQRCode = async () => {
+  const generateQRCode = async (customUrl?: string) => {
     try {
-      const url = typeof window !== 'undefined' ? window.location.origin + '/memorial-card-builder-4x6' : 'http://localhost:3000/memorial-card-builder-4x6';
+      // Use custom URL (from profile) or generate from name
+      const memorialUrl = customUrl || (typeof window !== 'undefined' 
+        ? `${window.location.origin}/memorial/${encodeURIComponent(name || 'loved-one')}`
+        : `http://localhost:3000/memorial/${encodeURIComponent(name || 'loved-one')}`);
+      
       const response = await fetch('/api/generate-qr', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          url, 
+          url: memorialUrl, 
           lovedOneName: name,
           color: textColor === '#FFFFFF' ? '#FFFFFF' : textColor // Match QR colors to text color
         }),
@@ -435,213 +643,63 @@ const MemorialCardBuilder4x6Page: React.FC = () => {
         position:'relative',
         WebkitOverflowScrolling:'touch'
       }}>
+        {/* Header with Back Button and Product Label */}
         <div style={{
           display:'flex',
           justifyContent:'space-between',
-          padding:'8px 12px',
-          marginBottom:'8px',
-          fontSize:'clamp(12px, 3.5vw, 14px)',
           alignItems:'center',
+          padding:'2px 12px',
+          marginBottom:'0px',
+          marginTop:'0px',
           flexShrink:0
         }}>
-          <div style={{display:'flex',alignItems:'center',gap:'12px'}}>
-            <button 
-              onClick={()=>router.push('/product-hub')} 
-              style={{
-                background:'transparent',
-                border:'none',
-                color:'white',
-                fontSize:'clamp(18px, 5vw, 20px)',
-                cursor:'pointer',
-                padding:'8px',
-                minWidth:'44px',
-                minHeight:'44px',
-                display:'flex',
-                alignItems:'center',
-                justifyContent:'center',
-                WebkitTapHighlightColor:'transparent'
-              }}
-            >
-              ←
-            </button>
-            <div style={{fontSize:'clamp(12px, 3.5vw, 14px)'}}>9:41</div>
-          </div>
-          <div style={{display:'flex',alignItems:'center',gap:'6px',flexWrap:'wrap',justifyContent:'flex-end'}}>
-            <button 
-              onClick={()=>router.push('/checkout')} 
-              style={{
-                background:'transparent',
-                border:'none',
-                color:'white',
-                cursor:'pointer',
-                padding:'8px',
-                minWidth:'44px',
-                minHeight:'44px',
-                display:'flex',
-                alignItems:'center',
-                justifyContent:'center',
-                position:'relative',
-                WebkitTapHighlightColor:'transparent'
-              }} 
-              title="Approve for print"
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="6 9 6 2 18 2 18 9"/>
-                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
-                <rect x="6" y="14" width="12" height="8"/>
-              </svg>
-            </button>
-            <span>●●●●● 📶 🔋</span>
-          </div>
-        </div>
-        
-        <div style={{
-          marginBottom:'8px',
-          overflowX:'auto',
-          WebkitOverflowScrolling:'touch',
-          paddingBottom:'8px',
-          scrollbarWidth:'none',
-          msOverflowStyle:'none',
-          paddingLeft:'env(safe-area-inset-left, 0px)',
-          paddingRight:'env(safe-area-inset-right, 0px)'
-        }}>
-          <style>{`
-            div::-webkit-scrollbar { display: none; }
-          `}</style>
+          <button 
+            onClick={()=>router.push('/profile')} 
+            style={{
+              background:'transparent',
+              border:'none',
+              color:'white',
+              fontSize:'clamp(18px, 5vw, 20px)',
+              cursor:'pointer',
+              padding:'8px',
+              minWidth:'44px',
+              minHeight:'44px',
+              display:'flex',
+              alignItems:'center',
+              justifyContent:'center',
+              WebkitTapHighlightColor:'transparent'
+            }}
+          >
+            ←
+          </button>
+          
+          {/* Product Label - Centered */}
           <div style={{
             display:'flex',
-            gap:'clamp(8px, 2.5vw, 12px)',
-            paddingLeft:'12px',
-            paddingRight:'12px',
-            minWidth:'max-content'
+            alignItems:'center',
+            justifyContent:'center',
+            flex:1
           }}>
-            <button style={{
+            <div style={{
               background:'rgba(102,126,234,0.3)',
               border:'1px solid rgba(102,126,234,0.5)',
-              borderRadius:'12px',
-              padding:'clamp(10px, 3vw, 12px) clamp(12px, 4vw, 16px)',
+              borderRadius:'10px',
+              padding:'clamp(6px, 2vw, 8px) clamp(10px, 3vw, 12px)',
               color:'white',
-              fontSize:'clamp(11px, 3.2vw, 13px)',
+              fontSize:'clamp(10px, 3vw, 12px)',
               fontWeight:'600',
-              cursor:'pointer',
               whiteSpace:'nowrap',
-              flexShrink:0,
-              minHeight:'44px',
-              WebkitTapHighlightColor:'transparent'
+              minHeight:'32px',
+              display:'flex',
+              alignItems:'center',
+              justifyContent:'center'
             }}>
               {t.card}
-            </button>
-            <button 
-              style={{
-                background:'rgba(255,255,255,0.05)',
-                border:'1px solid rgba(255,255,255,0.2)',
-                borderRadius:'12px',
-                padding:'clamp(10px, 3vw, 12px) clamp(12px, 4vw, 16px)',
-                color:'white',
-                fontSize:'clamp(11px, 3.2vw, 13px)',
-                fontWeight:'600',
-                cursor:'pointer',
-                whiteSpace:'nowrap',
-                flexShrink:0,
-                minHeight:'44px',
-                WebkitTapHighlightColor:'transparent'
-              }} 
-              onClick={()=>router.push('/poster-builder')}
-            >
-              {t.poster}
-            </button>
+            </div>
           </div>
-        </div>
-        
-        <div style={{
-          marginBottom:'clamp(8px, 2vw, 10px)',
-          padding:'0 clamp(12px, 4vw, 20px)',
-          display:'flex',
-          justifyContent:'center',
-          alignItems:'center',
-          gap:'clamp(12px, 3vw, 16px)',
-          flexShrink:0
-        }}>
-          <p style={{
-            fontSize:'clamp(14px, 4vw, 18px)',
-            color:'rgba(255,255,255,0.5)',
-            margin:'0',
-            fontWeight:'700'
-          }}>
-            {t.card}
-          </p>
-          <div style={{
-            display:'flex',
-            gap:'clamp(6px, 2vw, 8px)',
-            alignItems:'center',
-            position:'absolute',
-            right:'clamp(12px, 4vw, 20px)'
-          }}>
-            <button 
-              onClick={handlePhotoClick} 
-              style={{
-                position:'relative',
-                background:'rgba(255,255,255,0.2)',
-                border:'1px solid rgba(255,255,255,0.3)',
-                borderRadius:'50%',
-                width:'clamp(44px, 11vw, 48px)',
-                height:'clamp(44px, 11vw, 48px)',
-                minWidth:'44px',
-                minHeight:'44px',
-                display:'flex',
-                alignItems:'center',
-                justifyContent:'center',
-                cursor:'pointer',
-                WebkitTapHighlightColor:'transparent'
-              }} 
-              title="Upload photo"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                <circle cx="8.5" cy="8.5" r="1.5"/>
-                <path d="M21 15l-5-5L5 21"/>
-              </svg>
-            </button>
-            <button 
-              onClick={()=>{
-                const cardData = {
-                  type: '4x6-card',
-                  front: {
-                    name,
-                    sunrise,
-                    sunset,
-                    photo,
-                  },
-                  language,
-                };
-                localStorage.setItem('cardDesign', JSON.stringify(cardData));
-                router.push('/checkout');
-              }} 
-              style={{
-                position:'relative',
-                background:'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
-                border:'none',
-                borderRadius:'50%',
-                width:'clamp(44px, 11vw, 48px)',
-                height:'clamp(44px, 11vw, 48px)',
-                minWidth:'44px',
-                minHeight:'44px',
-                display:'flex',
-                alignItems:'center',
-                justifyContent:'center',
-                cursor:'pointer',
-                boxShadow:'0 2px 10px rgba(102,126,234,0.4)',
-                WebkitTapHighlightColor:'transparent'
-              }} 
-              title="Approve for print"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                <polyline points="6 9 6 2 18 2 18 9"/>
-                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
-                <rect x="6" y="14" width="12" height="8"/>
-              </svg>
-            </button>
-          </div>
+
+          {/* Spacer to balance layout */}
+          <div style={{width:'44px',minWidth:'44px'}} />
         </div>
         
         <div style={{
@@ -653,51 +711,14 @@ const MemorialCardBuilder4x6Page: React.FC = () => {
           position:'relative',
           minHeight:0,
           width:'100%',
-          padding:'8px 16px',
+          padding:'0px 16px 4px',
           overflow:'hidden'
         }}>
-          {/* Front/Back Label - Clickable to flip */}
-          <div 
-            onClick={handleFlip}
-            style={{
-              marginTop:'0',
-              marginBottom:'clamp(8px, 2vw, 12px)',
-              color:'white',
-              fontSize:'clamp(14px, 4vw, 16px)',
-              fontWeight:'600',
-              fontFamily:'-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
-              cursor:'pointer',
-              padding:'8px clamp(10px, 3vw, 12px)',
-              borderRadius:'8px',
-              transition:'all 0.2s',
-              userSelect:'none',
-              minHeight:'44px',
-              display:'flex',
-              alignItems:'center',
-              justifyContent:'center',
-              WebkitTapHighlightColor:'transparent',
-              alignSelf:'center'
-            }}
-            onTouchStart={(e) => {
-              e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
-            }}
-            onTouchEnd={(e) => {
-              e.currentTarget.style.background = 'transparent';
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'transparent';
-            }}
-          >
-            {showBack ? bt.back : t.front}
-          </div>
           {/* 4:6 aspect ratio - scaled for mobile */}
           <div style={{
             position:'relative',
-            width:'min(calc(100vw - 32px), calc((100vh - 200px) * 0.4), 320px)',
-            maxWidth:'320px',
+            width:'min(calc(100vw - 32px), 340px)',
+            maxWidth:'340px',
             aspectRatio:'4/6',
             perspective:'1000px',
             margin:'0 auto'
@@ -729,82 +750,81 @@ const MemorialCardBuilder4x6Page: React.FC = () => {
                 opacity: showBack ? 0 : 1,
                 pointerEvents: showBack ? 'none' : 'auto'
               }}>
-                <div onClick={handleBackgroundClick} style={{width:'100%',height:'100%',display:'flex',flexDirection:'column',position:'relative',cursor:'pointer',overflow:'hidden',background:backgrounds[currentBgIndex].startsWith('linear-gradient') ? backgrounds[currentBgIndex] : 'transparent'}}>
-                  {!backgrounds[currentBgIndex].startsWith('linear-gradient') && (
-                    <img src={backgrounds[currentBgIndex]} alt="Person background" style={{width:'100%',height:'100%',objectFit:'cover',position:'absolute',top:0,left:0,zIndex:0,filter:backgrounds[currentBgIndex].includes('grayscale') ? 'grayscale(100%)' : 'none'}} />
-                  )}
-                  {/* Large profile icon CTA */}
-                  {!photo && (
-                    <svg style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',width:'150px',height:'150px',zIndex:1,pointerEvents:'none'}} viewBox="0 0 24 24" fill="none" stroke={textColor === '#0A2463' ? 'rgba(10,36,99,0.3)' : 'rgba(255,255,255,0.3)'} strokeWidth="1">
-                      <circle cx="12" cy="7" r="4"/>
-                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                    </svg>
-                  )}
+                <div onClick={handleBackgroundClick} style={{width:'100%',height:'100%',display:'flex',flexDirection:'column',position:'relative',cursor:'pointer',overflow:'hidden',background:'transparent'}}>
                   {photo && (
-                    <img src={photo} alt="Uploaded" style={{width:'100%',height:'100%',objectFit:'cover',position:'absolute',top:0,left:0,zIndex:2}} />
+                    <img 
+                      src={photo} 
+                      alt="Uploaded" 
+                      style={{
+                        width:'100%',
+                        height:'100%',
+                        objectFit:'cover',
+                        position:'absolute',
+                        top:0,
+                        left:0,
+                        zIndex:2,
+                        transform: `scale(${imageEnhancement.zoom})`,
+                        objectPosition: `${imageEnhancement.facePosition.x}% ${imageEnhancement.facePosition.y}%`,
+                        filter: `brightness(${imageEnhancement.brightness}) contrast(${imageEnhancement.contrast}) saturate(${imageEnhancement.saturation})`,
+                        imageRendering: 'high-quality',
+                        WebkitFilter: `brightness(${imageEnhancement.brightness}) contrast(${imageEnhancement.contrast}) saturate(${imageEnhancement.saturation})`,
+                      }} 
+                    />
+                  )}
+                  
+                  {/* Dark gradient overlay for text readability */}
+                  {photo && (
+                    <div style={{
+                      position:'absolute',
+                      bottom:0,
+                      left:0,
+                      right:0,
+                      height:'120px',
+                      background:'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.4) 50%, transparent 100%)',
+                      zIndex:5,
+                      pointerEvents:'none'
+                    }} />
                   )}
                   
                   {/* In Loving Memory text */}
-                  <div style={{position:'absolute',bottom:'130px',left:'50%',transform:'translateX(-50%)',color:textColor,fontSize:'clamp(11px, 2.8vw, 14px)',fontFamily:'cursive',fontStyle:'italic',zIndex:10,textAlign:'center',fontWeight:'600'}}>
+                  <div style={{position:'absolute',bottom:'80px',left:'50%',transform:'translateX(-50%)',color: photo ? '#FFFFFF' : textColor,fontSize:'clamp(16px, 4.5vw, 21px)',fontFamily:'cursive',fontStyle:'italic',zIndex:10,textAlign:'center',fontWeight:'600',textShadow:photo ? '0 2px 8px rgba(0,0,0,0.9), 0 1px 3px rgba(0,0,0,0.8)' : 'none'}}>
                     {t.inLovingMemory}
                   </div>
                   
-                  <input onClick={(e)=>{e.stopPropagation(); handleNameClick();}} type="text" value={name} onChange={(e)=>{e.stopPropagation(); setName(e.target.value);}} placeholder={t.fullName} style={{position:'absolute',bottom:'90px',left:'20px',right:'20px',background:photo ? `rgba(${textColor === '#FFFFFF' ? '255,255,255' : '0,0,0'},0.2)`:'rgba(255,255,255,0.1)',border:`1px solid ${textColor}`,borderRadius:'4px',padding:'6px',color:textColor,fontSize:'clamp(13px, 3.5vw, 16px)',outline:'none',textAlign:'center',fontFamily:fonts[currentFontIndex],zIndex:10,minHeight:'32px',cursor:'pointer',transition:'all 0.3s ease'}} />
+                  {/* Name - Display Only */}
+                  <div style={{position:'absolute',bottom:'54px',left:'20px',right:'20px',color: photo ? '#FFFFFF' : textColor,fontSize:'clamp(21px, 5.5vw, 27px)',textAlign:'center',fontFamily:'-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif',zIndex:10,fontWeight:'700',textShadow:photo ? '0 3px 10px rgba(0,0,0,0.9), 0 2px 5px rgba(0,0,0,0.8), 0 1px 3px rgba(0,0,0,0.7)' : 'none'}}>
+                    {name || t.fullName}
+                  </div>
                   
-                  <div style={{position:'absolute',bottom:'30px',left:'20px',right:'20px',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',zIndex:10}}>
-                    <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:'4px'}}>
-                      <input 
-                        onClick={(e)=>{e.stopPropagation();}} 
-                        type="text" 
-                        value={sunrise} 
-                        onChange={(e)=>{e.stopPropagation(); setSunrise(formatDate(e.target.value));}} 
-                        placeholder="Month dd, yyyy"
-                        style={{
-                          background:photo ? `rgba(${textColor === '#FFFFFF' ? '255,255,255' : '0,0,0'},0.2)`:'rgba(255,255,255,0.1)',
-                          border:`1px solid ${textColor}`,
-                          borderRadius:'4px',
-                          padding:'1px 6px',
-                          color:textColor,
-                          fontSize:'9px',
-                          outline:'none',
-                          textAlign:'center',
-                          fontFamily:'-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
-                          fontWeight:'600',
-                          width:'clamp(70px, 20vw, 85px)',
-                          height:'14px',
-                          cursor:'pointer',
-                          transition:'all 0.3s ease',
-                          lineHeight:'1.1'
-                        }}
-                      />
-                      <span style={{color:textColor,opacity:0.6,fontSize:'7px'}}>{t.sunrise}</span>
+                  {/* Dates - Display Only */}
+                  <div style={{position:'absolute',bottom:'22px',left:'20px',right:'20px',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',zIndex:10}}>
+                    <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:'1px'}}>
+                      <div style={{
+                        color: photo ? '#FFFFFF' : textColor,
+                        fontSize:'13px',
+                        textAlign:'center',
+                        fontFamily:'-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
+                        fontWeight:'600',
+                        textShadow:photo ? '0 2px 6px rgba(0,0,0,0.9), 0 1px 3px rgba(0,0,0,0.7)' : 'none'
+                      }}>
+                        {formatDateForCard(sunrise) || 'Month dd, yyyy'}
+                      </div>
+                      <span style={{color: photo ? '#FFFFFF' : textColor,opacity:0.8,fontSize:'10px',textShadow:photo ? '0 1px 3px rgba(0,0,0,0.8)' : 'none'}}>{t.sunrise}</span>
                     </div>
-                    <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:'4px'}}>
-                      <input 
-                        onClick={(e)=>{e.stopPropagation();}} 
-                        type="text" 
-                        value={sunset} 
-                        onChange={(e)=>{e.stopPropagation(); setSunset(formatDate(e.target.value));}} 
-                        placeholder="Month dd, yyyy"
-                        style={{
-                          background:photo ? `rgba(${textColor === '#FFFFFF' ? '255,255,255' : '0,0,0'},0.2)`:'rgba(255,255,255,0.1)',
-                          border:`1px solid ${textColor}`,
-                          borderRadius:'4px',
-                          padding:'1px 6px',
-                          color:textColor,
-                          fontSize:'9px',
-                          outline:'none',
-                          textAlign:'center',
-                          fontFamily:'-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
-                          fontWeight:'600',
-                          width:'clamp(70px, 20vw, 85px)',
-                          height:'14px',
-                          cursor:'pointer',
-                          transition:'all 0.3s ease',
-                          lineHeight:'1.1'
-                        }}
-                      />
-                      <span style={{color:textColor,opacity:0.6,fontSize:'7px'}}>{t.sunset}</span>
+                    {/* Dash separator */}
+                    <div style={{color: photo ? '#FFFFFF' : textColor,fontSize:'16px',fontWeight:'600',marginBottom:'12px',textShadow:photo ? '0 2px 6px rgba(0,0,0,0.9)' : 'none'}}>-</div>
+                    <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:'1px'}}>
+                      <div style={{
+                        color: photo ? '#FFFFFF' : textColor,
+                        fontSize:'13px',
+                        textAlign:'center',
+                        fontFamily:'-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
+                        fontWeight:'600',
+                        textShadow:photo ? '0 2px 6px rgba(0,0,0,0.9), 0 1px 3px rgba(0,0,0,0.7)' : 'none'
+                      }}>
+                        {formatDateForCard(sunset) || 'Month dd, yyyy'}
+                      </div>
+                      <span style={{color: photo ? '#FFFFFF' : textColor,opacity:0.8,fontSize:'10px',textShadow:photo ? '0 1px 3px rgba(0,0,0,0.8)' : 'none'}}>{t.sunset}</span>
                     </div>
                   </div>
                 </div>
@@ -1041,158 +1061,42 @@ const MemorialCardBuilder4x6Page: React.FC = () => {
           </div>
         </div>
 
+        {/* Next Button */}
         <div style={{
           position:'fixed',
-          bottom:0,
-          left:0,
-          right:0,
-          background:'rgba(255,255,255,0.05)',
-          backdropFilter:'blur(20px)',
-          borderTop:'1px solid rgba(255,255,255,0.1)',
-          padding:'clamp(10px, 3vw, 12px) clamp(12px, 4vw, 20px)',
-          paddingBottom:'calc(clamp(10px, 3vw, 12px) + env(safe-area-inset-bottom, 0px))',
+          bottom:'calc(20px + env(safe-area-inset-bottom, 0px))',
+          left:'16px',
+          right:'16px',
+          zIndex:99,
           display:'flex',
-          justifyContent:'space-around',
-          alignItems:'center',
-          zIndex:100,
-          WebkitOverflowScrolling:'touch',
-          maxWidth:'100vw',
-          width:'100%'
+          justifyContent:'center'
         }}>
-          <button 
-            onClick={()=>router.push('/dashboard')} 
+          <button
+            onClick={() => router.push('/memorial-card-back')}
             style={{
-              background:'transparent',
+              width:'100%',
+              maxWidth:'400px',
+              background:'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
               border:'none',
+              borderRadius:'12px',
+              padding:'16px',
               color:'white',
+              fontSize:'16px',
+              fontWeight:'600',
               cursor:'pointer',
-              display:'flex',
-              flexDirection:'column',
-              alignItems:'center',
-              justifyContent:'center',
-              gap:'4px',
-              minWidth:'44px',
-              minHeight:'44px',
-              padding:'8px',
+              boxShadow:'0 4px 20px rgba(102,126,234,0.4)',
+              transition:'transform 0.2s',
               WebkitTapHighlightColor:'transparent'
             }}
+            onTouchStart={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
+            onTouchEnd={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}
+            onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}
           >
-            <svg width="clamp(20px, 5vw, 24px)" height="clamp(20px, 5vw, 24px)" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-              <polyline points="9 22 9 12 15 12 15 22"/>
-            </svg>
-            <span style={{fontSize:'clamp(9px, 2.5vw, 10px)'}}>Home</span>
-          </button>
-          <button 
-            onClick={()=>router.push('/profile')} 
-            style={{
-              background:'transparent',
-              border:'none',
-              color:'white',
-              cursor:'pointer',
-              display:'flex',
-              flexDirection:'column',
-              alignItems:'center',
-              justifyContent:'center',
-              gap:'4px',
-              minWidth:'44px',
-              minHeight:'44px',
-              padding:'8px',
-              WebkitTapHighlightColor:'transparent'
-            }}
-          >
-            <svg width="clamp(20px, 5vw, 24px)" height="clamp(20px, 5vw, 24px)" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-              <circle cx="12" cy="7" r="4"/>
-            </svg>
-            <span style={{fontSize:'clamp(9px, 2.5vw, 10px)'}}>Profile</span>
-          </button>
-          {/* HEAVEN Video Call - Center */}
-          <button 
-            onClick={()=>router.push('/heaven?call=true')} 
-            style={{
-              background:'linear-gradient(135deg, rgba(0,255,255,0.2) 0%, rgba(255,0,255,0.2) 100%)',
-              border:'2px solid rgba(0,255,255,0.4)',
-              color:'white',
-              cursor:'pointer',
-              display:'flex',
-              flexDirection:'column',
-              alignItems:'center',
-              justifyContent:'center',
-              gap:'4px',
-              minWidth:'56px',
-              minHeight:'56px',
-              padding:'10px',
-              borderRadius:'50%',
-              WebkitTapHighlightColor:'transparent',
-              boxShadow:'0 4px 20px rgba(0,255,255,0.3)',
-              transition:'all 0.3s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'scale(1.1)';
-              e.currentTarget.style.boxShadow = '0 6px 25px rgba(0,255,255,0.5)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'scale(1)';
-              e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,255,255,0.3)';
-            }}
-          >
-            <svg width="clamp(24px, 6vw, 28px)" height="clamp(24px, 6vw, 28px)" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M23 7l-7 5 7 5V7z"/>
-              <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
-            </svg>
-            <span style={{fontSize:'clamp(8px, 2vw, 9px)', fontWeight:'600'}}>HEAVEN</span>
-          </button>
-          <button 
-            onClick={()=>router.push('/spotify-callback')} 
-            style={{
-              background:'transparent',
-              border:'none',
-              color:'white',
-              cursor:'pointer',
-              display:'flex',
-              flexDirection:'column',
-              alignItems:'center',
-              justifyContent:'center',
-              gap:'4px',
-              minWidth:'44px',
-              minHeight:'44px',
-              padding:'8px',
-              WebkitTapHighlightColor:'transparent'
-            }}
-          >
-            <svg width="clamp(20px, 5vw, 24px)" height="clamp(20px, 5vw, 24px)" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M9 18V5l12-2v13"/>
-              <circle cx="6" cy="18" r="3"/>
-              <circle cx="18" cy="16" r="3"/>
-            </svg>
-            <span style={{fontSize:'clamp(9px, 2.5vw, 10px)'}}>Music</span>
-          </button>
-          <button 
-            onClick={()=>router.push('/slideshow')} 
-            style={{
-              background:'transparent',
-              border:'none',
-              color:'white',
-              cursor:'pointer',
-              display:'flex',
-              flexDirection:'column',
-              alignItems:'center',
-              justifyContent:'center',
-              gap:'4px',
-              minWidth:'44px',
-              minHeight:'44px',
-              padding:'8px',
-              WebkitTapHighlightColor:'transparent'
-            }}
-          >
-            <svg width="clamp(20px, 5vw, 24px)" height="clamp(20px, 5vw, 24px)" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M8 5V19L19 12L8 5Z"/>
-            </svg>
-            <span style={{fontSize:'clamp(9px, 2.5vw, 10px)'}}>Slideshow</span>
+            Next
           </button>
         </div>
-        
+
         {/* Bible Search Modal */}
         {showBibleSearch && (
           <div style={{

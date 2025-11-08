@@ -11,8 +11,8 @@ const Home = () => {
         const hasSignedUp = localStorage.getItem('userSignedUp');
         
         if (isAuthenticated) {
-            // User is authenticated, go to dashboard
-            router.push('/dashboard');
+            // User is authenticated, go to profile & product hub
+            router.push('/profile');
         } else if (hasSignedUp) {
             // User signed up but hasn't completed Face ID yet
             router.push('/face-id');

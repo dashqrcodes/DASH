@@ -1,5 +1,5 @@
 // API route triggered after successful checkout
-// Generates PDF and emails to print shop
+// Generates PDF and emails to print shop (if not in test mode)
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -8,37 +8,83 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const { cardDesign, orderId } = req.body;
+    const { cardDesign, posterDesign, orderId, testMode } = req.body;
     
-    if (!cardDesign) {
+    // Check if we have at least one design
+    if (!cardDesign && !posterDesign) {
       return res.status(400).json({ 
         success: false, 
-        message: 'Card design data is required' 
+        message: 'Card or poster design data is required' 
       });
     }
     
-    // Call PDF generation API
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-    const pdfResponse = await fetch(`${baseUrl}/api/generate-pdf`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(cardDesign),
-    });
-    
-    const pdfResult = await pdfResponse.json();
-    
-    if (pdfResult.success) {
+    // TEST MODE: Skip PDF generation and email sending
+    if (testMode === true) {
+      console.log('🧪 TEST MODE: Skipping PDF generation and email sending');
+      console.log('📦 Order Data:', {
+        orderId,
+        hasCard: !!cardDesign,
+        hasPoster: !!posterDesign,
+        cardName: cardDesign?.front?.name,
+        posterName: posterDesign?.front?.name
+      });
+      
       return res.status(200).json({ 
         success: true, 
-        message: 'PDF generated and sent to print shop successfully',
+        message: 'Order processed successfully (test mode - no email sent)',
+        orderId,
+        testMode: true
+      });
+    }
+    
+    // PRODUCTION MODE: Generate PDFs and send emails
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    const pdfPromises = [];
+    
+    // Generate PDF for card if exists
+    if (cardDesign) {
+      pdfPromises.push(
+        fetch(`${baseUrl}/api/generate-pdf`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ ...cardDesign, orderId }),
+        })
+      );
+    }
+    
+    // Generate PDF for poster if exists
+    if (posterDesign) {
+      pdfPromises.push(
+        fetch(`${baseUrl}/api/generate-pdf`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ ...posterDesign, orderId }),
+        })
+      );
+    }
+    
+    // Wait for all PDFs to be generated
+    const pdfResults = await Promise.all(pdfPromises);
+    const results = await Promise.all(pdfResults.map(r => r.json()));
+    
+    // Check if all PDFs were generated successfully
+    const allSuccess = results.every(r => r.success);
+    
+    if (allSuccess) {
+      return res.status(200).json({ 
+        success: true, 
+        message: 'PDFs generated and sent to print shop successfully',
         orderId 
       });
     } else {
       return res.status(500).json({ 
         success: false, 
-        message: pdfResult.message || 'Failed to generate PDF' 
+        message: 'Failed to generate some PDFs',
+        details: results
       });
     }
   } catch (error: any) {

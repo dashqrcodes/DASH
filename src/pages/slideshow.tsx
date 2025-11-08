@@ -3,18 +3,29 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import PhotoScanner from '../components/PhotoScanner';
 import BottomNav from '../components/BottomNav';
+import MuxPlayerWrapper from '../components/MuxPlayerWrapper';
 import { initLazyLoading } from '../utils/lazy-loading';
-import { getMuxThumbnailUrl } from '../utils/mux-integration';
+
+interface MediaItem {
+  id: string;
+  url: string;
+  file: File | null;
+  date?: string;
+  preview?: string;
+  type: 'photo' | 'video';
+  muxPlaybackId?: string; // For videos uploaded to Mux
+}
 
 const SlideshowPage: React.FC = () => {
   const router = useRouter();
-  const [photos, setPhotos] = useState<Array<{id: string, url: string, file: File | null, date?: string, preview?: string}>>([]);
+  const [photos, setPhotos] = useState<Array<MediaItem>>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [language, setLanguage] = useState<'en' | 'es'>('en');
     const [lovedOneName, setLovedOneName] = useState('');
   const [sunrise, setSunrise] = useState('');
   const [sunset, setSunset] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     // Load language preference from localStorage
@@ -23,23 +34,25 @@ const SlideshowPage: React.FC = () => {
       setLanguage(savedLanguage);
     }
     
-    // Load saved slideshow photos
-    const savedMedia = localStorage.getItem('slideshowMedia');
-    if (savedMedia) {
-      try {
-        const mediaItems = JSON.parse(savedMedia);
-        const loadedPhotos = mediaItems.map((item: any, index: number) => ({
-          id: `saved-${index}`,
-          url: item.url,
-          file: null,
-          date: undefined,
-          preview: item.url
-        }));
-        setPhotos(loadedPhotos);
-      } catch (e) {
-        console.error('Error loading saved photos:', e);
-      }
-    }
+        // Load saved slideshow media
+        const savedMedia = localStorage.getItem('slideshowMedia');
+        if (savedMedia) {
+          try {
+            const mediaItems = JSON.parse(savedMedia);
+            const loadedMedia = mediaItems.map((item: any, index: number) => ({
+              id: `saved-${index}`,
+              url: item.url,
+              file: null,
+              date: undefined,
+              preview: item.url,
+              type: item.type || 'photo',
+              muxPlaybackId: item.muxPlaybackId,
+            }));
+            setPhotos(loadedMedia);
+          } catch (e) {
+            console.error('Error loading saved media:', e);
+          }
+        }
 
     // Initialize lazy loading for images
     const cleanup = initLazyLoading('img[data-src]', {
@@ -51,6 +64,78 @@ const SlideshowPage: React.FC = () => {
       cleanup();
     };
   }, []);
+
+  // Auto-open photo picker when coming from order completion
+  useEffect(() => {
+    const autoOpen = router.query.autoOpen === 'true';
+    const orderComplete = localStorage.getItem('orderComplete') === 'true';
+    
+    if (autoOpen || orderComplete) {
+      // Clear the flag
+      localStorage.removeItem('orderComplete');
+      
+      // Small delay to ensure page is fully loaded
+      setTimeout(() => {
+        // Create a new file input with capture attribute to bypass menu
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*,video/*';
+        input.multiple = true;
+        input.setAttribute('capture', 'environment'); // Bypass file picker menu on mobile
+        input.style.display = 'none';
+        
+        // Clone the handler function to avoid dependency issues
+        input.onchange = async (e: any) => {
+          const files = e.target.files;
+          if (!files || files.length === 0) return;
+
+          setIsProcessing(true);
+          const newMedia: Array<MediaItem> = [];
+
+          // Process each file (simplified version of handlePhotoUpload)
+          for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const id = `${Date.now()}-${i}`;
+            const isVideo = file.type.startsWith('video/');
+            const preview = URL.createObjectURL(file);
+            
+            const fileDate = await extractDateFromFile(file);
+            
+            newMedia.push({
+              id,
+              url: preview,
+              file,
+              date: fileDate,
+              preview,
+              type: isVideo ? 'video' : 'photo',
+            });
+          }
+
+          const allMedia = [...photos, ...newMedia].sort((a, b) => {
+            if (!a.date && !b.date) return 0;
+            if (!a.date) return 1;
+            if (!b.date) return -1;
+            return new Date(a.date).getTime() - new Date(b.date).getTime();
+          });
+
+          setPhotos(allMedia);
+          setIsProcessing(false);
+          
+          const mediaItems = allMedia.map(m => ({ 
+            type: m.type, 
+            url: m.url,
+            muxPlaybackId: m.muxPlaybackId,
+          }));
+          localStorage.setItem('slideshowMedia', JSON.stringify(mediaItems));
+        };
+        
+        // Add to body temporarily and trigger click
+        document.body.appendChild(input);
+        input.click();
+        document.body.removeChild(input);
+      }, 800);
+    }
+  }, [router.query, photos]);
 
   const translations = {
     en: {
@@ -145,39 +230,105 @@ const SlideshowPage: React.FC = () => {
     if (!files || files.length === 0) return;
 
     setIsProcessing(true);
-    const newPhotos: Array<{id: string, url: string, file: File | null, date?: string, preview?: string}> = [];
+    const newMedia: Array<MediaItem> = [];
 
     // Process each file
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       const id = `${Date.now()}-${i}`;
+      const isVideo = file.type.startsWith('video/');
       const preview = URL.createObjectURL(file);
       
       // Try to extract date from file metadata
       const fileDate = await extractDateFromFile(file);
       
-      newPhotos.push({
+      // For videos, upload to Mux for optimal playback (async, non-blocking)
+      let muxPlaybackId: string | undefined;
+      if (isVideo) {
+        // Upload video to Mux in background
+        // For now, we'll use regular video element and update to Mux when ready
+        (async () => {
+          try {
+            // Get direct upload URL from our API
+            const uploadResponse = await fetch('/api/mux/upload-file', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                passthrough: `slideshow-${id}`,
+                test: false,
+              }),
+            });
+
+            if (uploadResponse.ok) {
+              const { uploadUrl, assetId } = await uploadResponse.json();
+              
+              // Upload file directly to Mux
+              await fetch(uploadUrl, {
+                method: 'PUT',
+                body: file,
+                headers: {
+                  'Content-Type': file.type,
+                },
+              });
+
+              // Poll for asset to be ready
+              const pollForPlaybackId = async (): Promise<string | null> => {
+                for (let i = 0; i < 30; i++) {
+                  await new Promise(resolve => setTimeout(resolve, 2000));
+                  
+                  const statusResponse = await fetch(`/api/mux/asset-status?assetId=${assetId}`);
+                  if (statusResponse.ok) {
+                    const { playbackId, ready } = await statusResponse.json();
+                    if (ready && playbackId) {
+                      // Update the media item with playback ID
+                      setPhotos(prev => prev.map(p => 
+                        p.id === id ? { ...p, muxPlaybackId: playbackId } : p
+                      ));
+                      return playbackId;
+                    }
+                  }
+                }
+                return null;
+              };
+
+              await pollForPlaybackId();
+            }
+          } catch (error) {
+            console.error('Error uploading video to Mux:', error);
+          }
+        })();
+      }
+      
+      newMedia.push({
         id,
         url: preview,
         file,
         date: fileDate,
-        preview
+        preview,
+        type: isVideo ? 'video' : 'photo',
+        muxPlaybackId,
       });
     }
 
     // Sort chronologically and merge with existing photos
-    const allPhotos = [...photos, ...newPhotos].sort((a, b) => {
+    const allMedia = [...photos, ...newMedia].sort((a, b) => {
       if (!a.date && !b.date) return 0;
       if (!a.date) return 1;
       if (!b.date) return -1;
       return new Date(a.date).getTime() - new Date(b.date).getTime();
     });
 
-    setPhotos(allPhotos);
+    setPhotos(allMedia);
     setIsProcessing(false);
     
     // Save to localStorage
-    const mediaItems = allPhotos.map(p => ({ type: 'photo' as const, url: p.url }));
+    const mediaItems = allMedia.map(m => ({ 
+      type: m.type, 
+      url: m.url,
+      muxPlaybackId: m.muxPlaybackId,
+    }));
     localStorage.setItem('slideshowMedia', JSON.stringify(mediaItems));
   };
 
@@ -185,28 +336,83 @@ const SlideshowPage: React.FC = () => {
     // Process scanned photo same as uploaded photos
     const id = `${Date.now()}-scanned`;
     const preview = URL.createObjectURL(scannedFile);
+    const isVideo = scannedFile.type.startsWith('video/');
     
-    const newPhoto = {
+    // For videos, upload to Mux (async, non-blocking)
+    if (isVideo) {
+      // Upload video to Mux in background
+      (async () => {
+        try {
+          const uploadResponse = await fetch('/api/mux/upload-file', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              passthrough: `slideshow-${id}`,
+              test: false,
+            }),
+          });
+
+          if (uploadResponse.ok) {
+            const { uploadUrl, assetId } = await uploadResponse.json();
+            
+            await fetch(uploadUrl, {
+              method: 'PUT',
+              body: scannedFile,
+              headers: {
+                'Content-Type': scannedFile.type,
+              },
+            });
+
+            // Poll for playback ID
+            for (let i = 0; i < 30; i++) {
+              await new Promise(resolve => setTimeout(resolve, 2000));
+              const statusResponse = await fetch(`/api/mux/asset-status?assetId=${assetId}`);
+              if (statusResponse.ok) {
+                const { playbackId, ready } = await statusResponse.json();
+                if (ready && playbackId) {
+                  setPhotos(prev => prev.map(p => 
+                    p.id === id ? { ...p, muxPlaybackId: playbackId } : p
+                  ));
+                  break;
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error uploading video to Mux:', error);
+        }
+      })();
+    }
+    
+    const newMedia: MediaItem = {
       id,
       url: preview,
       file: scannedFile,
       date: undefined, // User will set date manually
-      preview
+      preview,
+      type: isVideo ? 'video' : 'photo',
+      muxPlaybackId: undefined, // Will be set when Mux upload completes
     };
 
     // Add to photos array
-    const allPhotos = [...photos, newPhoto].sort((a, b) => {
+    const allMedia = [...photos, newMedia].sort((a, b) => {
       if (!a.date && !b.date) return 0;
       if (!a.date) return 1;
       if (!b.date) return -1;
       return new Date(a.date).getTime() - new Date(b.date).getTime();
     });
 
-    setPhotos(allPhotos);
+    setPhotos(allMedia);
     setShowScanner(false);
     
     // Save to localStorage
-    const mediaItems = allPhotos.map(p => ({ type: 'photo' as const, url: p.url }));
+    const mediaItems = allMedia.map(m => ({ 
+      type: m.type, 
+      url: m.url,
+      muxPlaybackId: m.muxPlaybackId,
+    }));
     localStorage.setItem('slideshowMedia', JSON.stringify(mediaItems));
   };
 
@@ -515,6 +721,7 @@ const SlideshowPage: React.FC = () => {
           {/* Add Digital Photos Button */}
           <label style={{display:'block',width:'100%'}}>
             <input 
+              ref={fileInputRef}
               type="file" 
               accept="image/*,video/*" 
               multiple 
@@ -612,7 +819,7 @@ const SlideshowPage: React.FC = () => {
                   }}
                 >
                   <div style={{display:'flex',gap:'14px',padding:'14px'}}>
-                    {/* Photo Preview */}
+                    {/* Media Preview */}
                     <div style={{
                       position:'relative',
                       width:'90px',
@@ -623,17 +830,46 @@ const SlideshowPage: React.FC = () => {
                       background:'rgba(255,255,255,0.1)',
                       border:'2px solid rgba(255,255,255,0.15)'
                     }}>
-                      <img 
-                        data-src={photo.preview || photo.url}
-                        src={photo.preview ? undefined : photo.url}
-                        alt={`Photo ${index + 1}`} 
-                        loading="lazy"
-                        style={{
-                          width:'100%',
-                          height:'100%',
-                          objectFit:'cover'
-                        }} 
-                      />
+                      {photo.type === 'video' ? (
+                        // Video player with Mux
+                        photo.muxPlaybackId ? (
+                          <MuxPlayerWrapper
+                            playbackId={photo.muxPlaybackId}
+                            title={`Memory ${index + 1}`}
+                            muted
+                            controls={false}
+                            style={{
+                              width:'100%',
+                              height:'100%',
+                              objectFit:'cover'
+                            }}
+                          />
+                        ) : (
+                          // Fallback to regular video element
+                          <video
+                            src={photo.preview || photo.url}
+                            muted
+                            style={{
+                              width:'100%',
+                              height:'100%',
+                              objectFit:'cover'
+                            }}
+                          />
+                        )
+                      ) : (
+                        // Photo with lazy loading
+                        <img 
+                          data-src={photo.preview || photo.url}
+                          src={photo.preview ? undefined : photo.url}
+                          alt={`Photo ${index + 1}`} 
+                          loading="lazy"
+                          style={{
+                            width:'100%',
+                            height:'100%',
+                            objectFit:'cover'
+                          }} 
+                        />
+                      )}
                       <div style={{
                         position:'absolute',
                         bottom:'6px',
@@ -644,8 +880,12 @@ const SlideshowPage: React.FC = () => {
                         padding:'3px 8px',
                         borderRadius:'6px',
                         fontWeight:'700',
-                        backdropFilter:'blur(10px)'
+                        backdropFilter:'blur(10px)',
+                        display:'flex',
+                        alignItems:'center',
+                        gap:'4px'
                       }}>
+                        {photo.type === 'video' && '▶'}
                         #{index + 1}
                         </div>
                     </div>

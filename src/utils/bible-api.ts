@@ -135,6 +135,71 @@ export async function searchBibleVerse(query: string, translation: 'NIV' | 'NKJV
   }
 }
 
+// Search by keywords or paraphrasing (semantic search)
+export function searchByKeywords(query: string, language: 'en' | 'es'): Array<{ text: string; reference?: string; title?: string; score: number }> {
+  const lowercaseQuery = query.toLowerCase();
+  const verses = POPULAR_VERSES[language];
+  const prayers = CATHOLIC_PRAYERS[language];
+  
+  // Keyword mapping for common memorial themes (English & Spanish)
+  const keywordMap: Record<string, string[]> = {
+    'comfort': ['comfort', 'peace', 'rest', 'troubled', 'fear', 'mercy', 'consuelo', 'paz', 'descanso', 'temor', 'misericordia'],
+    'heaven': ['heaven', 'father', 'house', 'mansions', 'place', 'prepare', 'cielo', 'padre', 'casa', 'moradas', 'lugar', 'preparar'],
+    'death': ['death', 'departed', 'soul', 'eternal', 'life', 'rest', 'muerte', 'difunto', 'alma', 'eterno', 'vida', 'descanso'],
+    'shepherd': ['shepherd', 'pasture', 'water', 'valley', 'rod', 'staff', 'pastor', 'praderas', 'agua', 'valle', 'vara', 'cayado'],
+    'tears': ['tears', 'wipe', 'pain', 'sorrow', 'crying', 'lágrimas', 'enjugar', 'dolor', 'llanto', 'llorar'],
+    'peace': ['peace', 'calm', 'still', 'rest', 'troubled', 'paz', 'calma', 'tranquilo', 'descanso', 'turbado'],
+    'love': ['love', 'mercy', 'goodness', 'kindness', 'amor', 'misericordia', 'bondad', 'amabilidad'],
+    'hope': ['hope', 'faith', 'believe', 'trust', 'esperanza', 'fe', 'creer', 'confiar']
+  };
+  
+  // Function to calculate relevance score
+  const calculateScore = (text: string, reference?: string): number => {
+    let score = 0;
+    const lowerText = text.toLowerCase();
+    const lowerRef = reference?.toLowerCase() || '';
+    
+    // Direct word match in text
+    const queryWords = lowercaseQuery.split(/\s+/).filter(w => w.length > 2);
+    queryWords.forEach(word => {
+      if (lowerText.includes(word)) score += 10;
+      if (lowerRef.includes(word)) score += 5;
+    });
+    
+    // Semantic keyword matching
+    Object.entries(keywordMap).forEach(([theme, keywords]) => {
+      if (queryWords.some(qw => theme.includes(qw) || keywords.includes(qw))) {
+        keywords.forEach(keyword => {
+          if (lowerText.includes(keyword)) score += 3;
+        });
+      }
+    });
+    
+    return score;
+  };
+  
+  // Score all content
+  const scoredVerses = verses.map(v => ({
+    text: v.text,
+    reference: v.reference,
+    score: calculateScore(v.text, v.reference)
+  }));
+  
+  const scoredPrayers = prayers.map(p => ({
+    text: p.text,
+    title: p.title,
+    score: calculateScore(p.text, p.title)
+  }));
+  
+  // Combine and filter results with score > 0
+  const results = [...scoredVerses, ...scoredPrayers]
+    .filter(item => item.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 5); // Return top 5 matches
+  
+  return results;
+}
+
 // Get popular verses or prayers based on language
 export function getPopularContent(language: 'en' | 'es'): Array<{ text: string; reference?: string; title?: string }> {
   const verses = POPULAR_VERSES[language].map(v => ({ text: v.text, reference: v.reference }));

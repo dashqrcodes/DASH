@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 
@@ -14,11 +14,44 @@ const PosterBuilderPage: React.FC = () => {
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
   const [qrBackgroundStyle, setQrBackgroundStyle] = useState<React.CSSProperties>({});
   
+  // Debug: Track photo state changes
+  useEffect(() => {
+    console.log('🖼️ Photo state changed:', photo ? 'Photo loaded' : 'No photo');
+  }, [photo]);
+  
   useEffect(() => {
     // Load language preference from localStorage
     const savedLanguage = localStorage.getItem('appLanguage') as 'en' | 'es' | null;
     if (savedLanguage) {
       setLanguage(savedLanguage);
+    }
+    
+    // Load profile data first (from profile page)
+    const profileData = localStorage.getItem('profileData');
+    if (profileData) {
+      try {
+        const data = JSON.parse(profileData);
+        if (data.name) setName(data.name);
+        if (data.sunrise) setSunrise(data.sunrise);
+        if (data.sunset) setSunset(data.sunset);
+        console.log('✅ Profile data loaded (name, sunrise, sunset)');
+      } catch (e) {
+        console.error('❌ Error loading profile data:', e);
+      }
+    }
+    
+    // Load saved poster settings (font, background, textColor - NOT photo)
+    const savedPosterData = localStorage.getItem('posterBuilderData');
+    if (savedPosterData) {
+      try {
+        const data = JSON.parse(savedPosterData);
+        if (data.textColor) setTextColor(data.textColor);
+        if (data.currentBgIndex !== undefined) setCurrentBgIndex(data.currentBgIndex);
+        if (data.currentFontIndex !== undefined) setCurrentFontIndex(data.currentFontIndex);
+        console.log('✅ Poster settings loaded');
+      } catch (e) {
+        console.error('❌ Error loading poster settings:', e);
+      }
     }
   }, []);
   
@@ -123,15 +156,7 @@ const PosterBuilderPage: React.FC = () => {
   
   // Background cycling - People images (one person, mix of color and B&W)
   const backgrounds = [
-    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=1200&fit=crop&q=80', // Person portrait color
-    'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=800&h=1200&fit=crop&q=80&grayscale', // Person portrait B&W
-    'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=800&h=1200&fit=crop&q=80', // Person portrait color
-    'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800&h=1200&fit=crop&q=80&grayscale', // Person portrait B&W
-    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&h=1200&fit=crop&q=80', // Person portrait color
-    'https://images.unsplash.com/photo-1506277886164-e25aa3f4ef7f?w=800&h=1200&fit=crop&q=80&grayscale', // Person portrait B&W
-    'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&h=1200&fit=crop&q=80', // Person portrait color
-    'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=800&h=1200&fit=crop&q=80&grayscale', // Person portrait B&W
-    'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=800&h=1200&fit=crop&q=80', // Person portrait color
+    'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', // Simple gradient background
   ];
   const [currentBgIndex, setCurrentBgIndex] = useState(0);
   
@@ -145,6 +170,33 @@ const PosterBuilderPage: React.FC = () => {
     'Lora, serif',
   ];
   const [currentFontIndex, setCurrentFontIndex] = useState(0);
+
+  // Auto-save poster data to localStorage whenever it changes (skip first render)
+  // NOTE: We DON'T save photo to avoid QuotaExceededError (base64 images are too large)
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    
+    const posterData = {
+      // photo excluded - too large for localStorage
+      name,
+      sunrise,
+      sunset,
+      textColor,
+      currentBgIndex,
+      currentFontIndex,
+      savedAt: new Date().toISOString()
+    };
+    try {
+      localStorage.setItem('posterBuilderData', JSON.stringify(posterData));
+      console.log('💾 Settings saved (excluding photo)');
+    } catch (e) {
+      console.error('❌ Failed to save to localStorage:', e);
+    }
+  }, [name, sunrise, sunset, textColor, currentBgIndex, currentFontIndex]);
 
   // Detect image brightness and adjust text color
   const analyzeImageBrightness = (imgSrc: string) => {
@@ -192,21 +244,29 @@ const PosterBuilderPage: React.FC = () => {
   };
 
   const handlePhotoClick = () => {
+    console.log('📸 Photo button clicked');
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
-    // Use capture attribute to bypass native menu on mobile
-    input.setAttribute('capture', 'environment');
+    // NO capture attribute = opens Photos directly, skips menu
     input.onchange = (e: any) => {
+      console.log('📂 File selected:', e.target.files);
       const file = e.target.files[0];
       if (file) {
+        console.log('📄 File details:', file.name, file.type, file.size);
         const reader = new FileReader();
         reader.onload = (e: any) => {
           const imgSrc = e.target.result;
+          console.log('✅ Image loaded, setting photo state');
           setPhoto(imgSrc);
           analyzeImageBrightness(imgSrc);
         };
+        reader.onerror = (error) => {
+          console.error('❌ FileReader error:', error);
+        };
         reader.readAsDataURL(file);
+      } else {
+        console.log('⚠️ No file selected');
       }
     };
     // Trigger click immediately without showing menu
@@ -256,14 +316,18 @@ const PosterBuilderPage: React.FC = () => {
   // Generate QR code with color matching
   const generateQRCode = async () => {
     try {
-      const url = typeof window !== 'undefined' ? window.location.origin + '/poster-builder' : 'http://localhost:3000/poster-builder';
+      // Generate memorial profile URL
+      const memorialUrl = typeof window !== 'undefined' 
+        ? `${window.location.origin}/memorial/${encodeURIComponent(name || 'loved-one')}`
+        : `http://localhost:3000/memorial/${encodeURIComponent(name || 'loved-one')}`;
+      
       const response = await fetch('/api/generate-qr', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          url, 
+          url: memorialUrl, 
           lovedOneName: name,
           color: textColor === '#FFFFFF' ? '#FFFFFF' : textColor // Match QR colors to text color
         }),
@@ -290,114 +354,119 @@ const PosterBuilderPage: React.FC = () => {
     <>
       <Head>
         <title>Poster Builder - DASH</title>
+        <style>{`
+          html {
+            overflow-x: hidden !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          body {
+            overflow-x: hidden !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            touch-action: pan-y pinch-zoom !important;
+            transform: translateX(0) !important;
+          }
+          #__next {
+            width: 100% !important;
+            overflow-x: hidden !important;
+            touch-action: pan-y pinch-zoom !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            transform: translateX(0) !important;
+          }
+          * {
+            box-sizing: border-box !important;
+          }
+        `}</style>
       </Head>
-      <div style={{minHeight:'100vh',background:'#000000',fontFamily:'-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',color:'white',padding:'10px',paddingBottom:'90px',display:'flex',flexDirection:'column',maxWidth:'100vw',overflow:'hidden'}}>
-        <div style={{display:'flex',justifyContent:'space-between',padding:'8px 16px',marginBottom:'10px',fontSize:'14px',alignItems:'center'}}>
-          <div style={{display:'flex',alignItems:'center',gap:'16px'}}>
-            <button onClick={()=>router.push('/product-hub')} style={{background:'transparent',border:'none',color:'white',fontSize:'20px',cursor:'pointer',padding:0}}>←</button>
-            <div>9:41</div>
-          </div>
-          <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
-            {/* Language Selector */}
-            <div style={{display:'flex',gap:'4px',marginRight:'8px'}}>
-              <button 
-                onClick={()=>{setLanguage('en'); localStorage.setItem('appLanguage', 'en');}}
-                style={{
-                  background: language === 'en' ? 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)' : 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.2)',
-                  borderRadius: '8px',
-                  padding: '6px 12px',
-                  color: 'white',
-                  fontSize: '12px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
-              >
-                English
-              </button>
-              <button 
-                onClick={()=>{setLanguage('es'); localStorage.setItem('appLanguage', 'es');}}
-                style={{
-                  background: language === 'es' ? 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)' : 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.2)',
-                  borderRadius: '8px',
-                  padding: '6px 12px',
-                  color: 'white',
-                  fontSize: '12px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
-              >
-                Español
-              </button>
+      <div style={{minHeight:'100vh',background:'#000000',fontFamily:'-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',color:'white',padding:'5px',paddingBottom:'90px',display:'flex',flexDirection:'column',width:'100%',overflow:'hidden',overflowX:'hidden',boxSizing:'border-box',margin:0,padding:'5px',transform:'translateX(0)'}}>
+        {/* Back Button + Centered Language Toggle */}
+        <div style={{position:'relative',display:'flex',justifyContent:'center',alignItems:'center',padding:'8px 12px',marginBottom:'8px'}}>
+          {/* Back Button - Positioned Left */}
+          <button onClick={()=>router.push('/profile')} style={{position:'absolute',left:'12px',background:'transparent',border:'none',color:'white',fontSize:'20px',cursor:'pointer',padding:0}}>←</button>
+          
+          {/* Language Toggle - Centered */}
+          <div 
+            onClick={()=>{
+              const newLang = language === 'en' ? 'es' : 'en';
+              setLanguage(newLang);
+              localStorage.setItem('appLanguage', newLang);
+            }}
+            style={{
+              position: 'relative',
+              width: '200px',
+              height: '40px',
+              background: 'rgba(255,255,255,0.1)',
+              borderRadius: '20px',
+              padding: '3px',
+              cursor: 'pointer',
+              border: '1px solid rgba(255,255,255,0.2)',
+              display: 'flex',
+              alignItems: 'center',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            {/* Sliding background */}
+            <div style={{
+              position: 'absolute',
+              width: '50%',
+              height: 'calc(100% - 6px)',
+              background: 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
+              borderRadius: '17px',
+              top: '3px',
+              left: language === 'en' ? '3px' : 'calc(50% - 3px)',
+              transition: 'left 0.3s ease',
+              boxShadow: '0 2px 8px rgba(102,126,234,0.4)'
+            }}></div>
+            
+            {/* Labels */}
+            <div style={{
+              position: 'relative',
+              width: '50%',
+              textAlign: 'center',
+              fontSize: '14px',
+              fontWeight: '600',
+              color: language === 'en' ? 'white' : 'rgba(255,255,255,0.5)',
+              transition: 'color 0.3s ease',
+              zIndex: 1
+            }}>
+              English
             </div>
-            <button onClick={()=>router.push('/checkout')} style={{background:'transparent',border:'none',color:'white',cursor:'pointer',padding:0,position:'relative'}} title="Approve for print">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="6 9 6 2 18 2 18 9"/>
-                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
-                <rect x="6" y="14" width="12" height="8"/>
-              </svg>
-            </button>
-            <span>●●●●● 📶 🔋</span>
+            <div style={{
+              position: 'relative',
+              width: '50%',
+              textAlign: 'center',
+              fontSize: '14px',
+              fontWeight: '600',
+              color: language === 'es' ? 'white' : 'rgba(255,255,255,0.5)',
+              transition: 'color 0.3s ease',
+              zIndex: 1
+            }}>
+              Español
+            </div>
           </div>
         </div>
         
-        <div style={{marginBottom:'8px',overflowX:'auto',WebkitOverflowScrolling:'touch',paddingBottom:'8px',scrollbarWidth:'none',msOverflowStyle:'none'}}>
+        <div style={{marginBottom:'4px',overflowX:'auto',WebkitOverflowScrolling:'touch',paddingBottom:'4px',scrollbarWidth:'none',msOverflowStyle:'none',width:'100%',maxWidth:'100%',touchAction:'pan-x'}}>
           <style>{`
             div::-webkit-scrollbar { display: none; }
           `}</style>
-          <div style={{display:'flex',gap:'12px',paddingLeft:'10px',paddingRight:'10px',minWidth:'max-content'}}>
-            <button style={{background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.2)',borderRadius:'12px',padding:'12px 16px',color:'white',fontSize:'13px',fontWeight:'600',cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}} onClick={()=>router.push('/memorial-card-builder-4x6')}>{t.card}</button>
-            <button style={{background:'rgba(102,126,234,0.3)',border:'1px solid rgba(102,126,234,0.5)',borderRadius:'12px',padding:'12px 16px',color:'white',fontSize:'13px',fontWeight:'600',cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}}>{t.poster}</button>
-            <button style={{background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.2)',borderRadius:'12px',padding:'12px 16px',color:'white',fontSize:'13px',fontWeight:'600',cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}}>{t.program}</button>
-            <button style={{background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.2)',borderRadius:'12px',padding:'12px 16px',color:'white',fontSize:'13px',fontWeight:'600',cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}}>{t.metalQR}</button>
-            <button style={{background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.2)',borderRadius:'12px',padding:'12px 16px',color:'white',fontSize:'13px',fontWeight:'600',cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}}>{t.acrylic57}</button>
-            <button style={{background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.2)',borderRadius:'12px',padding:'12px 16px',color:'white',fontSize:'13px',fontWeight:'600',cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}}>{t.acrylic66}</button>
+          <div style={{display:'flex',gap:'12px',paddingLeft:'10px',paddingRight:'10px',minWidth:'max-content',touchAction:'pan-x'}}>
+            <button style={{background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.2)',borderRadius:'12px',padding:'12px 16px',color:'white',fontSize:'13px',fontWeight:'600',cursor:'pointer',whiteSpace:'nowrap',flexShrink:0,touchAction:'manipulation'}} onClick={()=>router.push('/memorial-card-builder-4x6')}>{t.card}</button>
+            <button style={{background:'rgba(102,126,234,0.3)',border:'1px solid rgba(102,126,234,0.5)',borderRadius:'12px',padding:'12px 16px',color:'white',fontSize:'13px',fontWeight:'600',cursor:'pointer',whiteSpace:'nowrap',flexShrink:0,touchAction:'manipulation'}}>{t.poster}</button>
+            <button style={{background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.2)',borderRadius:'12px',padding:'12px 16px',color:'white',fontSize:'13px',fontWeight:'600',cursor:'pointer',whiteSpace:'nowrap',flexShrink:0,touchAction:'manipulation'}}>{t.program}</button>
+            <button style={{background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.2)',borderRadius:'12px',padding:'12px 16px',color:'white',fontSize:'13px',fontWeight:'600',cursor:'pointer',whiteSpace:'nowrap',flexShrink:0,touchAction:'manipulation'}}>{t.metalQR}</button>
+            <button style={{background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.2)',borderRadius:'12px',padding:'12px 16px',color:'white',fontSize:'13px',fontWeight:'600',cursor:'pointer',whiteSpace:'nowrap',flexShrink:0,touchAction:'manipulation'}}>{t.acrylic57}</button>
+            <button style={{background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.2)',borderRadius:'12px',padding:'12px 16px',color:'white',fontSize:'13px',fontWeight:'600',cursor:'pointer',whiteSpace:'nowrap',flexShrink:0,touchAction:'manipulation'}}>{t.acrylic66}</button>
           </div>
         </div>
         
-        <div style={{marginBottom:'10px',padding:'0 20px',display:'flex',justifyContent:'center',alignItems:'center',gap:'16px'}}>
+        <div style={{marginBottom:'4px',padding:'0 12px',display:'flex',justifyContent:'center',alignItems:'center',gap:'16px'}}>
           <p style={{fontSize:'18px',color:'rgba(255,255,255,0.5)',margin:'0',fontWeight:'700'}}>{t.poster}</p>
-          {/* Date Inputs */}
-          <div style={{display:'flex',gap:'8px',alignItems:'center',marginLeft:'auto'}}>
-            <input 
-              type="text" 
-              value={sunrise} 
-              onChange={(e)=>setSunrise(formatDate(e.target.value))} 
-              placeholder={t.datePlaceholder}
-              style={{
-                background:'rgba(255,255,255,0.05)',
-                border:'1px solid rgba(255,255,255,0.2)',
-                borderRadius:'8px',
-                padding:'6px 10px',
-                color:'white',
-                fontSize:'12px',
-                width:'100px',
-                outline:'none',
-                textAlign:'center'
-              }}
-            />
-            <input 
-              type="text" 
-              value={sunset} 
-              onChange={(e)=>setSunset(formatDate(e.target.value))} 
-              placeholder={t.datePlaceholder}
-              style={{
-                background:'rgba(255,255,255,0.05)',
-                border:'1px solid rgba(255,255,255,0.2)',
-                borderRadius:'8px',
-                padding:'6px 10px',
-                color:'white',
-                fontSize:'12px',
-                width:'100px',
-                outline:'none',
-                textAlign:'center'
-              }}
-            />
-          </div>
-          <div style={{display:'flex',gap:'8px',alignItems:'center',position:'absolute',right:'20px'}}>
+          <div style={{display:'flex',gap:'8px',alignItems:'center',position:'absolute',right:'12px'}}>
             <button onClick={handlePhotoClick} style={{position:'relative',background:'rgba(255,255,255,0.2)',border:'1px solid rgba(255,255,255,0.3)',borderRadius:'50%',width:'36px',height:'36px',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}} title="Upload photo">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
@@ -406,17 +475,24 @@ const PosterBuilderPage: React.FC = () => {
               </svg>
             </button>
             <button onClick={()=>{
-                const cardData = {
+                const posterData = {
                     type: 'poster',
                     front: {
                         name,
                         sunrise,
                         sunset,
                         photo,
+                        textColor,
+                        fontIndex: currentFontIndex,
+                        font: fonts[currentFontIndex],
+                        backgroundIndex: currentBgIndex,
+                        background: backgrounds[currentBgIndex],
+                        qrCodeUrl,
                     },
                     language,
+                    qrCodeUrl,
                 };
-                localStorage.setItem('posterDesign', JSON.stringify(cardData));
+                localStorage.setItem('posterDesign', JSON.stringify(posterData));
                 router.push('/checkout');
             }} style={{position:'relative',background:'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',border:'none',borderRadius:'50%',width:'36px',height:'36px',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',boxShadow:'0 2px 10px rgba(102,126,234,0.4)'}} title="Approve for print">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
@@ -428,7 +504,7 @@ const PosterBuilderPage: React.FC = () => {
           </div>
         </div>
         
-        <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',position:'relative',minHeight:0}}>
+        <div style={{flex:1,display:'flex',alignItems:'flex-start',justifyContent:'center',position:'relative',minHeight:0,paddingTop:'8px'}}>
           <div style={{position:'relative',width:'min(calc(100vw - 60px), 90vw)',maxWidth:'600px',aspectRatio:'2/3'}}>
             <div onClick={handleBackgroundClick} style={{width:'100%',height:'100%',display:'flex',flexDirection:'column',position:'relative',cursor:'pointer',overflow:'hidden',background:backgrounds[currentBgIndex].startsWith('linear-gradient') ? backgrounds[currentBgIndex] : 'transparent'}}>
               {!backgrounds[currentBgIndex].startsWith('linear-gradient') && (
@@ -450,7 +526,7 @@ const PosterBuilderPage: React.FC = () => {
                 {t.inLovingMemory}
               </div>
               
-              <input onClick={(e)=>{e.stopPropagation(); handleNameClick();}} type="text" value={name} onChange={(e)=>{e.stopPropagation(); setName(e.target.value);}} placeholder={t.fullName} style={{position:'absolute',bottom:'80px',left:'60px',right:'60px',background:photo ? `rgba(${textColor === '#FFFFFF' ? '255,255,255' : '0,0,0'},0.2)`:'rgba(255,255,255,0.1)',border:`1px solid ${textColor}`,borderRadius:'4px',padding:'8px',color:textColor,fontSize:'18px',outline:'none',textAlign:'center',fontFamily:fonts[currentFontIndex],zIndex:10,minHeight:'40px',cursor:'pointer',transition:'all 0.3s ease'}} />
+              <input onClick={(e)=>{e.stopPropagation(); handleNameClick();}} type="text" value={name} onChange={(e)=>{e.stopPropagation(); setName(e.target.value);}} placeholder={t.fullName} style={{position:'absolute',bottom:'65px',left:'60px',right:'60px',background:photo ? `rgba(${textColor === '#FFFFFF' ? '0,0,0' : '255,255,255'},0.3)`:'rgba(255,255,255,0.2)',border:`2px solid ${textColor}`,borderRadius:'4px',padding:'8px',color:textColor,fontSize:'18px',outline:'none',textAlign:'center',fontFamily:fonts[currentFontIndex],zIndex:10,minHeight:'40px',cursor:'pointer',transition:'all 0.3s ease'}} />
               
               <div style={{position:'absolute',bottom:'20px',left:'60px',right:'60px',display:'flex',alignItems:'center',justifyContent:'center',gap:'12px',zIndex:10}}>
                 <div style={{display:'flex',flexDirection:'column',alignItems:'center'}}>
@@ -476,7 +552,7 @@ const PosterBuilderPage: React.FC = () => {
         </div>
 
         <div style={{position:'fixed',bottom:0,left:0,right:0,background:'rgba(255,255,255,0.05)',backdropFilter:'blur(20px)',borderTop:'1px solid rgba(255,255,255,0.1)',padding:'12px 20px',display:'flex',justifyContent:'space-around',zIndex:100}}>
-          <button onClick={()=>router.push('/dashboard')} style={{background:'transparent',border:'none',color:'white',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:'4px'}}>
+          <button onClick={()=>router.push('/')} style={{background:'transparent',border:'none',color:'white',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:'4px'}}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
               <polyline points="9 22 9 12 15 12 15 22"/>

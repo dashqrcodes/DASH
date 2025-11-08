@@ -16,44 +16,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         // QR code size (smaller as requested)
         const qrSize = 150;
-        const logoSize = 30; // DASH logo size in center
         
         // Generate QR code with custom color (default to matching text color)
         const qrColor = color || '#000000';
-        const backgroundColor = 'transparent'; // No white background
         
-        // Create QR code canvas
+        // Create QR code canvas with transparent background
         const qrCanvas = await QRCode.toCanvas(url, {
             width: qrSize,
             margin: 1,
             color: {
                 dark: qrColor,
-                light: backgroundColor
+                light: '#00000000' // Fully transparent
             },
             errorCorrectionLevel: 'H' // Higher error correction for logo overlay
         });
 
-        // Create final canvas with logo overlay
+        // Create final canvas with logo overlay and transparent background
         const finalCanvas = createCanvas(qrSize, qrSize);
         const ctx = finalCanvas.getContext('2d');
+        
+        // Clear canvas to ensure transparency
+        ctx.clearRect(0, 0, qrSize, qrSize);
         
         // Draw QR code
         ctx.drawImage(qrCanvas as any, 0, 0);
         
-        // Draw DASH logo in center (white circle with DASH text)
+        // Draw DASH logo in center (no background, just text)
         const centerX = qrSize / 2;
         const centerY = qrSize / 2;
-        const logoRadius = logoSize / 2;
         
-        // White circle background for logo
-        ctx.fillStyle = '#FFFFFF';
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, logoRadius, 0, 2 * Math.PI);
-        ctx.fill();
-        
-        // DASH text
+        // DASH text directly on QR code
         ctx.fillStyle = qrColor;
-        ctx.font = 'bold 10px Arial';
+        ctx.font = 'bold 8px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText('DASH', centerX, centerY);
