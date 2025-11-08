@@ -527,7 +527,7 @@ const ProfilePage: React.FC = () => {
                             type="text"
                             value={name}
                             onChange={handleNameChange}
-                            onBlur={handleFieldBlur}
+                            onBlur={() => handleFieldBlur()}
                             placeholder={t.enterFullName}
                             style={{
                                 width: '100%',
@@ -566,7 +566,8 @@ const ProfilePage: React.FC = () => {
                                 value={sunrise}
                                 onChange={(e) => handleDateChange(e.target.value, setSunrise)}
                                 onBlur={() => {
-                                    const normalized = formatDateOnBlur(sunrise, setSunrise);
+                                    const normalized = normalizeDateInput(sunrise, language);
+                                    setSunrise(normalized);
                                     handleFieldBlur({ sunrise: normalized });
                                 }}
                                 placeholder={t.birthDate}
@@ -598,7 +599,8 @@ const ProfilePage: React.FC = () => {
                                 value={sunset}
                                 onChange={(e) => handleDateChange(e.target.value, setSunset)}
                                 onBlur={() => {
-                                    const normalized = formatDateOnBlur(sunset, setSunset);
+                                    const normalized = normalizeDateInput(sunset, language);
+                                    setSunset(normalized);
                                     handleFieldBlur({ sunset: normalized });
                                 }}
                                 placeholder={t.dateOfPassing}

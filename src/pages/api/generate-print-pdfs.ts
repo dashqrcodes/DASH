@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import { Buffer } from 'buffer';
 import nodemailer from 'nodemailer';
 
 const inchesToPoints = (inches: number) => inches * 72;
@@ -24,7 +25,7 @@ const decodeBase64Image = (dataUri?: string): MaybeBuffer | null => {
 const embedImage = async (pdfDoc: PDFDocument, data?: string | MaybeBuffer | null) => {
     if (!data) return null;
     try {
-        if (data instanceof Uint8Array || data instanceof Buffer) {
+        if (data instanceof Uint8Array || Buffer.isBuffer(data)) {
             return pdfDoc.embedPng(data).catch(() => pdfDoc.embedJpg(data));
         }
         const buffer = decodeBase64Image(data);

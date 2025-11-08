@@ -74,7 +74,6 @@ export default function MuxPlayerWrapper({
         autoPlay={autoPlay}
         muted={muted}
         loop={loop}
-        controls={controls}
         style={{
           width: '100%',
           height: '100%',

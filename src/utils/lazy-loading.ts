@@ -53,7 +53,10 @@ export function initLazyLoading(
 
           img.onerror = (error) => {
             if (options?.onError) {
-              options.onError(element, error as Error);
+              const normalizedError = error instanceof Error
+                ? error
+                : new Error(typeof error === 'string' ? error : 'Failed to load image');
+              options.onError(element, normalizedError);
             }
           };
 

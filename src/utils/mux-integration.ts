@@ -6,10 +6,10 @@
 import Mux from '@mux/mux-node';
 
 // Initialize Mux SDK
-const mux = new Mux(
-  process.env.MUX_TOKEN_ID || '',
-  process.env.MUX_TOKEN_SECRET || ''
-);
+const mux = new Mux({
+  tokenId: process.env.MUX_TOKEN_ID || '',
+  tokenSecret: process.env.MUX_TOKEN_SECRET || ''
+}) as any;
 
 export interface MuxUploadOptions {
   url?: string;
@@ -74,11 +74,11 @@ export async function uploadVideoToMux(
     while (attempts < maxAttempts) {
       asset = await mux.video.assets.retrieve(upload.asset_id);
       
-      if (asset.status === 'ready') {
+      if (asset && asset.status === 'ready') {
         break;
       }
       
-      if (asset.status === 'errored') {
+      if (asset && asset.status === 'errored') {
         throw new Error('Asset processing failed');
       }
 

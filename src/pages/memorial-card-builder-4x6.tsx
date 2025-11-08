@@ -758,7 +758,7 @@ const MemorialCardBuilder4x6Page: React.FC = () => {
                         transform: `scale(${imageEnhancement.zoom})`,
                         objectPosition: `${imageEnhancement.facePosition.x}% ${imageEnhancement.facePosition.y}%`,
                         filter: `brightness(${imageEnhancement.brightness}) contrast(${imageEnhancement.contrast}) saturate(${imageEnhancement.saturation})`,
-                        imageRendering: 'high-quality',
+                        imageRendering: 'auto',
                         WebkitFilter: `brightness(${imageEnhancement.brightness}) contrast(${imageEnhancement.contrast}) saturate(${imageEnhancement.saturation})`,
                       }} 
                     />
