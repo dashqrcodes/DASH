@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import BottomNav from '../components/BottomNav';
-import MuxPlayerWrapper from '../components/MuxPlayerWrapper';
+import BottomNav from 'components/BottomNav';
+import MuxPlayerWrapper from 'components/MuxPlayerWrapper';
 
 interface MediaItem {
   id: string;

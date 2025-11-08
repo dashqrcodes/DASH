@@ -7,11 +7,11 @@ interface AvatarVideoProps {
   personName?: string;
 }
 
-const AvatarVideo: React.FC<AvatarVideoProps> = ({
+const AvatarVideo = ({
   videoUrl,
   isLoading = false,
   personName = 'Heaven'
-}) => {
+}: AvatarVideoProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
