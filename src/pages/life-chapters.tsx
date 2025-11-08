@@ -50,7 +50,7 @@ const LifeChaptersPage: React.FC = () => {
     };
 
     const goHome = () => {
-        router.push('/dashboard');
+        router.push('/');
     };
 
     const handleCollaborate = () => {

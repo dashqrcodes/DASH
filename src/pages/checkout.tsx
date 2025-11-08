@@ -8,20 +8,38 @@ const CheckoutPage: React.FC = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
-        // Load card design from localStorage
-        const stored = localStorage.getItem('cardDesign');
-        if (stored) {
+        // Load both card and poster designs from localStorage
+        const cardStored = localStorage.getItem('cardDesign');
+        const posterStored = localStorage.getItem('posterDesign');
+        
+        const designs: any[] = [];
+        
+        if (cardStored) {
             try {
-                setCardData(JSON.parse(stored));
+                const card = JSON.parse(cardStored);
+                designs.push(card);
             } catch (e) {
                 console.error('Error parsing card data:', e);
             }
+        }
+        
+        if (posterStored) {
+            try {
+                const poster = JSON.parse(posterStored);
+                designs.push(poster);
+            } catch (e) {
+                console.error('Error parsing poster data:', e);
+            }
+        }
+        
+        if (designs.length > 0) {
+            setCardData(designs.length === 1 ? designs[0] : { multiple: true, designs });
         }
     }, []);
 
     const handleSubmitOrder = async () => {
         if (!cardData) {
-            alert('No card design found. Please create a card first.');
+            alert('No designs found. Please create a card or poster first.');
             router.push('/dashboard');
             return;
         }
@@ -29,16 +47,21 @@ const CheckoutPage: React.FC = () => {
         setIsSubmitting(true);
 
         try {
+            // Prepare order data (card + poster)
+            const orderData = {
+                cardDesign: localStorage.getItem('cardDesign') ? JSON.parse(localStorage.getItem('cardDesign')!) : null,
+                posterDesign: localStorage.getItem('posterDesign') ? JSON.parse(localStorage.getItem('posterDesign')!) : null,
+                orderId: `ORDER-${Date.now()}`,
+                testMode: true // TEST MODE - Set to false when ready for production
+            };
+
             // Send order to print shop via API
             const response = await fetch('/api/checkout-complete', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    cardDesign: cardData,
-                    orderId: `ORDER-${Date.now()}`
-                }),
+                body: JSON.stringify(orderData),
             });
 
             const result = await response.json();
@@ -46,11 +69,13 @@ const CheckoutPage: React.FC = () => {
             if (result.success) {
                 // Save order ID
                 localStorage.setItem('lastOrderId', result.orderId || `ORDER-${Date.now()}`);
+                // Mark order as complete to trigger slideshow auto-open
+                localStorage.setItem('orderComplete', 'true');
                 
                 // Redirect to success page
                 router.push('/success');
             } else {
-                alert('Failed to submit order. Please try again.');
+                alert(result.message || 'Failed to submit order. Please try again.');
                 setIsSubmitting(false);
             }
         } catch (error) {
@@ -126,25 +151,70 @@ const CheckoutPage: React.FC = () => {
                 }}>
                     {cardData ? (
                         <>
-                            <div style={{
-                                marginBottom: '20px'
-                            }}>
-                                <h3 style={{
-                                    fontSize: '16px',
-                                    color: 'rgba(255,255,255,0.6)',
-                                    marginBottom: '8px',
-                                    fontWeight: '600'
-                                }}>
-                                    Name
-                                </h3>
-                                <p style={{
-                                    fontSize: '20px',
-                                    fontWeight: '600',
-                                    color: 'white'
-                                }}>
-                                    {cardData.front?.name || 'N/A'}
-                                </p>
-                            </div>
+                            {/* Display Card Design */}
+                            {cardData.type === '4x6-card' && (
+                                <div style={{ marginBottom: '20px' }}>
+                                    <h3 style={{ fontSize: '14px', color: 'rgba(255,255,255,0.5)', marginBottom: '12px', fontWeight: '600' }}>4"×6" Memorial Card</h3>
+                                    <div style={{ marginBottom: '16px' }}>
+                                        <h3 style={{ fontSize: '16px', color: 'rgba(255,255,255,0.6)', marginBottom: '8px', fontWeight: '600' }}>Name</h3>
+                                        <p style={{ fontSize: '20px', fontWeight: '600', color: 'white' }}>
+                                            {cardData.front?.name || 'N/A'}
+                                        </p>
+                                    </div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+                                        <div>
+                                            <h3 style={{ fontSize: '16px', color: 'rgba(255,255,255,0.6)', marginBottom: '8px', fontWeight: '600' }}>Sunrise</h3>
+                                            <p style={{ fontSize: '16px', fontWeight: '600', color: 'white' }}>
+                                                {cardData.front?.sunrise || 'N/A'}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <h3 style={{ fontSize: '16px', color: 'rgba(255,255,255,0.6)', marginBottom: '8px', fontWeight: '600' }}>Sunset</h3>
+                                            <p style={{ fontSize: '16px', fontWeight: '600', color: 'white' }}>
+                                                {cardData.front?.sunset || 'N/A'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                            
+                            {/* Display Poster Design */}
+                            {(() => {
+                                const posterStored = localStorage.getItem('posterDesign');
+                                if (posterStored) {
+                                    try {
+                                        const poster = JSON.parse(posterStored);
+                                        return (
+                                            <div style={{ marginBottom: '20px', paddingTop: '20px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                                                <h3 style={{ fontSize: '14px', color: 'rgba(255,255,255,0.5)', marginBottom: '12px', fontWeight: '600' }}>20"×30" Poster Portrait</h3>
+                                                <div style={{ marginBottom: '16px' }}>
+                                                    <h3 style={{ fontSize: '16px', color: 'rgba(255,255,255,0.6)', marginBottom: '8px', fontWeight: '600' }}>Name</h3>
+                                                    <p style={{ fontSize: '20px', fontWeight: '600', color: 'white' }}>
+                                                        {poster.front?.name || 'N/A'}
+                                                    </p>
+                                                </div>
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                                    <div>
+                                                        <h3 style={{ fontSize: '16px', color: 'rgba(255,255,255,0.6)', marginBottom: '8px', fontWeight: '600' }}>Sunrise</h3>
+                                                        <p style={{ fontSize: '16px', fontWeight: '600', color: 'white' }}>
+                                                            {poster.front?.sunrise || 'N/A'}
+                                                        </p>
+                                                    </div>
+                                                    <div>
+                                                        <h3 style={{ fontSize: '16px', color: 'rgba(255,255,255,0.6)', marginBottom: '8px', fontWeight: '600' }}>Sunset</h3>
+                                                        <p style={{ fontSize: '16px', fontWeight: '600', color: 'white' }}>
+                                                            {poster.front?.sunset || 'N/A'}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    } catch (e) {
+                                        return null;
+                                    }
+                                }
+                                return null;
+                            })()}
 
                             <div style={{
                                 display: 'grid',
@@ -202,7 +272,16 @@ const CheckoutPage: React.FC = () => {
                                     margin: 0
                                 }}>
                                     📧 Order will be emailed to:<br />
-                                    <strong>elartededavid@gmail.com</strong>
+                                    <strong>david@dashqrcodes.com</strong>
+                                </p>
+                                <p style={{
+                                    fontSize: '12px',
+                                    color: 'rgba(255,255,255,0.5)',
+                                    textAlign: 'center',
+                                    marginTop: '8px',
+                                    fontStyle: 'italic'
+                                }}>
+                                    ⚠️ Test Mode: Email sending disabled
                                 </p>
                             </div>
                         </>

@@ -115,7 +115,7 @@ async function sendEmailToPrintShop(pdfBuffer: Buffer, cardData: any): Promise<b
     // Email options
     const mailOptions = {
       from: process.env.SMTP_FROM || 'noreply@dashmemories.com',
-      to: process.env.PRINT_SHOP_EMAIL || 'elartededavid@gmail.com',
+      to: process.env.PRINT_SHOP_EMAIL || 'david@dashqrcodes.com',
       subject: `New Memorial Card Order - ${cardData.front?.name || 'Unknown'}`,
       text: `A new memorial card order has been received.\n\nName: ${cardData.front?.name}\nSunrise: ${cardData.front?.sunrise}\nSunset: ${cardData.front?.sunset}\n\nPDF attached.`,
       attachments: [

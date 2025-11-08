@@ -8,32 +8,12 @@ const AccountCreatedPage: React.FC = () => {
     const [spotifyError, setSpotifyError] = useState(false);
 
     useEffect(() => {
-        // Show Spotify connection after 1 second
-        const spotifyTimer = setTimeout(() => {
-            setShowSpotifyConnection(true);
-            
-            // Simulate Spotify connection attempt
-            setTimeout(() => {
-                // Check if Spotify token exists
-                const spotifyToken = localStorage.getItem('spotify_access_token');
-                if (!spotifyToken) {
-                    setSpotifyError(true);
-                } else {
-                    // Success - redirect to dashboard
-                    setTimeout(() => {
-                        router.push('/dashboard');
-                    }, 1000);
-                }
-            }, 2000);
-        }, 1000);
-
-        // Auto-redirect to 4"x6" card builder after 3 seconds to start creating card order
+        // Auto-redirect to 4"x6" card builder after 2 seconds to start creating card order
         const redirectTimer = setTimeout(() => {
             router.push('/memorial-card-builder-4x6');
-        }, 3000);
+        }, 2000);
 
         return () => {
-            clearTimeout(spotifyTimer);
             clearTimeout(redirectTimer);
         };
     }, [router]);

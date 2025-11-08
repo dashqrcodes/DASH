@@ -50,7 +50,7 @@ const LifeChaptersSlideshowPage: React.FC = () => {
     };
 
     const goHome = () => {
-        router.push('/dashboard');
+        router.push('/');
     };
 
     const handleVideoCall = () => {

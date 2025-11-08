@@ -1,37 +1,52 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import { getPopularContent, searchBibleVerse } from '../utils/bible-api';
+import { getPopularContent, searchBibleVerse, searchByKeywords } from '../utils/bible-api';
 
 const MemorialCardBackPage: React.FC = () => {
     const router = useRouter();
     const [language, setLanguage] = useState<'en' | 'es'>('en');
+
+    // Format date to abbreviate months (except June and July)
+    const formatDateForCard = (dateStr: string): string => {
+        if (!dateStr) return dateStr;
+        
+        const monthMap: { [key: string]: string } = {
+            'January': 'Jan', 'February': 'Feb', 'March': 'Mar',
+            'April': 'Apr', 'May': 'May', 'June': 'June',
+            'July': 'July', 'August': 'Aug', 'September': 'Sep',
+            'October': 'Oct', 'November': 'Nov', 'December': 'Dec'
+        };
+        
+        let result = dateStr;
+        Object.keys(monthMap).forEach(fullMonth => {
+            const regex = new RegExp(fullMonth, 'gi');
+            result = result.replace(regex, monthMap[fullMonth]);
+        });
+        
+        return result;
+    };
     const [name, setName] = useState('');
     const [sunrise, setSunrise] = useState('');
     const [sunset, setSunset] = useState('');
     const [frontPhoto, setFrontPhoto] = useState<string | null>(null);
     const [currentBgIndex, setCurrentBgIndex] = useState(0);
     const [skyPhoto, setSkyPhoto] = useState<string | null>(null);
-    const [textColor, setTextColor] = useState('#0A2463');
+    const [textColor, setTextColor] = useState('#1e1b4b');
     const [isEditing, setIsEditing] = useState(false);
     const [showBibleSearch, setShowBibleSearch] = useState(false);
     const [bibleSearchQuery, setBibleSearchQuery] = useState('');
     const [selectedTranslation, setSelectedTranslation] = useState<'NIV' | 'NKJV' | 'Catholic'>('NIV');
     const [isSearching, setIsSearching] = useState(false);
     const [searchResult, setSearchResult] = useState<{ reference: string; text: string } | null>(null);
+    const [keywordResults, setKeywordResults] = useState<Array<{ text: string; reference?: string; title?: string; score: number }>>([]);
     const [qrPattern, setQrPattern] = useState<boolean[]>([]);
     const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
     const [currentScriptureIndex, setCurrentScriptureIndex] = useState(0);
     const [psalm23Text, setPsalm23Text] = useState('');
 
     const backgrounds = [
-        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=1200&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=800&h=1200&fit=crop&q=80&grayscale',
-        'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=800&h=1200&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800&h=1200&fit=crop&q=80&grayscale',
-        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&h=1200&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1506277886164-e25aa3f4ef7f?w=800&h=1200&fit=crop&q=80&grayscale',
-        'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&h=1200&fit=crop&q=80',
+        '/sky background rear.jpg',
     ];
 
     const translations = {
@@ -40,12 +55,16 @@ const MemorialCardBackPage: React.FC = () => {
             foreverInOurHearts: 'Forever in Our Hearts',
             sunrise: 'Sunrise',
             sunset: 'Sunset',
+            card: '4"×6" Card',
+            poster: '20"×30" Poster',
         },
         es: {
             back: 'Atrás',
             foreverInOurHearts: 'Por Siempre en Nuestros Corazones',
             sunrise: 'Amanecer',
             sunset: 'Atardecer',
+            card: '4"×6" Tarjeta',
+            poster: '20"×30" Ampliación',
         },
     };
 
@@ -71,6 +90,21 @@ const MemorialCardBackPage: React.FC = () => {
         if (urlSunset) setSunset(urlSunset);
         if (urlPhoto) setFrontPhoto(urlPhoto);
 
+        // Load from profile data first (priority)
+        const profileData = localStorage.getItem('profileData');
+        if (profileData) {
+            try {
+                const data = JSON.parse(profileData);
+                if (data.name) setName(data.name);
+                if (data.sunrise) setSunrise(data.sunrise);
+                if (data.sunset) setSunset(data.sunset);
+                if (data.photo) setFrontPhoto(data.photo);
+            } catch (e) {
+                console.error('Error parsing profile data:', e);
+            }
+        }
+
+        // Also check frontCardData as fallback
         const frontCardData = localStorage.getItem('frontCardData');
         if (frontCardData) {
             try {
@@ -94,7 +128,7 @@ const MemorialCardBackPage: React.FC = () => {
     }, [language]);
 
     useEffect(() => {
-        setTextColor('#0A2463');
+        setTextColor('#1e1b4b');
     }, [skyPhoto]);
 
   const generateQRCode = async () => {
@@ -141,13 +175,31 @@ const MemorialCardBackPage: React.FC = () => {
         
         setIsSearching(true);
         try {
-            const result = await searchBibleVerse(bibleSearchQuery, selectedTranslation, language);
-            if (result) {
-                setSearchResult(result);
-                setPsalm23Text(result.text);
-                setShowBibleSearch(false);
+            // Check if query looks like a verse reference (e.g., "John 14:1-3")
+            const isVerseReference = /^\d*\s*\w+\s+\d+:\d+(-\d+)?$/i.test(bibleSearchQuery.trim());
+            
+            if (isVerseReference) {
+                // Exact verse search
+                const result = await searchBibleVerse(bibleSearchQuery, selectedTranslation, language);
+                if (result) {
+                    setSearchResult(result);
+                    setPsalm23Text(result.text);
+                    setKeywordResults([]);
+                    setShowBibleSearch(false);
+                } else {
+                    alert('Verse not found. Please check the format (e.g., "John 14:1-3" or "Psalm 23:1")');
+                }
             } else {
-                alert('Verse not found. Please check the format (e.g., "John 14:1-3" or "Psalm 23:1")');
+                // Keyword/semantic search
+                const results = searchByKeywords(bibleSearchQuery, language);
+                if (results.length > 0) {
+                    setKeywordResults(results);
+                    setSearchResult(null);
+                } else {
+                    alert(language === 'en' 
+                        ? 'No verses found for that search. Try keywords like "comfort", "heaven", "peace"' 
+                        : 'No se encontraron versículos. Intenta palabras clave como "consuelo", "cielo", "paz"');
+                }
             }
         } catch (error) {
             console.error('Search error:', error);
@@ -161,8 +213,7 @@ const MemorialCardBackPage: React.FC = () => {
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = 'image/*';
-        // Use capture attribute to bypass native menu on mobile
-        input.setAttribute('capture', 'environment');
+        // Remove capture attribute to open photo picker instead of camera
         input.onchange = (e: any) => {
             const file = e.target.files[0];
             if (file) {
@@ -174,7 +225,7 @@ const MemorialCardBackPage: React.FC = () => {
                 reader.readAsDataURL(file);
             }
         };
-        // Trigger click immediately without showing menu
+        // Trigger click immediately
         input.click();
     };
 
@@ -199,10 +250,17 @@ const MemorialCardBackPage: React.FC = () => {
                 <meta name="mobile-web-app-capable" content="yes" />
                 <meta name="apple-mobile-web-app-capable" content="yes" />
                 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+                <style>{`
+                    html, body {
+                        overscroll-behavior-y: auto;
+                        -webkit-overflow-scrolling: touch;
+                    }
+                `}</style>
             </Head>
             <div style={{
                 minHeight: '100vh',
-                height: '100vh',
+                height: '100dvh',
+                maxHeight: '100dvh',
                 background: '#000000',
                 fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
                 color: 'white',
@@ -214,224 +272,69 @@ const MemorialCardBackPage: React.FC = () => {
                 display: 'flex',
                 flexDirection: 'column',
                 maxWidth: '100vw',
-                overflow: 'hidden',
+                overflowY: 'auto',
                 position: 'relative',
                 WebkitOverflowScrolling: 'touch'
             }}>
+                {/* Header with Back Button and Product Label */}
                 <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',
-                    padding: '8px 12px',
-                    marginBottom: '8px',
-                    fontSize: 'clamp(12px, 3.5vw, 14px)',
                     alignItems: 'center',
+                    padding: '2px 12px',
+                    marginBottom: '0px',
+                    marginTop: '0px',
                     flexShrink: 0
                 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <button
-                            onClick={handleFlip}
-                            style={{
-                                background: 'transparent',
-                                border: 'none',
-                                color: 'white',
-                                fontSize: 'clamp(18px, 5vw, 20px)',
-                                cursor: 'pointer',
-                                padding: '8px',
-                                minWidth: '44px',
-                                minHeight: '44px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                WebkitTapHighlightColor: 'transparent'
-                            }}
-                        >
-                            ←
-                        </button>
-                        <div style={{ fontSize: 'clamp(12px, 3.5vw, 14px)' }}>9:41</div>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                        <button
-                            onClick={() => router.push('/checkout')}
-                            style={{
-                                background: 'transparent',
-                                border: 'none',
-                                color: 'white',
-                                cursor: 'pointer',
-                                padding: '8px',
-                                minWidth: '44px',
-                                minHeight: '44px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                position: 'relative',
-                                WebkitTapHighlightColor: 'transparent'
-                            }}
-                            title="Approve for print"
-                        >
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <polyline points="6 9 6 2 18 2 18 9"/>
-                                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
-                                <rect x="6" y="14" width="12" height="8"/>
-                            </svg>
-                        </button>
-                        <span>●●●●● 📶 🔋</span>
-                    </div>
-                </div>
-
-                <div style={{
-                    marginBottom: '8px',
-                    overflowX: 'auto',
-                    WebkitOverflowScrolling: 'touch',
-                    paddingBottom: '8px',
-                    scrollbarWidth: 'none',
-                    msOverflowStyle: 'none',
-                    paddingLeft: 'env(safe-area-inset-left, 0px)',
-                    paddingRight: 'env(safe-area-inset-right, 0px)'
-                }}>
-                    <style>{`
-                        div::-webkit-scrollbar { display: none; }
-                    `}</style>
-                    <div style={{
-                        display: 'flex',
-                        gap: 'clamp(8px, 2.5vw, 12px)',
-                        paddingLeft: '12px',
-                        paddingRight: '12px',
-                        minWidth: 'max-content'
-                    }}>
-                        <button style={{
-                            background: 'rgba(102,126,234,0.3)',
-                            border: '1px solid rgba(102,126,234,0.5)',
-                            borderRadius: '12px',
-                            padding: 'clamp(10px, 3vw, 12px) clamp(12px, 4vw, 16px)',
-                            color: 'white',
-                            fontSize: 'clamp(11px, 3.2vw, 13px)',
-                            fontWeight: '600',
-                            cursor: 'pointer',
-                            whiteSpace: 'nowrap',
-                            flexShrink: 0,
-                            minHeight: '44px',
-                            WebkitTapHighlightColor: 'transparent'
-                        }}>
-                            {t.card}
-                        </button>
-                        <button 
-                            style={{
-                                background: 'rgba(255,255,255,0.05)',
-                                border: '1px solid rgba(255,255,255,0.2)',
-                                borderRadius: '12px',
-                                padding: 'clamp(10px, 3vw, 12px) clamp(12px, 4vw, 16px)',
-                                color: 'white',
-                                fontSize: 'clamp(11px, 3.2vw, 13px)',
-                                fontWeight: '600',
-                                cursor: 'pointer',
-                                whiteSpace: 'nowrap',
-                                flexShrink: 0,
-                                minHeight: '44px',
-                                WebkitTapHighlightColor: 'transparent'
-                            }}
-                            onClick={() => router.push('/poster-builder')}
-                        >
-                            {t.poster}
-                        </button>
-                    </div>
-                </div>
-
-                <div style={{
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    gap: 'clamp(12px, 3vw, 16px)',
-                    marginBottom: 'clamp(8px, 2vw, 10px)',
-                    padding: '0 clamp(12px, 4vw, 20px)',
-                    position: 'relative',
-                    flexShrink: 0
-                }}>
-                    <p
-                        onClick={handleFlip}
+                    <button
+                        onClick={() => router.push('/memorial-card-builder-4x6')}
                         style={{
-                            fontSize: 'clamp(14px, 4vw, 18px)',
-                            color: 'rgba(255,255,255,0.5)',
-                            margin: '0',
-                            fontWeight: '700',
+                            background: 'transparent',
+                            border: 'none',
+                            color: 'white',
+                            fontSize: 'clamp(18px, 5vw, 20px)',
                             cursor: 'pointer',
-                            display: 'inline-block',
-                            padding: '8px clamp(10px, 3vw, 20px)',
-                            borderRadius: '20px',
-                            transition: 'all 0.3s ease',
+                            padding: '8px',
+                            minWidth: '44px',
                             minHeight: '44px',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             WebkitTapHighlightColor: 'transparent'
                         }}
-                        onTouchStart={(e) => {
-                            e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
-                        }}
-                        onTouchEnd={(e) => {
-                            e.currentTarget.style.background = 'transparent';
-                        }}
-                        onMouseEnter={(e) => { 
-                            e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; 
-                        }}
-                        onMouseLeave={(e) => { 
-                            e.currentTarget.style.background = 'transparent'; 
-                        }}
                     >
-                        {t.back}
-                    </p>
+                        ←
+                    </button>
+
+                    {/* Product Label - Centered */}
                     <div style={{
                         display: 'flex',
-                        gap: 'clamp(6px, 2vw, 8px)',
                         alignItems: 'center',
-                        position: 'absolute',
-                        right: 'clamp(12px, 4vw, 20px)'
+                        justifyContent: 'center',
+                        flex: 1
                     }}>
-                        <button
-                            onClick={() => {
-                                const cardData = {
-                                    type: '4x6-card',
-                                    front: {
-                                        name,
-                                        sunrise,
-                                        sunset,
-                                        photo: frontPhoto,
-                                    },
-                                    back: {
-                                        scripture: psalm23Text,
-                                        background: skyPhoto,
-                                        sunrise,
-                                        sunset,
-                                    },
-                                    language,
-                                };
-                                localStorage.setItem('cardDesign', JSON.stringify(cardData));
-                                router.push('/checkout');
-                            }}
+                        <div
                             style={{
-                                position: 'relative',
-                                background: 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
-                                border: 'none',
-                                borderRadius: '50%',
-                                width: 'clamp(44px, 11vw, 48px)',
-                                height: 'clamp(44px, 11vw, 48px)',
-                                minWidth: '44px',
-                                minHeight: '44px',
+                                background: 'rgba(255,255,255,0.05)',
+                                border: '1px solid rgba(255,255,255,0.2)',
+                                borderRadius: '10px',
+                                padding: 'clamp(6px, 2vw, 8px) clamp(10px, 3vw, 12px)',
+                                color: 'white',
+                                fontSize: 'clamp(10px, 3vw, 12px)',
+                                fontWeight: '600',
+                                whiteSpace: 'nowrap',
+                                minHeight: '32px',
                                 display: 'flex',
                                 alignItems: 'center',
-                                justifyContent: 'center',
-                                cursor: 'pointer',
-                                boxShadow: '0 2px 10px rgba(102,126,234,0.4)',
-                                WebkitTapHighlightColor: 'transparent'
+                                justifyContent: 'center'
                             }}
-                            title="Approve for print"
                         >
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                                <polyline points="6 9 6 2 18 2 18 9" />
-                                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-                                <rect x="6" y="14" width="12" height="8" />
-                            </svg>
-                        </button>
+                            {t.card}
+                        </div>
                     </div>
+
+                    {/* Spacer to balance layout */}
+                    <div style={{ width: '44px', minWidth: '44px' }} />
                 </div>
 
                 <div style={{
@@ -439,17 +342,17 @@ const MemorialCardBackPage: React.FC = () => {
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
-                    justifyContent: 'center',
+                    justifyContent: 'flex-start',
                     position: 'relative',
-                    minHeight: 0,
+                    minHeight: 'calc(100vh - 100px)',
                     width: '100%',
-                    padding: '8px 16px',
-                    overflow: 'hidden'
+                    padding: '0px 16px 4px',
+                    overflow: 'visible'
                 }}>
                     <div style={{
                         position: 'relative',
-                        width: 'min(calc(100vw - 32px), calc((100vh - 200px) * 0.4), 320px)',
-                        maxWidth: '320px',
+                        width: 'min(calc(100vw - 32px), 340px)',
+                        maxWidth: '340px',
                         aspectRatio: '4/6',
                         perspective: '1000px',
                         margin: '0 auto'
@@ -479,7 +382,7 @@ const MemorialCardBackPage: React.FC = () => {
                                         top: 0,
                                         left: 0,
                                         zIndex: 1,
-                                        opacity: 0.8,
+                                        opacity: 0.7,
                                         filter: skyPhoto.includes('grayscale') ? 'grayscale(100%)' : 'none'
                                     }}
                                 />
@@ -493,28 +396,6 @@ const MemorialCardBackPage: React.FC = () => {
                                 gap: '5px',
                                 zIndex: 10
                             }}>
-                                <button
-                                    onClick={handleCustomUpload}
-                                    style={{
-                                        width: '35px',
-                                        height: '25px',
-                                        background: 'rgba(102,126,234,0.6)',
-                                        border: '1px solid rgba(102,126,234,1)',
-                                        borderRadius: '2px',
-                                        color: 'white',
-                                        outline: 'none',
-                                        cursor: 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center'
-                                    }}
-                                >
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                                        <circle cx="8.5" cy="8.5" r="1.5"/>
-                                        <path d="M21 15l-5-5L5 21"/>
-                                    </svg>
-                                </button>
                                 <button
                                     onClick={handleScriptureCycle}
                                     style={{
@@ -558,43 +439,61 @@ const MemorialCardBackPage: React.FC = () => {
                             </div>
 
                             {isEditing ? (
-                                <textarea
-                                    value={psalm23Text}
-                                    onChange={(e) => setPsalm23Text(e.target.value)}
-                                    onClick={handleTextEdit}
-                                    onBlur={handleTextEdit}
-                                    style={{
+                                <>
+                                    <textarea
+                                        value={psalm23Text}
+                                        onChange={(e) => setPsalm23Text(e.target.value)}
+                                        onClick={handleTextEdit}
+                                        onBlur={handleTextEdit}
+                                        style={{
+                                            position: 'absolute',
+                                            top: '80px',
+                                            left: '24px',
+                                            right: '24px',
+                                            bottom: '110px',
+                                            background: 'rgba(255,255,255,0.4)',
+                                            border: '2px solid rgba(102,126,234,0.8)',
+                                            color: textColor,
+                                            fontSize: '11px',
+                                            outline: 'none',
+                                            textAlign: 'center',
+                                            fontFamily: '-apple-system, BlinkMacSystemFont, "Open Sans", sans-serif',
+                                            lineHeight: '1.4',
+                                            zIndex: 20,
+                                            resize: 'none',
+                                            fontWeight: '500',
+                                            borderRadius: '4px',
+                                            padding: '12px',
+                                            overflow: 'hidden'
+                                        }}
+                                        autoFocus
+                                    />
+                                    {/* Character Counter */}
+                                    <div style={{
                                         position: 'absolute',
-                                        top: '70px',
-                                        left: '32px',
-                                        right: '32px',
-                                        bottom: '120px',
-                                        background: 'rgba(255,255,255,0.4)',
-                                        border: '2px solid rgba(102,126,234,0.8)',
-                                        color: textColor,
-                                        fontSize: '15px',
-                                        outline: 'none',
-                                        textAlign: 'center',
-                                        fontFamily: '-apple-system, BlinkMacSystemFont, "Open Sans", sans-serif',
-                                        lineHeight: '1.4',
-                                        zIndex: 20,
-                                        resize: 'none',
-                                        fontWeight: '500',
-                                        borderRadius: '4px',
-                                        padding: '12px',
-                                        overflow: 'hidden'
-                                    }}
-                                    autoFocus
-                                />
+                                        bottom: '115px',
+                                        right: '28px',
+                                        fontSize: '11px',
+                                        color: psalm23Text.length > 400 ? '#ff6b6b' : 'rgba(255,255,255,0.6)',
+                                        fontWeight: '600',
+                                        zIndex: 21,
+                                        background: 'rgba(0,0,0,0.5)',
+                                        padding: '4px 8px',
+                                        borderRadius: '12px',
+                                        backdropFilter: 'blur(8px)'
+                                    }}>
+                                        {psalm23Text.length}/400
+                                    </div>
+                                </>
                             ) : (
                                 <div
                                     onClick={handleTextEdit}
                                     style={{
                                         position: 'absolute',
-                                        top: '70px',
-                                        left: '32px',
-                                        right: '32px',
-                                        bottom: '120px',
+                                        top: '80px',
+                                        left: '24px',
+                                        right: '24px',
+                                        bottom: '110px',
                                         cursor: 'text',
                                         zIndex: 20
                                     }}
@@ -608,7 +507,7 @@ const MemorialCardBackPage: React.FC = () => {
                                             background: 'transparent',
                                             border: 'none',
                                             color: textColor,
-                                            fontSize: '15px',
+                                            fontSize: '11px',
                                             outline: 'none',
                                             textAlign: 'center',
                                             fontFamily: '-apple-system, BlinkMacSystemFont, "Open Sans", sans-serif',
@@ -632,22 +531,24 @@ const MemorialCardBackPage: React.FC = () => {
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 zIndex: 10,
-                                gap: '24px'
+                                gap: '12px'
                             }}>
                                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                                     <div style={{
                                         color: textColor,
-                                        fontSize: '11px',
+                                        fontSize: '15px',
                                         textAlign: 'center',
                                         marginBottom: '3px',
-                                        fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
-                                        fontWeight: '600'
+                                        fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Condensed", "Helvetica Neue Condensed", "Arial Narrow", sans-serif',
+                                        fontWeight: '600',
+                                        letterSpacing: '-0.5px',
+                                        whiteSpace: 'nowrap'
                                     }}>
-                                        {sunrise || 'Date'}
+                                        {formatDateForCard(sunrise) || 'Date'}
                                     </div>
                                     <span style={{
                                         color: textColor,
-                                        fontSize: '9px',
+                                        fontSize: '11px',
                                         fontWeight: '500',
                                         opacity: 0.9
                                     }}>
@@ -658,7 +559,7 @@ const MemorialCardBackPage: React.FC = () => {
                                 <div style={{
                                     width: '60px',
                                     height: '60px',
-                                    borderRadius: '4px',
+                                    borderRadius: '0px',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
@@ -671,45 +572,72 @@ const MemorialCardBackPage: React.FC = () => {
                                         <img
                                             src={qrCodeUrl}
                                             alt="QR Code"
-                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                            style={{ 
+                                                width: '100%', 
+                                                height: '100%', 
+                                                objectFit: 'cover'
+                                            }}
                                         />
                                     ) : (
                                         <div style={{
                                             display: 'grid',
                                             gridTemplateColumns: 'repeat(8,1fr)',
                                             gap: '1px',
-                                            width: '56px',
-                                            height: '56px',
+                                            width: '100%',
+                                            height: '100%',
                                             background: 'transparent',
-                                            padding: '8px',
-                                            borderRadius: '6px'
+                                            padding: '8px'
                                         }}>
                                             {qrPattern.map((isFilled, i) => (
                                                 <div
                                                     key={i}
                                                     style={{
-                                                        background: isFilled ? 'rgba(255,255,255,0.9)' : 'transparent'
+                                                        background: isFilled ? textColor : 'transparent'
                                                     }}
                                                 />
                                             ))}
                                         </div>
                                     )}
+                                    {/* DASH Logo in center */}
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '50%',
+                                        left: '50%',
+                                        transform: 'translate(-50%, -50%)',
+                                        width: '26px',
+                                        height: '14px',
+                                        background: 'transparent',
+                                        borderRadius: '2px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontWeight: '900',
+                                        fontSize: '8px',
+                                        color: textColor,
+                                        fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif',
+                                        letterSpacing: '-0.3px',
+                                        zIndex: 10
+                                    }}>
+                                        DASH
+                                    </div>
                                 </div>
 
                                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                                     <div style={{
                                         color: textColor,
-                                        fontSize: '11px',
+                                        fontSize: '15px',
                                         textAlign: 'center',
                                         marginBottom: '3px',
-                                        fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
-                                        fontWeight: '600'
+                                        fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Condensed", "Helvetica Neue Condensed", "Arial Narrow", sans-serif',
+                                        fontWeight: '600',
+                                        letterSpacing: '-0.5px',
+                                        whiteSpace: 'nowrap'
                                     }}>
-                                        {sunset || 'Date'}
+                                        {formatDateForCard(sunset) || 'Date'}
                                     </div>
                                     <span style={{
                                         color: textColor,
-                                        fontSize: '9px',
+                                        fontSize: '11px',
                                         fontWeight: '500',
                                         opacity: 0.9
                                     }}>
@@ -721,7 +649,7 @@ const MemorialCardBackPage: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Bible Search Modal */}
+                {/* Bible Search Modal - ChatGPT Style */}
                 {showBibleSearch && (
                     <div style={{
                         position: 'fixed',
@@ -729,43 +657,83 @@ const MemorialCardBackPage: React.FC = () => {
                         left: 0,
                         right: 0,
                         bottom: 0,
-                        background: 'rgba(0,0,0,0.9)',
+                        background: 'rgba(0,0,0,0.85)',
                         zIndex: 1000,
                         display: 'flex',
-                        alignItems: 'center',
+                        alignItems: 'flex-start',
                         justifyContent: 'center',
+                        paddingTop: '10vh',
                         padding: '20px'
                     }}
                     onClick={() => setShowBibleSearch(false)}
                     >
                         <div style={{
-                            background: 'rgba(255,255,255,0.1)',
-                            backdropFilter: 'blur(20px)',
-                            border: '1px solid rgba(255,255,255,0.2)',
-                            borderRadius: '20px',
-                            padding: '30px',
-                            maxWidth: '500px',
-                            width: '100%',
-                            maxHeight: '90vh',
-                            overflowY: 'auto'
+                            maxWidth: '700px',
+                            width: '100%'
                         }}
                         onClick={(e) => e.stopPropagation()}
                         >
-                            <h2 style={{
-                                color: 'white',
-                                fontSize: '24px',
-                                marginBottom: '20px',
-                                textAlign: 'center',
-                                fontWeight: '700'
+                            {/* ChatGPT-style Search Bar */}
+                            <div style={{
+                                position: 'relative',
+                                width: '100%',
+                                marginBottom: '16px'
                             }}>
-                                Search Bible Verse
-                            </h2>
+                                <input
+                                    type="text"
+                                    value={bibleSearchQuery}
+                                    onChange={(e) => setBibleSearchQuery(e.target.value)}
+                                    onKeyPress={(e) => e.key === 'Enter' && handleBibleSearch()}
+                                    placeholder={language === 'en' ? 'Search verse or keywords (e.g., "John 14:1" or "comfort, peace")' : 'Buscar versículo o palabras (ej., "Juan 14:1" o "consuelo, paz")'}
+                                    autoFocus
+                                    style={{
+                                        width: '100%',
+                                        background: '#2f2f2f',
+                                        border: '1px solid #565869',
+                                        borderRadius: '24px',
+                                        padding: '14px 56px 14px 20px',
+                                        color: 'white',
+                                        fontSize: '15px',
+                                        outline: 'none',
+                                        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+                                        transition: 'border-color 0.2s',
+                                        boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+                                    }}
+                                />
+                                <button
+                                    onClick={handleBibleSearch}
+                                    disabled={isSearching || !bibleSearchQuery.trim()}
+                                    style={{
+                                        position: 'absolute',
+                                        right: '8px',
+                                        top: '50%',
+                                        transform: 'translateY(-50%)',
+                                        background: isSearching || !bibleSearchQuery.trim()
+                                            ? 'rgba(255,255,255,0.1)'
+                                            : '#10a37f',
+                                        border: 'none',
+                                        borderRadius: '18px',
+                                        width: '40px',
+                                        height: '40px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        cursor: isSearching || !bibleSearchQuery.trim() ? 'not-allowed' : 'pointer',
+                                        opacity: isSearching || !bibleSearchQuery.trim() ? 0.4 : 1,
+                                        transition: 'all 0.2s'
+                                    }}
+                                >
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                                    </svg>
+                                </button>
+                            </div>
 
-                            {/* Translation Selector */}
+                            {/* Translation Pills */}
                             <div style={{
                                 display: 'flex',
                                 gap: '8px',
-                                marginBottom: '20px',
+                                marginBottom: '16px',
                                 justifyContent: 'center'
                             }}>
                                 {(['NIV', 'NKJV', 'Catholic'] as const).map((trans) => (
@@ -774,14 +742,14 @@ const MemorialCardBackPage: React.FC = () => {
                                         onClick={() => setSelectedTranslation(trans)}
                                         style={{
                                             background: selectedTranslation === trans 
-                                                ? 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)' 
-                                                : 'rgba(255,255,255,0.1)',
-                                            border: '1px solid rgba(255,255,255,0.2)',
-                                            borderRadius: '8px',
-                                            padding: '8px 16px',
+                                                ? '#10a37f' 
+                                                : 'rgba(255,255,255,0.08)',
+                                            border: 'none',
+                                            borderRadius: '16px',
+                                            padding: '6px 14px',
                                             color: 'white',
-                                            fontSize: '14px',
-                                            fontWeight: '600',
+                                            fontSize: '13px',
+                                            fontWeight: '500',
                                             cursor: 'pointer',
                                             transition: 'all 0.2s'
                                         }}
@@ -791,244 +759,102 @@ const MemorialCardBackPage: React.FC = () => {
                                 ))}
                             </div>
 
-                            {/* Search Input */}
-                            <input
-                                type="text"
-                                value={bibleSearchQuery}
-                                onChange={(e) => setBibleSearchQuery(e.target.value)}
-                                onKeyPress={(e) => e.key === 'Enter' && handleBibleSearch()}
-                                placeholder="e.g., John 14:1-3 or Psalm 23:1"
-                                style={{
-                                    width: '100%',
-                                    background: 'rgba(255,255,255,0.1)',
-                                    border: '1px solid rgba(255,255,255,0.2)',
-                                    borderRadius: '12px',
-                                    padding: '12px 16px',
-                                    color: 'white',
-                                    fontSize: '16px',
-                                    outline: 'none',
-                                    marginBottom: '20px'
-                                }}
-                            />
-
-                            {/* Search Button */}
-                            <button
-                                onClick={handleBibleSearch}
-                                disabled={isSearching || !bibleSearchQuery.trim()}
-                                style={{
-                                    width: '100%',
-                                    background: isSearching || !bibleSearchQuery.trim()
-                                        ? 'rgba(255,255,255,0.1)'
-                                        : 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
-                                    border: 'none',
-                                    borderRadius: '12px',
-                                    padding: '14px',
-                                    color: 'white',
-                                    fontSize: '16px',
-                                    fontWeight: '600',
-                                    cursor: isSearching || !bibleSearchQuery.trim() ? 'not-allowed' : 'pointer',
-                                    marginBottom: '20px',
-                                    opacity: isSearching || !bibleSearchQuery.trim() ? 0.5 : 1
-                                }}
-                            >
-                                {isSearching ? 'Searching...' : 'Search'}
-                            </button>
-
-                            {/* Popular Verses */}
-                            <div style={{
-                                marginTop: '20px',
-                                paddingTop: '20px',
-                                borderTop: '1px solid rgba(255,255,255,0.1)'
-                            }}>
-                                <h3 style={{
-                                    color: 'rgba(255,255,255,0.8)',
-                                    fontSize: '14px',
-                                    marginBottom: '12px',
-                                    fontWeight: '600'
-                                }}>
-                                    Popular Verses:
-                                </h3>
+                            {/* Keyword Results */}
+                            {keywordResults.length > 0 && (
                                 <div style={{
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    gap: '8px'
+                                    background: '#2f2f2f',
+                                    borderRadius: '16px',
+                                    padding: '16px',
+                                    marginTop: '12px',
+                                    maxHeight: '400px',
+                                    overflowY: 'auto',
+                                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
                                 }}>
-                                    {scriptureOptions.slice(0, 3).map((option, index) => (
+                                    {keywordResults.map((result, index) => (
                                         <button
                                             key={index}
                                             onClick={() => {
-                                                setPsalm23Text(option.text);
+                                                setPsalm23Text(result.text);
                                                 setShowBibleSearch(false);
+                                                setKeywordResults([]);
                                             }}
                                             style={{
+                                                width: '100%',
                                                 background: 'rgba(255,255,255,0.05)',
                                                 border: '1px solid rgba(255,255,255,0.1)',
-                                                borderRadius: '8px',
+                                                borderRadius: '12px',
                                                 padding: '12px',
+                                                marginBottom: '8px',
                                                 color: 'white',
-                                                fontSize: '13px',
                                                 textAlign: 'left',
                                                 cursor: 'pointer',
-                                                transition: 'all 0.2s'
-                                            }}
-                                            onMouseEnter={(e) => {
-                                                e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
-                                            }}
-                                            onMouseLeave={(e) => {
-                                                e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                                                transition: 'all 0.2s',
+                                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif'
                                             }}
                                         >
-                                            <div style={{ fontWeight: '600', marginBottom: '4px' }}>
-                                                {option.reference || option.title}
-                                            </div>
-                                            <div style={{ 
-                                                fontSize: '11px', 
-                                                color: 'rgba(255,255,255,0.7)',
+                                            {result.reference && (
+                                                <div style={{
+                                                    fontSize: '12px',
+                                                    color: '#10a37f',
+                                                    marginBottom: '6px',
+                                                    fontWeight: '600'
+                                                }}>
+                                                    {result.reference}
+                                                </div>
+                                            )}
+                                            <div style={{
+                                                fontSize: '13px',
+                                                lineHeight: '1.4',
+                                                color: 'rgba(255,255,255,0.9)',
                                                 overflow: 'hidden',
                                                 textOverflow: 'ellipsis',
                                                 display: '-webkit-box',
-                                                WebkitLineClamp: 2,
+                                                WebkitLineClamp: 3,
                                                 WebkitBoxOrient: 'vertical'
                                             }}>
-                                                {option.text.substring(0, 80)}...
+                                                {result.text}
                                             </div>
                                         </button>
                                     ))}
                                 </div>
-                            </div>
-
-                            {/* Close Button */}
-                            <button
-                                onClick={() => setShowBibleSearch(false)}
-                                style={{
-                                    width: '100%',
-                                    background: 'transparent',
-                                    border: '1px solid rgba(255,255,255,0.2)',
-                                    borderRadius: '12px',
-                                    padding: '12px',
-                                    color: 'white',
-                                    fontSize: '14px',
-                                    fontWeight: '600',
-                                    cursor: 'pointer',
-                                    marginTop: '20px'
-                                }}
-                            >
-                                Close
-                            </button>
+                            )}
                         </div>
                     </div>
                 )}
 
+                {/* Next Button */}
                 <div style={{
                     position: 'fixed',
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    background: 'rgba(255,255,255,0.05)',
-                    backdropFilter: 'blur(20px)',
-                    borderTop: '1px solid rgba(255,255,255,0.1)',
-                    padding: 'clamp(10px, 3vw, 12px) clamp(12px, 4vw, 20px)',
-                    paddingBottom: 'calc(clamp(10px, 3vw, 12px) + env(safe-area-inset-bottom, 0px))',
+                    bottom: 'calc(20px + env(safe-area-inset-bottom, 0px))',
+                    left: '16px',
+                    right: '16px',
+                    zIndex: 99,
                     display: 'flex',
-                    justifyContent: 'space-around',
-                    zIndex: 100,
-                    WebkitOverflowScrolling: 'touch'
+                    justifyContent: 'center'
                 }}>
-                    <button 
-                        onClick={() => router.push('/dashboard')} 
+                    <button
+                        onClick={() => router.push('/poster-builder')}
                         style={{
-                            background: 'transparent',
+                            width: '100%',
+                            maxWidth: '400px',
+                            background: 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
                             border: 'none',
+                            borderRadius: '12px',
+                            padding: '16px',
                             color: 'white',
+                            fontSize: '16px',
+                            fontWeight: '600',
                             cursor: 'pointer',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '4px',
-                            minWidth: '44px',
-                            minHeight: '44px',
-                            padding: '8px',
+                            boxShadow: '0 4px 20px rgba(102,126,234,0.4)',
+                            transition: 'transform 0.2s',
                             WebkitTapHighlightColor: 'transparent'
                         }}
+                        onTouchStart={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                        onTouchEnd={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}
+                        onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}
                     >
-                        <svg width="clamp(20px, 5vw, 24px)" height="clamp(20px, 5vw, 24px)" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                            <polyline points="9 22 9 12 15 12 15 22"/>
-                        </svg>
-                        <span style={{ fontSize: 'clamp(9px, 2.5vw, 10px)' }}>Home</span>
-                    </button>
-                    <button 
-                        onClick={() => router.push('/profile')} 
-                        style={{
-                            background: 'transparent',
-                            border: 'none',
-                            color: 'white',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '4px',
-                            minWidth: '44px',
-                            minHeight: '44px',
-                            padding: '8px',
-                            WebkitTapHighlightColor: 'transparent'
-                        }}
-                    >
-                        <svg width="clamp(20px, 5vw, 24px)" height="clamp(20px, 5vw, 24px)" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <polygon points="23 7 16 12 23 17 23 7"/>
-                            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
-                        </svg>
-                        <span style={{ fontSize: 'clamp(9px, 2.5vw, 10px)' }}>HEAVEN</span>
-                    </button>
-                    <button 
-                        onClick={() => router.push('/spotify-callback')} 
-                        style={{
-                            background: 'transparent',
-                            border: 'none',
-                            color: 'white',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '4px',
-                            minWidth: '44px',
-                            minHeight: '44px',
-                            padding: '8px',
-                            WebkitTapHighlightColor: 'transparent'
-                        }}
-                    >
-                        <svg width="clamp(20px, 5vw, 24px)" height="clamp(20px, 5vw, 24px)" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M9 18V5l12-2v13"/>
-                            <circle cx="6" cy="18" r="3"/>
-                            <circle cx="18" cy="16" r="3"/>
-                        </svg>
-                        <span style={{ fontSize: 'clamp(9px, 2.5vw, 10px)' }}>Music</span>
-                    </button>
-                    <button 
-                        onClick={() => router.push('/slideshow')} 
-                        style={{
-                            background: 'transparent',
-                            border: 'none',
-                            color: 'white',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '4px',
-                            minWidth: '44px',
-                            minHeight: '44px',
-                            padding: '8px',
-                            WebkitTapHighlightColor: 'transparent'
-                        }}
-                    >
-                        <svg width="clamp(20px, 5vw, 24px)" height="clamp(20px, 5vw, 24px)" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M8 5V19L19 12L8 5Z"/>
-                        </svg>
-                        <span style={{ fontSize: 'clamp(9px, 2.5vw, 10px)' }}>Slideshow</span>
+                        Next
                     </button>
                 </div>
             </div>

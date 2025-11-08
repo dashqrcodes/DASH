@@ -84,6 +84,13 @@ export default function App({ Component, pageProps }: AppProps) {
               -moz-osx-font-smoothing: grayscale;
               text-rendering: optimizeLegibility;
             }
+            
+            /* Hide Next.js dev indicator (only in dev mode) */
+            #__next-build-watcher,
+            iframe[title="Vercel Speed Insights"],
+            nextjs-portal {
+              display: none !important;
+            }
           `
         }} />
       </Head>
