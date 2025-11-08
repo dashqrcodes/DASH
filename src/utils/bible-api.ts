@@ -14,6 +14,93 @@ interface CatholicPrayer {
   language: 'en' | 'es';
 }
 
+interface ComfortMessage {
+  title: string;
+  text: string;
+  language: 'en' | 'es';
+  category: 'secular' | 'universal';
+}
+
+// Non-religious comfort messages and tidings for all users
+const COMFORT_MESSAGES: { en: ComfortMessage[]; es: ComfortMessage[] } = {
+  en: [
+    {
+      title: "A Life Well Lived",
+      text: "Those we love don't go away, they walk beside us every day. Unseen, unheard, but always near, still loved, still missed, and very dear.",
+      language: 'en',
+      category: 'secular'
+    },
+    {
+      title: "Legacy of Love",
+      text: "What we have once enjoyed we can never lose. All that we love deeply becomes a part of us.",
+      language: 'en',
+      category: 'secular'
+    },
+    {
+      title: "Cherished Memories",
+      text: "To live in hearts we leave behind is not to die. Your memory is a keepsake from which we'll never part. Heaven holds you and our hearts hold you forever.",
+      language: 'en',
+      category: 'universal'
+    },
+    {
+      title: "Forever in Our Hearts",
+      text: "Though your smile is gone forever and your hand we cannot touch, we have so many memories of the one we loved so much. Your memory is our keepsake with which we'll never part.",
+      language: 'en',
+      category: 'secular'
+    },
+    {
+      title: "Celebration of Life",
+      text: "Life is not measured by the number of breaths we take, but by the moments that take our breath away. You gave us countless such moments, and for that we are forever grateful.",
+      language: 'en',
+      category: 'secular'
+    },
+    {
+      title: "Gentle Peace",
+      text: "May you find comfort in knowing that your loved one is at peace, free from pain and suffering. The love you shared will forever remain in your heart.",
+      language: 'en',
+      category: 'universal'
+    }
+  ],
+  es: [
+    {
+      title: "Una Vida Bien Vivida",
+      text: "Aquellos que amamos nunca se van, caminan a nuestro lado cada día. Invisibles, inaudibles, pero siempre cerca, aún amados, aún extrañados, y muy queridos.",
+      language: 'es',
+      category: 'secular'
+    },
+    {
+      title: "Legado de Amor",
+      text: "Lo que una vez disfrutamos nunca lo podemos perder. Todo lo que amamos profundamente se convierte en parte de nosotros.",
+      language: 'es',
+      category: 'secular'
+    },
+    {
+      title: "Recuerdos Preciados",
+      text: "Vivir en los corazones que dejamos atrás no es morir. Tu memoria es un tesoro del cual nunca nos separaremos. El cielo te sostiene y nuestros corazones te guardan para siempre.",
+      language: 'es',
+      category: 'universal'
+    },
+    {
+      title: "Por Siempre en Nuestros Corazones",
+      text: "Aunque tu sonrisa se ha ido para siempre y tu mano no podemos tocar, tenemos tantos recuerdos de quien tanto amamos. Tu memoria es nuestro tesoro del cual nunca nos separaremos.",
+      language: 'es',
+      category: 'secular'
+    },
+    {
+      title: "Celebración de la Vida",
+      text: "La vida no se mide por el número de respiraciones que tomamos, sino por los momentos que nos dejan sin aliento. Nos diste incontables momentos así, y por eso estamos eternamente agradecidos.",
+      language: 'es',
+      category: 'secular'
+    },
+    {
+      title: "Paz Dulce",
+      text: "Que encuentres consuelo sabiendo que tu ser querido está en paz, libre de dolor y sufrimiento. El amor que compartieron permanecerá para siempre en tu corazón.",
+      language: 'es',
+      category: 'universal'
+    }
+  ]
+};
+
 // Popular Catholic prayers (pre-loaded, no API needed)
 const CATHOLIC_PRAYERS: { en: CatholicPrayer[]; es: CatholicPrayer[] } = {
   en: [
@@ -140,6 +227,7 @@ export function searchByKeywords(query: string, language: 'en' | 'es'): Array<{ 
   const lowercaseQuery = query.toLowerCase();
   const verses = POPULAR_VERSES[language];
   const prayers = CATHOLIC_PRAYERS[language];
+  const comfortMessages = COMFORT_MESSAGES[language];
   
   // Keyword mapping for common memorial themes (English & Spanish)
   const keywordMap: Record<string, string[]> = {
@@ -149,21 +237,26 @@ export function searchByKeywords(query: string, language: 'en' | 'es'): Array<{ 
     'shepherd': ['shepherd', 'pasture', 'water', 'valley', 'rod', 'staff', 'pastor', 'praderas', 'agua', 'valle', 'vara', 'cayado'],
     'tears': ['tears', 'wipe', 'pain', 'sorrow', 'crying', 'lágrimas', 'enjugar', 'dolor', 'llanto', 'llorar'],
     'peace': ['peace', 'calm', 'still', 'rest', 'troubled', 'paz', 'calma', 'tranquilo', 'descanso', 'turbado'],
-    'love': ['love', 'mercy', 'goodness', 'kindness', 'amor', 'misericordia', 'bondad', 'amabilidad'],
-    'hope': ['hope', 'faith', 'believe', 'trust', 'esperanza', 'fe', 'creer', 'confiar']
+    'love': ['love', 'mercy', 'goodness', 'kindness', 'hearts', 'memory', 'amor', 'misericordia', 'bondad', 'amabilidad', 'corazones', 'memoria'],
+    'hope': ['hope', 'faith', 'believe', 'trust', 'esperanza', 'fe', 'creer', 'confiar'],
+    'prayer': ['prayer', 'pray', 'bless', 'amen', 'oración', 'orar', 'bendición', 'amén'],
+    'secular': ['memory', 'memories', 'cherish', 'celebrate', 'legacy', 'recuerdos', 'celebrar', 'legado'],
+    'comfort_secular': ['non-religious', 'universal', 'secular', 'humanist', 'non-denominational', 'no religioso', 'universal', 'secular', 'humanista']
   };
   
   // Function to calculate relevance score
-  const calculateScore = (text: string, reference?: string): number => {
+  const calculateScore = (text: string, reference?: string, title?: string): number => {
     let score = 0;
     const lowerText = text.toLowerCase();
     const lowerRef = reference?.toLowerCase() || '';
+    const lowerTitle = title?.toLowerCase() || '';
     
     // Direct word match in text
     const queryWords = lowercaseQuery.split(/\s+/).filter(w => w.length > 2);
     queryWords.forEach(word => {
       if (lowerText.includes(word)) score += 10;
       if (lowerRef.includes(word)) score += 5;
+      if (lowerTitle.includes(word)) score += 7;
     });
     
     // Semantic keyword matching
@@ -171,6 +264,7 @@ export function searchByKeywords(query: string, language: 'en' | 'es'): Array<{ 
       if (queryWords.some(qw => theme.includes(qw) || keywords.includes(qw))) {
         keywords.forEach(keyword => {
           if (lowerText.includes(keyword)) score += 3;
+          if (lowerTitle.includes(keyword)) score += 2;
         });
       }
     });
@@ -188,14 +282,20 @@ export function searchByKeywords(query: string, language: 'en' | 'es'): Array<{ 
   const scoredPrayers = prayers.map(p => ({
     text: p.text,
     title: p.title,
-    score: calculateScore(p.text, p.title)
+    score: calculateScore(p.text, undefined, p.title)
+  }));
+  
+  const scoredComfortMessages = comfortMessages.map(c => ({
+    text: c.text,
+    title: c.title,
+    score: calculateScore(c.text, undefined, c.title)
   }));
   
   // Combine and filter results with score > 0
-  const results = [...scoredVerses, ...scoredPrayers]
+  const results = [...scoredVerses, ...scoredPrayers, ...scoredComfortMessages]
     .filter(item => item.score > 0)
     .sort((a, b) => b.score - a.score)
-    .slice(0, 5); // Return top 5 matches
+    .slice(0, 8); // Return top 8 matches (increased from 5 to show more variety)
   
   return results;
 }

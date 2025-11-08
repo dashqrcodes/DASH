@@ -133,39 +133,151 @@ const ProfilePage: React.FC = () => {
         setter(value);
     };
     
-    const formatDateOnBlur = (value: string, setter: (val: string) => void) => {
-        if (!value) return;
-        
-        // Smart formatting: add comma and space if needed
-        // Check if it looks like: "Month day year" without comma
-        const words = value.split(/\s+/).filter(w => w.length > 0);
-        
-        if (words.length === 3 && !value.includes(',')) {
-            // Auto-add comma: "January 1 1990" → "January 1, 1990"
-            setter(`${words[0]} ${words[1]}, ${words[2]}`);
-        } else if (words.length >= 3 && value.includes(',')) {
-            // Already has comma, just clean up spacing
-            const formatted = value.replace(/,\s*/g, ', ').replace(/\s+/g, ' ').trim();
-            setter(formatted);
-        }
+    interface ProfileSnapshot {
+        name: string;
+        sunrise: string;
+        sunset: string;
+        photo: string | null;
+    }
+
+    const monthMapEn: Record<string, number> = {
+        january: 0,
+        february: 1,
+        march: 2,
+        april: 3,
+        may: 4,
+        june: 5,
+        july: 6,
+        august: 7,
+        september: 8,
+        october: 9,
+        november: 10,
+        december: 11
     };
 
-    const handleFieldBlur = () => {
+    const monthMapEs: Record<string, number> = {
+        enero: 0,
+        febrero: 1,
+        marzo: 2,
+        abril: 3,
+        mayo: 4,
+        junio: 5,
+        julio: 6,
+        agosto: 7,
+        septiembre: 8,
+        setiembre: 8,
+        octubre: 9,
+        noviembre: 10,
+        diciembre: 11
+    };
+
+    const normalizeDateInput = (value: string, lang: 'en' | 'es'): string => {
+        if (!value) return '';
+
+        let trimmed = value.trim();
+        if (!trimmed) return '';
+
+        trimmed = trimmed
+            .replace(/\s+/g, ' ')
+            .replace(/(\d+)(st|nd|rd|th)/gi, '$1')
+            .replace(/\./g, '');
+
+        const cleanNumeric = trimmed.replace(/-/g, '/');
+        const numericMatch = cleanNumeric.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+
+        const buildDate = (day: number, monthIndex: number, year: number) => {
+            const date = new Date(year, monthIndex, day);
+            if (Number.isNaN(date.getTime())) {
+                return null;
+            }
+            const validMonth = date.getMonth() === monthIndex;
+            const validDay = date.getDate() === day;
+            if (!validMonth || !validDay) return null;
+            return date;
+        };
+
+        if (numericMatch) {
+            const [, first, second, yearRaw] = numericMatch;
+            const year = Number(yearRaw.length === 2 ? `20${yearRaw}` : yearRaw);
+            if (lang === 'en') {
+                const month = Number(first);
+                const day = Number(second);
+                const date = buildDate(day, month - 1, year);
+                if (date) {
+                    const monthName = new Intl.DateTimeFormat('en-US', { month: 'long' }).format(date);
+                    return `${monthName} ${day}, ${year}`;
+                }
+            } else {
+                const day = Number(first);
+                const month = Number(second);
+                const date = buildDate(day, month - 1, year);
+                if (date) {
+                    const monthName = new Intl.DateTimeFormat('es-ES', { month: 'long' }).format(date);
+                    const capitalized = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+                    const paddedDay = day.toString().padStart(2, '0');
+                    return `${paddedDay} ${capitalized}, ${year}`;
+                }
+            }
+        }
+
+        if (lang === 'en') {
+            const match = trimmed.match(/^([A-Za-z]+)\s+(\d{1,2})(?:,)?\s*(\d{4})$/);
+            if (match) {
+                const [, monthRaw, dayRaw, yearRaw] = match;
+                const monthIndex = monthMapEn[monthRaw.toLowerCase()];
+                const day = Number(dayRaw);
+                const year = Number(yearRaw);
+                if (monthIndex !== undefined) {
+                    const date = buildDate(day, monthIndex, year);
+                    if (date) {
+                        const monthName = new Intl.DateTimeFormat('en-US', { month: 'long' }).format(date);
+                        return `${monthName} ${day}, ${year}`;
+                    }
+                }
+            }
+        } else {
+            const match = trimmed.match(/^(\d{1,2})\s+([A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+)(?:,)?\s*(\d{4})$/);
+            if (match) {
+                const [, dayRaw, monthRaw, yearRaw] = match;
+                const monthIndex = monthMapEs[monthRaw.toLowerCase()];
+                const day = Number(dayRaw);
+                const year = Number(yearRaw);
+                if (monthIndex !== undefined) {
+                    const date = buildDate(day, monthIndex, year);
+                    if (date) {
+                        const monthName = new Intl.DateTimeFormat('es-ES', { month: 'long' }).format(date);
+                        const capitalized = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+                        const paddedDay = day.toString().padStart(2, '0');
+                        return `${paddedDay} ${capitalized}, ${year}`;
+                    }
+                }
+            }
+        }
+
+        return trimmed;
+    };
+
+    const handleFieldBlur = (overrides?: Partial<ProfileSnapshot>) => {
         // Only save if data has been loaded (prevent overwriting on initial render)
         if (!isDataLoaded.current) return;
         
         // Auto-save when user taps away from a field
         const profileData = {
-            name,
-            sunrise,
-            sunset,
-            photo,
+            name: overrides?.name ?? name,
+            sunrise: overrides?.sunrise ?? sunrise,
+            sunset: overrides?.sunset ?? sunset,
+            photo: overrides?.photo ?? photo,
             updatedAt: new Date().toISOString()
         };
         localStorage.setItem('profileData', JSON.stringify(profileData));
     };
 
+    const isProfileComplete = Boolean(name.trim() && sunrise.trim() && sunset.trim() && photo);
+
     const handleNext = () => {
+        if (!isProfileComplete) {
+            return;
+        }
         // Save profile data before navigating
         const profileData = {
             name,
@@ -234,7 +346,7 @@ const ProfilePage: React.FC = () => {
                         box-shadow: inset 0 0 20px 20px rgba(255,255,255,0.05) !important;
                         background-color: rgba(255,255,255,0.05) !important;
                         caret-color: white !important;
-                        border: 1px solid rgba(255,255,255,0.2) !important;
+                        border: none !important;
                     }
                 `}</style>
             </Head>
@@ -420,7 +532,7 @@ const ProfilePage: React.FC = () => {
                             style={{
                                 width: '100%',
                                 background: 'rgba(255,255,255,0.05)',
-                                border: '1px solid rgba(255,255,255,0.2)',
+                                border: 'none',
                                 borderRadius: '12px',
                                 padding: '12px 16px',
                                 color: 'white',
@@ -454,14 +566,14 @@ const ProfilePage: React.FC = () => {
                                 value={sunrise}
                                 onChange={(e) => handleDateChange(e.target.value, setSunrise)}
                                 onBlur={() => {
-                                    formatDateOnBlur(sunrise, setSunrise);
-                                    handleFieldBlur();
+                                    const normalized = formatDateOnBlur(sunrise, setSunrise);
+                                    handleFieldBlur({ sunrise: normalized });
                                 }}
                                 placeholder={t.birthDate}
                                 style={{
                                     width: '100%',
                                     background: 'rgba(255,255,255,0.05)',
-                                    border: '1px solid rgba(255,255,255,0.2)',
+                                    border: 'none',
                                     borderRadius: '12px',
                                     padding: '12px 16px',
                                     color: 'white',
@@ -486,14 +598,14 @@ const ProfilePage: React.FC = () => {
                                 value={sunset}
                                 onChange={(e) => handleDateChange(e.target.value, setSunset)}
                                 onBlur={() => {
-                                    formatDateOnBlur(sunset, setSunset);
-                                    handleFieldBlur();
+                                    const normalized = formatDateOnBlur(sunset, setSunset);
+                                    handleFieldBlur({ sunset: normalized });
                                 }}
                                 placeholder={t.dateOfPassing}
                                 style={{
                                     width: '100%',
                                     background: 'rgba(255,255,255,0.05)',
-                                    border: '1px solid rgba(255,255,255,0.2)',
+                                    border: 'none',
                                     borderRadius: '12px',
                                     padding: '12px 16px',
                                     color: 'white',
@@ -506,27 +618,41 @@ const ProfilePage: React.FC = () => {
                     </div>
 
                     {/* Next Button */}
-                    <button
-                        onClick={handleNext}
-                        style={{
-                            width: '100%',
-                            background: 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
-                            border: 'none',
-                            borderRadius: '12px',
-                            padding: '16px',
-                            color: 'white',
-                            fontSize: '16px',
-                            fontWeight: '600',
-                            cursor: 'pointer',
-                            marginTop: '20px',
-                            boxShadow: '0 4px 20px rgba(102,126,234,0.4)',
-                            transition: 'transform 0.2s'
-                        }}
-                        onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}
-                    >
-                        {language === 'en' ? 'Next' : 'Siguiente'}
-                    </button>
+                    <div style={{ width: '100%', marginTop: '20px' }}>
+                        <button
+                            onClick={handleNext}
+                            disabled={!isProfileComplete}
+                            style={{
+                                width: '100%',
+                                background: isProfileComplete ? 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)' : 'rgba(102,126,234,0.25)',
+                                border: 'none',
+                                borderRadius: '9999px',
+                                padding: '14px 20px',
+                                color: 'white',
+                                fontSize: '16px',
+                                fontWeight: '600',
+                                cursor: isProfileComplete ? 'pointer' : 'default',
+                                boxShadow: isProfileComplete ? '0 4px 20px rgba(102,126,234,0.4)' : 'none',
+                                transition: 'transform 0.2s, background 0.2s',
+                                opacity: isProfileComplete ? 1 : 0.6
+                            }}
+                            onMouseEnter={(e) => { if (isProfileComplete) e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}
+                        >
+                            {language === 'en' ? 'Next' : 'Siguiente'}
+                        </button>
+                        {!isProfileComplete && (
+                            <div style={{
+                                marginTop: '8px',
+                                fontSize: '12px',
+                                color: 'rgba(255,255,255,0.7)',
+                                textAlign: 'center',
+                                fontWeight: '500'
+                            }}>
+                                {language === 'en' ? 'To proceed, please complete the form.' : 'Para continuar, complete el formulario.'}
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </>
