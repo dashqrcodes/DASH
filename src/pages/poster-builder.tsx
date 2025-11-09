@@ -144,13 +144,22 @@ const PosterBuilderPage: React.FC = () => {
       const data = await response.json();
       
       if (data.success) {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('orderComplete', 'true');
+          if (name) localStorage.setItem('lovedOneName', name);
+          if (sunrise) localStorage.setItem('sunrise', sunrise);
+          if (sunset) localStorage.setItem('sunset', sunset);
+        }
         router.push({
           pathname: '/print-confirmation',
           query: {
             funeralHome: orderDetails.funeralHome,
             deliveryAddress: orderDetails.deliveryAddress,
             serviceDate: orderDetails.serviceDate,
-            customerName: name || 'Your loved one'
+            customerName: name || 'Your loved one',
+            sunrise,
+            sunset,
+            autoOpen: 'true'
           }
         });
       } else {

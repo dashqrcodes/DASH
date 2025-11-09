@@ -9,22 +9,42 @@ const PrintConfirmationPage: React.FC = () => {
     funeralHome = 'Print Shop',
     deliveryAddress = 'Delivery address pending',
     serviceDate = 'the scheduled service',
-    customerName = 'your loved one'
+    customerName = 'your loved one',
+    sunrise,
+    sunset,
+    autoOpen = 'true'
   } = router.query as {
     funeralHome?: string;
     deliveryAddress?: string;
     serviceDate?: string;
     customerName?: string;
+    sunrise?: string;
+    sunset?: string;
+    autoOpen?: string;
   };
 
   useEffect(() => {
     // Auto-advance to slideshow after a brief pause so the flow continues
     const timeout = setTimeout(() => {
-      router.push('/slideshow');
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('orderComplete', 'true');
+        if (customerName) localStorage.setItem('lovedOneName', customerName);
+        if (sunrise) localStorage.setItem('sunrise', sunrise);
+        if (sunset) localStorage.setItem('sunset', sunset);
+      }
+      router.push({
+        pathname: '/slideshow',
+        query: {
+          autoOpen,
+          name: customerName,
+          sunrise,
+          sunset
+        }
+      });
     }, 3500);
 
     return () => clearTimeout(timeout);
-  }, [router]);
+  }, [router, autoOpen, customerName, sunrise, sunset]);
 
   const headline = useMemo(() => {
     if (!customerName || customerName === 'your loved one') {
@@ -177,7 +197,23 @@ const PrintConfirmationPage: React.FC = () => {
           </div>
 
           <button
-            onClick={() => router.push('/slideshow')}
+            onClick={() => {
+              if (typeof window !== 'undefined') {
+                localStorage.setItem('orderComplete', 'true');
+                if (customerName) localStorage.setItem('lovedOneName', customerName);
+                if (sunrise) localStorage.setItem('sunrise', sunrise);
+                if (sunset) localStorage.setItem('sunset', sunset);
+              }
+              router.push({
+                pathname: '/slideshow',
+                query: {
+                  autoOpen,
+                  name: customerName,
+                  sunrise,
+                  sunset
+                }
+              });
+            }}
             style={{
               width: '100%',
               maxWidth: '260px',
