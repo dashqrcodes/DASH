@@ -160,7 +160,12 @@ const SlideshowPage: React.FC = () => {
       later: '↓ Later',
       remove: 'Remove',
       completeSlideshow: 'Complete Slideshow',
-      memories: 'memories'
+      memories: 'memories',
+      inviteCollaborators: 'Invite Collaborators',
+      inviteSubtitle: 'Send Mom, siblings, and friends a one-tap link to add photos.',
+      connectSpotify: 'Connect Spotify',
+      spotifySubtitle: 'Pick the playlist that should play with this memorial slideshow.',
+      comingSoon: 'Coming soon – tap to preview the flow.'
     },
     es: {
       createSlideshow: 'Crear Presentación',
@@ -184,7 +189,12 @@ const SlideshowPage: React.FC = () => {
       later: '↓ Después',
       remove: 'Eliminar',
       completeSlideshow: 'Completar Presentación',
-      memories: 'recuerdos'
+      memories: 'recuerdos',
+      inviteCollaborators: 'Invitar Colaboradores',
+      inviteSubtitle: 'Envía un enlace de un toque a mamá, hermanos y amigos.',
+      connectSpotify: 'Conectar Spotify',
+      spotifySubtitle: 'Elige la lista que acompañará esta presentación.',
+      comingSoon: 'Próximamente: toca para ver el flujo.'
     }
   };
 
@@ -480,6 +490,50 @@ const SlideshowPage: React.FC = () => {
     return ((current - start) / (end - start)) * 100;
   };
 
+  const handleInviteCollaborators = () => {
+    alert(`${t.inviteCollaborators}: ${t.comingSoon}`);
+  };
+
+  const handleConnectSpotify = () => {
+    alert(`${t.connectSpotify}: ${t.comingSoon}`);
+  };
+
+  const renderHeroMedia = () => {
+    const hero = photos[0];
+    if (!hero) return null;
+
+    if (hero.type === 'video') {
+      if (hero.muxPlaybackId) {
+        return (
+          <MuxPlayerWrapper
+            playbackId={hero.muxPlaybackId}
+            title={`Memory preview`}
+            muted
+            controls={false}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+        );
+      }
+      return (
+        <video
+          src={hero.preview || hero.url}
+          muted
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+        />
+      );
+    }
+
+    return (
+      <img
+        data-src={hero.preview || hero.url}
+        src={hero.preview ? undefined : hero.url}
+        alt="Slideshow preview"
+        loading="lazy"
+        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+      />
+    );
+  };
+
     return (
         <>
             <Head>
@@ -650,6 +704,53 @@ const SlideshowPage: React.FC = () => {
                         </div>
         )}
 
+        {/* Hero Preview */}
+        <div
+          onClick={() => {
+            if (fileInputRef.current) fileInputRef.current.click();
+          }}
+          style={{
+            margin: '0 20px 18px',
+            position: 'relative',
+            borderRadius: '22px',
+            overflow: 'hidden',
+            background: photos.length
+              ? 'rgba(255,255,255,0.08)'
+              : 'linear-gradient(135deg, rgba(102,126,234,0.28) 0%, rgba(118,75,162,0.22) 100%)',
+            aspectRatio: '16 / 9',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            boxShadow: '0 25px 50px rgba(8,8,18,0.35)'
+          }}
+        >
+          {photos.length > 0 ? (
+            renderHeroMedia()
+          ) : (
+            <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.85)', padding: '0 32px' }}>
+              <div style={{ fontSize: '28px', marginBottom: '12px' }}>+</div>
+              <div style={{ fontSize: '16px', fontWeight: 600 }}>{t.addPhotosVideos}</div>
+              <div style={{ fontSize: '13px', opacity: 0.75, marginTop: '6px' }}>{t.startFromEarliest}</div>
+            </div>
+          )}
+          <div
+            style={{
+              position: 'absolute',
+              bottom: '14px',
+              right: '14px',
+              background: 'rgba(0,0,0,0.6)',
+              borderRadius: '999px',
+              padding: '8px 16px',
+              fontSize: '12px',
+              letterSpacing: '0.1em',
+              opacity: 0.8
+            }}
+          >
+            {photos.length === 0 ? 'TAP TO ADD' : `${photos.length} ${t.memories}`}
+          </div>
+        </div>
+
         {/* Add Photos Buttons */}
         <div style={{
           padding:'0 20px',
@@ -769,6 +870,54 @@ const SlideshowPage: React.FC = () => {
           />
         )}
 
+        {/* Collaboration & Music CTAs */}
+        <div style={{
+          padding: '0 20px',
+          marginBottom: '20px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px'
+        }}>
+          <button
+            onClick={handleInviteCollaborators}
+            style={{
+              border: 'none',
+              borderRadius: '16px',
+              padding: '18px 20px',
+              background: 'rgba(255,255,255,0.08)',
+              color: 'white',
+              textAlign: 'left',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '6px',
+              cursor: 'pointer'
+            }}
+          >
+            <span style={{ fontSize: '15px', fontWeight: 600 }}>{t.inviteCollaborators}</span>
+            <span style={{ fontSize: '13px', opacity: 0.8 }}>{t.inviteSubtitle}</span>
+          </button>
+
+          <button
+            onClick={handleConnectSpotify}
+            style={{
+              border: 'none',
+              borderRadius: '16px',
+              padding: '18px 20px',
+              background: 'rgba(102,126,234,0.18)',
+              color: 'white',
+              textAlign: 'left',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '6px',
+              cursor: 'pointer',
+              boxShadow: '0 6px 20px rgba(102,126,234,0.35)'
+            }}
+          >
+            <span style={{ fontSize: '15px', fontWeight: 700 }}>{t.connectSpotify}</span>
+            <span style={{ fontSize: '13px', opacity: 0.85 }}>{t.spotifySubtitle}</span>
+          </button>
+        </div>
+ 
         {/* Photo Grid - Chronological */}
         <div style={{
           flex:1,

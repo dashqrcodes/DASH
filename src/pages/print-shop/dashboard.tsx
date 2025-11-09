@@ -1,769 +1,498 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 
-interface Order {
+import type { PrintShopOrderStatus } from '../api/print-shop/orders';
+
+type CourierStatus = 'requested' | 'en_route' | 'picked_up' | 'delivered';
+
+type TimelineStatus = PrintShopOrderStatus | 'courier_requested' | 'payout_released';
+
+type TimelineEntry = {
+  status: TimelineStatus;
+  label: string;
+  at: string;
+};
+
+type PrintShopOrder = {
   id: string;
   orderNumber: string;
   customerName: string;
   funeralHome: string;
+  deliveryAddress: string;
   serviceDate: string;
-  status: 'pending' | 'in_progress' | 'ready' | 'delivered';
-  products: Array<{
-    type: string;
-    quantity: number;
-  }>;
+  status: PrintShopOrderStatus;
+  products: Array<{ type: string; quantity: number }>;
   orderDate: string;
-  deliveryType: string;
-  totalPrice: number;
-}
+  deliveryType: 'UBER';
+  totalDue: number;
+  courier?: {
+    vendor: string;
+    status: CourierStatus;
+    trackingUrl: string;
+    etaMinutes: number;
+  };
+  payout?: {
+    amount: number;
+    currency: string;
+    status: 'pending' | 'sent';
+    transferId?: string;
+  };
+  timeline: TimelineEntry[];
+};
 
-const PrintShopDashboard: React.FC = () => {
+const STATUS_PIPELINE: PrintShopOrderStatus[] = ['pending', 'in_progress', 'ready', 'picked_up', 'delivered'];
+
+const pipelineCopy: Record<PrintShopOrderStatus, string> = {
+  pending: 'Order received',
+  in_progress: 'Print in production',
+  ready: 'Ready for courier pickup',
+  picked_up: 'Courier picked up',
+  delivered: 'Delivered to funeral home',
+};
+
+const accentGradient = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+
+const statusPillColor: Record<PrintShopOrderStatus, string> = {
+  pending: 'rgba(255,255,255,0.16)',
+  in_progress: 'rgba(102,126,234,0.35)',
+  ready: 'rgba(80,200,120,0.35)',
+  picked_up: 'rgba(255,200,80,0.32)',
+  delivered: 'rgba(255,255,255,0.14)',
+};
+
+const nextStatus = (status: PrintShopOrderStatus): PrintShopOrderStatus | null => {
+  const currentIndex = STATUS_PIPELINE.indexOf(status);
+  if (currentIndex === -1 || currentIndex === STATUS_PIPELINE.length - 1) return null;
+  return STATUS_PIPELINE[currentIndex + 1];
+};
+
+const Dashboard: React.FC = () => {
   const router = useRouter();
-  const [shopInfo, setShopInfo] = useState<any>(null);
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [filter, setFilter] = useState<'all' | 'pending' | 'in_progress' | 'ready' | 'delivered'>('all');
+  const [shopInfo, setShopInfo] = useState<{ shopName: string } | null>(null);
+  const [orders, setOrders] = useState<PrintShopOrder[]>([]);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('printShopTheme') as 'dark' | 'light') || 'dark';
+    }
+    return 'dark';
+  });
+
+  const toggleTheme = () => {
+    const nextTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(nextTheme);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('printShopTheme', nextTheme);
+    }
+  };
+
+  const isDark = theme === 'dark';
 
   useEffect(() => {
-    // Check authentication
     const auth = localStorage.getItem('printShopAuth');
     if (!auth) {
       router.push('/print-shop/sign-in');
       return;
     }
-    
     setShopInfo(JSON.parse(auth));
-    
-    // Check if mobile
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    
-    // Load orders
+
+    const handleResize = () => setIsMobile(window.innerWidth <= 820);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+
     loadOrders();
-    
-    return () => window.removeEventListener('resize', checkMobile);
+
+    return () => window.removeEventListener('resize', handleResize);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadOrders = async () => {
-    // TODO: Fetch from API
-    // Mock data for now
-    const mockOrders: Order[] = [
-      {
-        id: '1',
-        orderNumber: 'JOHN-DOE-1699123456789',
-        customerName: 'John Doe',
-        funeralHome: 'Groman Mortuary',
-        serviceDate: '2024-11-15',
-        status: 'pending',
-        products: [
-          { type: '4"x6" Card', quantity: 100 },
-          { type: '20"x30" Poster', quantity: 1 }
-        ],
-        orderDate: new Date().toISOString(),
-        deliveryType: 'UBER',
-        totalPrice: 250
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/print-shop/orders');
+      const data = await response.json();
+      setOrders(data.orders || []);
+      if (!selectedOrderId && data.orders && data.orders.length > 0) {
+        setSelectedOrderId(data.orders[0].id);
       }
-    ];
-    setOrders(mockOrders);
-  };
-
-  const updateOrderStatus = async (orderId: string, newStatus: Order['status']) => {
-    // TODO: Update via API
-    setOrders(orders.map(order => 
-      order.id === orderId ? { ...order, status: newStatus } : order
-    ));
-    
-    // If marked as ready, trigger Uber
-    if (newStatus === 'ready') {
-      alert('Uber courier has been notified for pickup');
+    } catch (error) {
+      console.error('Failed to load orders', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleSignOut = () => {
-    localStorage.removeItem('printShopAuth');
-    router.push('/print-shop/sign-in');
-  };
-
-  const filteredOrders = filter === 'all' 
-    ? orders 
-    : orders.filter(order => order.status === filter);
-
-  const getStatusColor = (status: Order['status']) => {
-    switch (status) {
-      case 'pending': return '#FFA500';
-      case 'in_progress': return '#4A90E2';
-      case 'ready': return '#50C878';
-      case 'delivered': return '#808080';
-      default: return '#000';
+  const handleUpdateStatus = async (orderId: string, status: PrintShopOrderStatus) => {
+    setUpdatingId(orderId);
+    try {
+      const response = await fetch('/api/print-shop/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: orderId, status }),
+      });
+      if (!response.ok) throw new Error('Failed to update order');
+      const data = await response.json();
+      const updated = data.order as PrintShopOrder;
+      setOrders((prev) => prev.map((order) => (order.id === updated.id ? updated : order)));
+      setSelectedOrderId(updated.id);
+    } catch (error) {
+      console.error(error);
+      alert('Could not update order status.');
+    } finally {
+      setUpdatingId(null);
     }
   };
 
-  const getStatusLabel = (status: Order['status']) => {
-    switch (status) {
-      case 'pending': return 'New Order';
-      case 'in_progress': return 'In Progress';
-      case 'ready': return 'Ready for Pickup';
-      case 'delivered': return 'Delivered';
-      default: return status;
-    }
+  const selectedOrder = useMemo(
+    () => orders.find((order) => order.id === selectedOrderId) || orders[0] || null,
+    [orders, selectedOrderId]
+  );
+
+  const stats = useMemo(() => {
+    const byStatus: Record<PrintShopOrderStatus, number> = {
+      pending: 0,
+      in_progress: 0,
+      ready: 0,
+      picked_up: 0,
+      delivered: 0,
+    };
+    orders.forEach((order) => {
+      byStatus[order.status] += 1;
+    });
+    return byStatus;
+  }, [orders]);
+
+  const renderTimeline = (order: PrintShopOrder) => {
+    if (!order.timeline?.length) return null;
+    return (
+      <div style={{ marginTop: '20px' }}>
+        <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.55)', marginBottom: '8px', letterSpacing: '0.4px' }}>
+          Timeline
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {order.timeline
+            .slice()
+            .reverse()
+            .map((event, index) => (
+              <div key={`${event.status}-${index}`} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div
+                  style={{
+                    width: '10px',
+                    height: '10px',
+                    borderRadius: '50%',
+                    background:
+                      event.status === 'payout_released'
+                        ? '#60ffa9'
+                        : event.status === 'courier_requested'
+                        ? '#ffd86b'
+                        : '#ffffff',
+                    opacity: 0.85,
+                    flexShrink: 0,
+                  }}
+                />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '14px', color: 'white', marginBottom: '4px' }}>{event.label}</div>
+                  <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.45)' }}>
+                    {new Date(event.at).toLocaleString()}
+                  </div>
+                </div>
+              </div>
+            ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderActionButton = (order: PrintShopOrder) => {
+    const next = nextStatus(order.status);
+    if (!next) return null;
+
+    const label =
+      next === 'in_progress'
+        ? 'Begin Printing'
+        : next === 'ready'
+        ? 'Mark Ready for Pickup'
+        : next === 'picked_up'
+        ? 'Courier Picked Up'
+        : 'Mark Delivered';
+
+    return (
+      <button
+        onClick={() => handleUpdateStatus(order.id, next)}
+        disabled={updatingId === order.id}
+        style={{
+          width: '100%',
+          border: 'none',
+          borderRadius: '999px',
+          padding: '16px',
+          marginTop: '24px',
+          background: accentGradient,
+          color: 'white',
+          fontSize: '16px',
+          fontWeight: 600,
+          cursor: 'pointer',
+          opacity: updatingId === order.id ? 0.6 : 1,
+          transition: 'transform 0.2s ease',
+        }}
+      >
+        {updatingId === order.id ? 'Updating…' : label}
+      </button>
+    );
   };
 
   if (!shopInfo) {
-    return <div>Loading...</div>;
+    return null;
   }
 
-  // MOBILE VIEW
-  if (isMobile) {
-    return (
-      <>
-        <Head>
-          <title>{shopInfo.shopName} - Dashboard</title>
-          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        </Head>
-        
-        <div style={{
-          minHeight: '100vh',
-          background: '#f5f5f5',
-          paddingBottom: '80px'
-        }}>
-          {/* Mobile Header */}
-          <div style={{
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            padding: '20px',
-            color: 'white',
-            position: 'sticky',
-            top: 0,
-            zIndex: 100,
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-          }}>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '16px'
-            }}>
-              <h1 style={{ fontSize: '20px', fontWeight: '700', margin: 0 }}>
-                {shopInfo.shopName}
-              </h1>
-              <button
-                onClick={handleSignOut}
-                style={{
-                  background: 'rgba(255,255,255,0.2)',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '8px 16px',
-                  color: 'white',
-                  fontSize: '14px',
-                  cursor: 'pointer'
-                }}
-              >
-                Sign Out
-              </button>
-            </div>
-            
-            {/* Stats */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
-              gap: '8px',
-              marginTop: '12px'
-            }}>
-              <div style={{
-                background: 'rgba(255,255,255,0.2)',
-                borderRadius: '8px',
-                padding: '12px',
-                textAlign: 'center'
-              }}>
-                <div style={{ fontSize: '24px', fontWeight: '700' }}>
-                  {orders.filter(o => o.status === 'pending').length}
-                </div>
-                <div style={{ fontSize: '12px', opacity: 0.9 }}>New</div>
-              </div>
-              <div style={{
-                background: 'rgba(255,255,255,0.2)',
-                borderRadius: '8px',
-                padding: '12px',
-                textAlign: 'center'
-              }}>
-                <div style={{ fontSize: '24px', fontWeight: '700' }}>
-                  {orders.filter(o => o.status === 'in_progress').length}
-                </div>
-                <div style={{ fontSize: '12px', opacity: 0.9 }}>Active</div>
-              </div>
-              <div style={{
-                background: 'rgba(255,255,255,0.2)',
-                borderRadius: '8px',
-                padding: '12px',
-                textAlign: 'center'
-              }}>
-                <div style={{ fontSize: '24px', fontWeight: '700' }}>
-                  {orders.filter(o => o.status === 'ready').length}
-                </div>
-                <div style={{ fontSize: '12px', opacity: 0.9 }}>Ready</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Filter Tabs */}
-          <div style={{
-            display: 'flex',
-            overflowX: 'auto',
-            background: 'white',
-            padding: '12px 20px',
-            gap: '8px',
-            borderBottom: '1px solid #e0e0e0'
-          }}>
-            {['all', 'pending', 'in_progress', 'ready', 'delivered'].map((f) => (
-              <button
-                key={f}
-                onClick={() => setFilter(f as any)}
-                style={{
-                  background: filter === f ? '#667eea' : '#f0f0f0',
-                  color: filter === f ? 'white' : '#333',
-                  border: 'none',
-                  borderRadius: '16px',
-                  padding: '8px 16px',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                {f === 'all' ? 'All' : getStatusLabel(f as any)}
-              </button>
-            ))}
-          </div>
-
-          {/* Orders List */}
-          <div style={{ padding: '16px' }}>
-            {filteredOrders.length === 0 ? (
-              <div style={{
-                textAlign: 'center',
-                padding: '40px 20px',
-                color: '#666'
-              }}>
-                No orders found
-              </div>
-            ) : (
-              filteredOrders.map((order) => (
-                <div
-                  key={order.id}
-                  onClick={() => setSelectedOrder(order)}
-                  style={{
-                    background: 'white',
-                    borderRadius: '12px',
-                    padding: '16px',
-                    marginBottom: '12px',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'flex-start',
-                    marginBottom: '12px'
-                  }}>
-                    <div>
-                      <div style={{
-                        fontSize: '16px',
-                        fontWeight: '700',
-                        color: '#333',
-                        marginBottom: '4px'
-                      }}>
-                        {order.customerName}
-                      </div>
-                      <div style={{
-                        fontSize: '12px',
-                        color: '#666'
-                      }}>
-                        {order.orderNumber}
-                      </div>
-                    </div>
-                    <div style={{
-                      background: getStatusColor(order.status),
-                      color: 'white',
-                      fontSize: '11px',
-                      fontWeight: '700',
-                      padding: '6px 12px',
-                      borderRadius: '12px'
-                    }}>
-                      {getStatusLabel(order.status)}
-                    </div>
-                  </div>
-
-                  <div style={{
-                    fontSize: '13px',
-                    color: '#666',
-                    marginBottom: '8px'
-                  }}>
-                    📍 {order.funeralHome} • 📅 {new Date(order.serviceDate).toLocaleDateString()}
-                  </div>
-
-                  <div style={{
-                    fontSize: '13px',
-                    color: '#333',
-                    fontWeight: '600'
-                  }}>
-                    {order.products.map(p => `${p.quantity}x ${p.type}`).join(' + ')}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-
-          {/* Order Detail Modal */}
-          {selectedOrder && (
-            <div
-              onClick={() => setSelectedOrder(null)}
-              style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                background: 'rgba(0,0,0,0.5)',
-                zIndex: 200,
-                display: 'flex',
-                alignItems: 'flex-end'
-              }}
-            >
-              <div
-                onClick={(e) => e.stopPropagation()}
-                style={{
-                  background: 'white',
-                  borderRadius: '16px 16px 0 0',
-                  width: '100%',
-                  maxHeight: '80vh',
-                  overflowY: 'auto',
-                  padding: '24px'
-                }}
-              >
-                <h2 style={{
-                  fontSize: '20px',
-                  fontWeight: '700',
-                  marginBottom: '16px'
-                }}>
-                  Order Details
-                </h2>
-
-                <div style={{ marginBottom: '20px' }}>
-                  <div style={{ fontSize: '14px', color: '#666', marginBottom: '4px' }}>Customer</div>
-                  <div style={{ fontSize: '16px', fontWeight: '600' }}>{selectedOrder.customerName}</div>
-                </div>
-
-                <div style={{ marginBottom: '20px' }}>
-                  <div style={{ fontSize: '14px', color: '#666', marginBottom: '4px' }}>Funeral Home</div>
-                  <div style={{ fontSize: '16px', fontWeight: '600' }}>{selectedOrder.funeralHome}</div>
-                </div>
-
-                <div style={{ marginBottom: '20px' }}>
-                  <div style={{ fontSize: '14px', color: '#666', marginBottom: '4px' }}>Service Date</div>
-                  <div style={{ fontSize: '16px', fontWeight: '600' }}>
-                    {new Date(selectedOrder.serviceDate).toLocaleDateString()}
-                  </div>
-                </div>
-
-                <div style={{ marginBottom: '20px' }}>
-                  <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px' }}>Products</div>
-                  {selectedOrder.products.map((product, idx) => (
-                    <div
-                      key={idx}
-                      style={{
-                        fontSize: '15px',
-                        padding: '8px 0',
-                        borderBottom: idx < selectedOrder.products.length - 1 ? '1px solid #f0f0f0' : 'none'
-                      }}
-                    >
-                      {product.quantity}x {product.type}
-                    </div>
-                  ))}
-                </div>
-
-                <div style={{ marginBottom: '24px' }}>
-                  <div style={{ fontSize: '14px', color: '#666', marginBottom: '4px' }}>Status</div>
-                  <select
-                    value={selectedOrder.status}
-                    onChange={(e) => updateOrderStatus(selectedOrder.id, e.target.value as Order['status'])}
-                    style={{
-                      width: '100%',
-                      padding: '12px',
-                      fontSize: '16px',
-                      border: '2px solid #e0e0e0',
-                      borderRadius: '8px',
-                      outline: 'none'
-                    }}
-                  >
-                    <option value="pending">New Order</option>
-                    <option value="in_progress">In Progress</option>
-                    <option value="ready">Ready for Pickup</option>
-                    <option value="delivered">Delivered</option>
-                  </select>
-                </div>
-
-                <button
-                  onClick={() => setSelectedOrder(null)}
-                  style={{
-                    width: '100%',
-                    padding: '14px',
-                    background: '#667eea',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontSize: '16px',
-                    fontWeight: '700',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </>
-    );
-  }
-
-  // DESKTOP VIEW
   return (
     <>
       <Head>
-        <title>{shopInfo.shopName} - Dashboard</title>
+        <title>{shopInfo?.shopName} · Orders</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       </Head>
-      
-      <div style={{
-        minHeight: '100vh',
-        background: '#f5f5f5',
-        display: 'flex'
-      }}>
-        {/* Sidebar */}
-        <div style={{
-          width: '250px',
-          background: 'linear-gradient(180deg, #667eea 0%, #764ba2 100%)',
-          color: 'white',
-          padding: '24px',
-          display: 'flex',
-          flexDirection: 'column'
-        }}>
-          <h1 style={{
-            fontSize: '24px',
-            fontWeight: '700',
-            marginBottom: '8px'
-          }}>
-            DASH
-          </h1>
-          <p style={{
-            fontSize: '14px',
-            opacity: 0.9,
-            marginBottom: '32px'
-          }}>
-            {shopInfo.shopName}
-          </p>
-
-          <nav style={{ flex: 1 }}>
-            <div style={{
-              background: 'rgba(255,255,255,0.2)',
-              borderRadius: '8px',
-              padding: '12px 16px',
-              marginBottom: '8px',
-              cursor: 'pointer',
-              fontWeight: '600'
-            }}>
-              📦 Orders
-            </div>
-            <div style={{
-              padding: '12px 16px',
-              marginBottom: '8px',
-              cursor: 'pointer',
-              opacity: 0.8
-            }}>
-              💰 Financials
-            </div>
-            <div style={{
-              padding: '12px 16px',
-              marginBottom: '8px',
-              cursor: 'pointer',
-              opacity: 0.8
-            }}>
-              ⚙️ Settings
-            </div>
-          </nav>
-
-          <button
-            onClick={handleSignOut}
+      <div
+        style={{
+          minHeight: '100vh',
+          background: isDark ? '#050507' : '#f5f6fa',
+          color: isDark ? 'white' : '#0b0c11',
+          padding: isMobile ? '28px 20px 80px' : '48px 60px',
+          transition: 'padding 0.3s ease, background 0.4s ease, color 0.4s ease',
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 1180,
+            margin: '0 auto',
+            display: 'flex',
+            flexDirection: isMobile ? 'column' : 'row',
+            gap: isMobile ? '32px' : '48px',
+          }}
+        >
+          <aside
             style={{
-              background: 'rgba(255,255,255,0.2)',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '12px',
-              color: 'white',
-              fontSize: '14px',
-              fontWeight: '600',
-              cursor: 'pointer'
+              flexBasis: isMobile ? 'unset' : '32%',
+              flexShrink: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '24px',
             }}
           >
-            Sign Out
-          </button>
-        </div>
-
-        {/* Main Content */}
-        <div style={{ flex: 1, padding: '32px' }}>
-          {/* Header */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '32px'
-          }}>
-            <h2 style={{
-              fontSize: '28px',
-              fontWeight: '700',
-              color: '#333'
-            }}>
-              Orders Dashboard
-            </h2>
-            
-            {/* Stats Cards */}
-            <div style={{
-              display: 'flex',
-              gap: '16px'
-            }}>
-              <div style={{
-                background: 'white',
-                borderRadius: '12px',
-                padding: '16px 24px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-              }}>
-                <div style={{ fontSize: '24px', fontWeight: '700', color: '#FFA500' }}>
-                  {orders.filter(o => o.status === 'pending').length}
+            <div
+              style={{
+                padding: '28px',
+                borderRadius: '28px',
+                background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(12,13,18,0.06)',
+                backdropFilter: 'blur(12px)',
+                boxShadow: isDark ? '0 30px 60px rgba(10,10,20,0.35)' : '0 28px 50px rgba(12,13,18,0.12)',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ letterSpacing: '0.35em', fontSize: 13, textTransform: 'uppercase', opacity: 0.55 }}>Print Shop</div>
+                  <div style={{ fontSize: '26px', fontWeight: 700, marginTop: '4px' }}>{shopInfo?.shopName}</div>
                 </div>
-                <div style={{ fontSize: '12px', color: '#666' }}>New Orders</div>
+                <button
+                  onClick={toggleTheme}
+                  style={{
+                    border: 'none',
+                    borderRadius: 999,
+                    padding: '10px 18px',
+                    fontSize: 12,
+                    letterSpacing: '0.15em',
+                    cursor: 'pointer',
+                    background: isDark ? 'rgba(255,255,255,0.1)' : '#e8e9f1',
+                    color: isDark ? 'white' : '#171822',
+                  }}
+                >
+                  {isDark ? 'LIGHT' : 'DARK'} MODE
+                </button>
               </div>
-              <div style={{
-                background: 'white',
-                borderRadius: '12px',
-                padding: '16px 24px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-              }}>
-                <div style={{ fontSize: '24px', fontWeight: '700', color: '#4A90E2' }}>
-                  {orders.filter(o => o.status === 'in_progress').length}
-                </div>
-                <div style={{ fontSize: '12px', color: '#666' }}>In Progress</div>
+              <div style={{ marginTop: '20px', display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '18px' }}>
+                {STATUS_PIPELINE.slice(0, 3).map((status) => (
+                  <div key={status} style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '24px', fontWeight: 700 }}>{stats[status]}</div>
+                    <div style={{ fontSize: '12px', opacity: 0.55 }}>{pipelineCopy[status]}</div>
+                  </div>
+                ))}
               </div>
-              <div style={{
-                background: 'white',
-                borderRadius: '12px',
-                padding: '16px 24px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-              }}>
-                <div style={{ fontSize: '24px', fontWeight: '700', color: '#50C878' }}>
-                  {orders.filter(o => o.status === 'ready').length}
-                </div>
-                <div style={{ fontSize: '12px', color: '#666' }}>Ready</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Filter Tabs */}
-          <div style={{
-            display: 'flex',
-            gap: '8px',
-            marginBottom: '24px'
-          }}>
-            {['all', 'pending', 'in_progress', 'ready', 'delivered'].map((f) => (
               <button
-                key={f}
-                onClick={() => setFilter(f as any)}
+                onClick={() => {
+                  localStorage.removeItem('printShopAuth');
+                  router.push('/print-shop/sign-in');
+                }}
                 style={{
-                  background: filter === f ? '#667eea' : 'white',
-                  color: filter === f ? 'white' : '#333',
-                  border: filter === f ? 'none' : '2px solid #e0e0e0',
-                  borderRadius: '8px',
-                  padding: '10px 20px',
+                  marginTop: '24px',
+                  background: 'rgba(255,255,255,0.1)',
+                  border: 'none',
+                  borderRadius: '16px',
+                  padding: '12px 18px',
+                  color: 'white',
+                  cursor: 'pointer',
                   fontSize: '14px',
-                  fontWeight: '600',
-                  cursor: 'pointer'
                 }}
               >
-                {f === 'all' ? 'All Orders' : getStatusLabel(f as any)}
+                Sign out
               </button>
-            ))}
-          </div>
+            </div>
 
-          {/* Orders Table */}
-          <div style={{
-            background: 'white',
-            borderRadius: '12px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-            overflow: 'hidden'
-          }}>
-            <table style={{
-              width: '100%',
-              borderCollapse: 'collapse'
-            }}>
-              <thead>
-                <tr style={{
-                  background: '#f8f8f8',
-                  borderBottom: '2px solid #e0e0e0'
-                }}>
-                  <th style={{
-                    padding: '16px',
-                    textAlign: 'left',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    color: '#333'
-                  }}>Order #</th>
-                  <th style={{
-                    padding: '16px',
-                    textAlign: 'left',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    color: '#333'
-                  }}>Customer</th>
-                  <th style={{
-                    padding: '16px',
-                    textAlign: 'left',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    color: '#333'
-                  }}>Funeral Home</th>
-                  <th style={{
-                    padding: '16px',
-                    textAlign: 'left',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    color: '#333'
-                  }}>Service Date</th>
-                  <th style={{
-                    padding: '16px',
-                    textAlign: 'left',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    color: '#333'
-                  }}>Products</th>
-                  <th style={{
-                    padding: '16px',
-                    textAlign: 'left',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    color: '#333'
-                  }}>Status</th>
-                  <th style={{
-                    padding: '16px',
-                    textAlign: 'left',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    color: '#333'
-                  }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredOrders.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} style={{
-                      padding: '40px',
-                      textAlign: 'center',
-                      color: '#666'
-                    }}>
-                      No orders found
-                    </td>
-                  </tr>
-                ) : (
-                  filteredOrders.map((order) => (
-                    <tr
-                      key={order.id}
-                      style={{
-                        borderBottom: '1px solid #f0f0f0',
-                        cursor: 'pointer'
-                      }}
-                      onClick={() => setSelectedOrder(order)}
-                    >
-                      <td style={{
-                        padding: '16px',
-                        fontSize: '13px',
-                        fontFamily: 'monospace',
-                        color: '#666'
-                      }}>
-                        {order.orderNumber.split('-')[0]}...
-                      </td>
-                      <td style={{
-                        padding: '16px',
-                        fontSize: '14px',
-                        fontWeight: '600'
-                      }}>
-                        {order.customerName}
-                      </td>
-                      <td style={{
-                        padding: '16px',
-                        fontSize: '14px'
-                      }}>
-                        {order.funeralHome}
-                      </td>
-                      <td style={{
-                        padding: '16px',
-                        fontSize: '14px'
-                      }}>
-                        {new Date(order.serviceDate).toLocaleDateString()}
-                      </td>
-                      <td style={{
-                        padding: '16px',
-                        fontSize: '13px'
-                      }}>
-                        {order.products.map(p => `${p.quantity}x ${p.type}`).join(', ')}
-                      </td>
-                      <td style={{ padding: '16px' }}>
-                        <span style={{
-                          background: getStatusColor(order.status),
-                          color: 'white',
-                          fontSize: '11px',
-                          fontWeight: '700',
-                          padding: '6px 12px',
-                          borderRadius: '12px',
-                          display: 'inline-block'
-                        }}>
-                          {getStatusLabel(order.status)}
-                        </span>
-                      </td>
-                      <td style={{ padding: '16px' }}>
-                        <select
-                          value={order.status}
-                          onChange={(e) => {
-                            e.stopPropagation();
-                            updateOrderStatus(order.id, e.target.value as Order['status']);
-                          }}
-                          style={{
-                            padding: '6px 12px',
-                            fontSize: '13px',
-                            border: '2px solid #e0e0e0',
-                            borderRadius: '6px',
-                            outline: 'none',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          <option value="pending">New</option>
-                          <option value="in_progress">In Progress</option>
-                          <option value="ready">Ready</option>
-                          <option value="delivered">Delivered</option>
-                        </select>
-                      </td>
-                    </tr>
-                  ))
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ fontSize: '14px', letterSpacing: '0.6px', opacity: 0.6 }}>Active Orders</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {isLoading && (
+                  <div style={{ opacity: 0.6, fontSize: '14px' }}>Loading orders…</div>
                 )}
-              </tbody>
-            </table>
-          </div>
+                {!isLoading && orders.length === 0 && (
+                  <div style={{ opacity: 0.6, fontSize: '14px' }}>No active orders yet.</div>
+                )}
+                {orders.map((order) => (
+                  <button
+                    key={order.id}
+                    onClick={() => setSelectedOrderId(order.id)}
+                    style={{
+                      textAlign: 'left',
+                      padding: '18px 20px',
+                      borderRadius: '20px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      background:
+                        selectedOrderId === order.id
+                          ? 'rgba(102,126,234,0.25)'
+                          : 'rgba(255,255,255,0.05)',
+                      color: 'white',
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
+                    <div style={{ fontSize: '16px', fontWeight: 600, marginBottom: '6px' }}>{order.customerName}</div>
+                    <div style={{ fontSize: '13px', opacity: 0.6, marginBottom: '10px' }}>{order.orderNumber}</div>
+                    <div
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '6px 12px',
+                        borderRadius: '999px',
+                        background: statusPillColor[order.status],
+                        color: 'white',
+                        fontSize: '12px',
+                      }}
+                    >
+                      {pipelineCopy[order.status]}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </aside>
+
+          {selectedOrder && (
+            <section
+              style={{
+                flex: 1,
+                background: isDark ? 'rgba(255,255,255,0.03)' : 'white',
+                borderRadius: '32px',
+                padding: isMobile ? '28px 24px 40px' : '38px 36px 48px',
+                boxShadow: isDark ? '0 40px 80px rgba(8,8,15,0.45)' : '0 32px 64px rgba(12,13,18,0.15)',
+                backdropFilter: 'blur(18px)',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', alignItems: 'flex-start' }}>
+                <div>
+                  <div style={{ fontSize: '13px', opacity: 0.55, letterSpacing: '0.5px' }}>Order for</div>
+                  <div style={{ fontSize: '26px', fontWeight: 700 }}>{selectedOrder.customerName}</div>
+                  <div style={{ marginTop: '12px', fontSize: '14px', opacity: 0.7 }}>
+                    {selectedOrder.funeralHome}
+                    <br />
+                    {new Date(selectedOrder.serviceDate).toLocaleString()}
+                  </div>
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '10px 16px',
+                    borderRadius: '999px',
+                    background: statusPillColor[selectedOrder.status],
+                    color: 'white',
+                    fontSize: '13px',
+                  }}
+                >
+                  {pipelineCopy[selectedOrder.status]}
+                </div>
+              </div>
+
+              <div style={{ marginTop: '30px' }}>
+                <div style={{ fontSize: '14px', opacity: 0.6, letterSpacing: '0.4px' }}>Products</div>
+                <div
+                  style={{
+                    marginTop: '12px',
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: '10px',
+                  }}
+                >
+                  {selectedOrder.products.map((product, idx) => (
+                    <div
+                      key={`${product.type}-${idx}`}
+                      style={{
+                        padding: '10px 16px',
+                        borderRadius: '999px',
+                        background: 'rgba(255,255,255,0.08)',
+                        fontSize: '14px',
+                      }}
+                    >
+                      {product.quantity}× {product.type}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {selectedOrder.courier && (
+                <div style={{ marginTop: '28px' }}>
+                  <div style={{ fontSize: '14px', opacity: 0.6, letterSpacing: '0.4px' }}>Courier</div>
+                  <div style={{ marginTop: '10px', fontSize: '15px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <span>{selectedOrder.courier.vendor} · {selectedOrder.courier.status.replace(/_/g, ' ')}</span>
+                    <span style={{ opacity: 0.6 }}>ETA {selectedOrder.courier.etaMinutes} minutes</span>
+                    <a
+                      href={selectedOrder.courier.trackingUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{ color: '#8fb5ff', textDecoration: 'none', fontSize: '14px' }}
+                    >
+                      View live tracking ↗
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              {selectedOrder.payout && (
+                <div style={{ marginTop: '28px' }}>
+                  <div style={{ fontSize: '14px', opacity: 0.6, letterSpacing: '0.4px' }}>Payout</div>
+                  <div style={{ marginTop: '10px', fontSize: '15px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <span>
+                      {selectedOrder.payout.currency} {selectedOrder.payout.amount} · {selectedOrder.payout.status === 'sent' ? 'Sent' : 'Pending'}
+                    </span>
+                    {selectedOrder.payout.transferId && (
+                      <span style={{ opacity: 0.6 }}>Transfer ID · {selectedOrder.payout.transferId}</span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {renderTimeline(selectedOrder)}
+
+              {renderActionButton(selectedOrder)}
+            </section>
+          )}
         </div>
       </div>
     </>
   );
 };
 
-export default PrintShopDashboard;
+export default Dashboard;
 
