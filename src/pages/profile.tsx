@@ -34,37 +34,55 @@ const ProfilePage: React.FC = () => {
     const t = translations[language];
 
     // Function to load profile data
-    const loadProfileData = () => {
+    const loadProfileData = (resume: boolean) => {
         // Load language preference from localStorage
         const savedLanguage = localStorage.getItem('appLanguage') as 'en' | 'es' | null;
         if (savedLanguage) {
             setLanguage(savedLanguage);
         }
-        
-        // Load profile data from localStorage
-        const savedProfile = localStorage.getItem('profileData');
-        if (savedProfile) {
-            try {
-                const data = JSON.parse(savedProfile);
-                setName(data.name || '');
-                setSunrise(data.sunrise || '');
-                setSunset(data.sunset || '');
-                setPhoto(data.photo || null);
-            } catch (e) {
-                console.error('Error loading profile data:', e);
+ 
+        if (resume) {
+            const savedProfile = localStorage.getItem('profileData');
+            if (savedProfile) {
+                try {
+                    const data = JSON.parse(savedProfile);
+                    setName(data.name || '');
+                    setSunrise(data.sunrise || '');
+                    setSunset(data.sunset || '');
+                    setPhoto(data.photo || null);
+                } catch (e) {
+                    console.error('Error loading profile data:', e);
+                }
             }
+        } else {
+            // Fresh session – clear any previous profile data
+            localStorage.removeItem('profileData');
+            localStorage.removeItem('profileResume');
+            setName('');
+            setSunrise('');
+            setSunset('');
+            setPhoto(null);
         }
+ 
         // Mark data as loaded to prevent overwriting on initial render
         isDataLoaded.current = true;
     };
-
+ 
     useEffect(() => {
         // Load data on mount
-        loadProfileData();
-        
+        const resumeFlag = () => {
+            if (typeof window === 'undefined') return false;
+            const explicitResume = router.query.resume === 'true';
+            const storedResume = localStorage.getItem('profileResume') === 'true';
+            return explicitResume || storedResume;
+        };
+
+        const shouldResume = resumeFlag();
+        loadProfileData(shouldResume);
+ 
         // Listen for route changes and reload data
         const handleRouteChange = () => {
-            loadProfileData();
+            loadProfileData(resumeFlag());
         };
         
         router.events.on('routeChangeComplete', handleRouteChange);
@@ -287,6 +305,7 @@ const ProfilePage: React.FC = () => {
             updatedAt: new Date().toISOString()
         };
         localStorage.setItem('profileData', JSON.stringify(profileData));
+        localStorage.setItem('profileResume', 'true');
         
         // Navigate to the cleaned-up card builder
         router.push('/memorial-card-builder-4x6');
@@ -431,6 +450,30 @@ const ProfilePage: React.FC = () => {
                             Español
                         </div>
                     </div>
+                </div>
+                <div style={{textAlign:'center', marginBottom:'20px'}}>
+                    <button
+                        onClick={() => {
+                            localStorage.removeItem('profileData');
+                            localStorage.removeItem('profileResume');
+                            setName('');
+                            setSunrise('');
+                            setSunset('');
+                            setPhoto(null);
+                        }}
+                        style={{
+                            border:'none',
+                            background:'rgba(255,255,255,0.1)',
+                            color:'white',
+                            padding:'10px 18px',
+                            borderRadius:'999px',
+                            cursor:'pointer',
+                            fontSize:'14px',
+                            WebkitTapHighlightColor:'transparent'
+                        }}
+                    >
+                        Start New Profile
+                    </button>
                 </div>
 
                 {/* Profile Form */}
