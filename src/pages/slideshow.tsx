@@ -1282,7 +1282,8 @@ const SlideshowPage: React.FC = () => {
                   <div style={{ fontSize: '13px', marginTop: '6px' }}>{t.emptyBucketCta}</div>
                 </div>
               ) : (
-              filteredPhotos.map((photo, index) => {
+              <>
+              {filteredPhotos.map((photo, index) => {
                 const globalIndex = photos.findIndex((p) => p.id === photo.id);
                 const isFirst = globalIndex === 0;
                 const isLast = globalIndex === photos.length - 1;
@@ -1515,6 +1516,7 @@ const SlideshowPage: React.FC = () => {
             </div>
                 );
               })}
+              </>
               )}
                 </div>
           )}
