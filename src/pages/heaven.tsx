@@ -1,14 +1,14 @@
 // HEAVEN - Interactive call-like experience
 // Uses slideshow video/audio to clone voice and create avatar
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import AvatarVideo from '../components/AvatarVideo';
 import CallHeader from '../components/CallHeader';
 import ChatInput from '../components/ChatInput';
 import { extractAudioFromVideo, getSlideshowVideoUrl, getPrimaryPhotoUrl } from '../utils/heaven-audio';
-import { cloneVoiceFromAudio, synthesizeSpeech } from '../utils/heaven-voice';
+import { cloneVoiceFromAudio } from '../utils/heaven-voice';
 import { createAvatar, generateTalkingVideo } from '../utils/heaven-avatar';
 
 interface Person {
@@ -29,12 +29,14 @@ const HeavenPage: React.FC = () => {
   const [person, setPerson] = useState<Person | null>(null);
   
   // Initialization states
-  const [initStep, setInitStep] = useState<'idle' | 'loading-media' | 'extracting-audio' | 'cloning-voice' | 'creating-avatar' | 'ready'>('idle');
+  const [initStep, setInitStep] = useState<'idle' | 'loading-media' | 'extracting-audio' | 'cloning-voice' | 'creating-avatar' | 'initializing-conversation' | 'ready'>('idle');
   const [statusMessage, setStatusMessage] = useState('');
   
   // Avatar and voice IDs
   const [voiceId, setVoiceId] = useState<string | null>(null);
   const [avatarId, setAvatarId] = useState<string | null>(null);
+  const [characterId, setCharacterId] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   
   // Call UI states
   const [currentVideoUrl, setCurrentVideoUrl] = useState<string | null>(null);
@@ -90,6 +92,55 @@ const HeavenPage: React.FC = () => {
     };
   };
 
+  const prepareConvaiCharacter = async (personData: Person, voiceSampleUrl: string) => {
+    const photos = personData.primaryPhotoUrl ? [personData.primaryPhotoUrl] : [];
+    const videos = personData.slideshowVideoUrl ? [personData.slideshowVideoUrl] : [];
+
+    setStatusMessage('Preparing their HEAVEN presence…');
+
+    const characterResponse = await fetch('/api/convai/create-character', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: personData.name,
+        photos,
+        videos,
+        voiceSample: voiceSampleUrl,
+      }),
+    });
+
+    if (!characterResponse.ok) {
+      const error = await characterResponse.json().catch(() => null);
+      throw new Error(error?.error || 'Failed to create HEAVEN character');
+    }
+
+    const characterData = await characterResponse.json();
+    setCharacterId(characterData.characterId);
+    if (characterData.voiceId && !voiceId) {
+      setVoiceId((prev) => prev ?? characterData.voiceId);
+    }
+
+    const conversationResponse = await fetch('/api/convai/start-conversation', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        characterId: characterData.characterId,
+      }),
+    });
+
+    if (!conversationResponse.ok) {
+      const error = await conversationResponse.json().catch(() => null);
+      throw new Error(error?.error || 'Failed to start HEAVEN session');
+    }
+
+    const conversationData = await conversationResponse.json();
+    setSessionId(conversationData.sessionId);
+  };
+
   /**
    * Initialize HEAVEN call - 3-step process
    */
@@ -141,6 +192,11 @@ const HeavenPage: React.FC = () => {
       const createdAvatarId = await createAvatar(personData.primaryPhotoUrl, personData.name);
       setAvatarId(createdAvatarId);
 
+      // STEP 4: Prepare Convai character & conversation
+      setInitStep('initializing-conversation');
+      setStatusMessage('Connecting their voice and memories…');
+      await prepareConvaiCharacter(personData, audioUrl);
+
       // Ready!
       setInitStep('ready');
       setStatusMessage(`Connected to HEAVEN – ${personData.name}`);
@@ -161,8 +217,12 @@ const HeavenPage: React.FC = () => {
    * Handle user message - generate talking video response
    */
   const handleSendMessage = async (text: string) => {
-    if (!voiceId || !avatarId || !person) {
+    if (!avatarId || !person) {
       alert('HEAVEN is not ready yet. Please wait for initialization.');
+      return;
+    }
+    if (!characterId || !sessionId) {
+      alert('Still preparing their HEAVEN presence. Please try again in a moment.');
       return;
     }
 
@@ -170,25 +230,44 @@ const HeavenPage: React.FC = () => {
     addToConversation('user', text);
 
     setIsGeneratingVideo(true);
-    setStatusMessage('Generating response…');
+    setStatusMessage('Listening and responding…');
 
     try {
-      // Synthesize speech using cloned voice
-      const speechAudioUrl = await synthesizeSpeech(voiceId, text);
+      const response = await fetch('/api/convai/send-message', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          characterId,
+          sessionId,
+          message: text,
+        }),
+      });
 
-      // Generate talking video from avatar + audio
-      const talkingVideoUrl = await generateTalkingVideo(avatarId, speechAudioUrl, text);
+      if (!response.ok) {
+        const error = await response.json().catch(() => null);
+        throw new Error(error?.error || 'Failed to receive response');
+      }
 
-      // Update video panel
-      setCurrentVideoUrl(talkingVideoUrl);
+      const data = await response.json();
+      const aiResponse = (data.text as string) || generateAIResponse(text);
+      if (data.text) {
+        addToConversation('heaven', aiResponse);
+      } else {
+        addToConversation('heaven', aiResponse);
+      }
 
-      // Add AI response to conversation (simplified - in production, get actual response)
-      const aiResponse = generateAIResponse(text);
-      addToConversation('heaven', aiResponse);
-
+      if (data.audioUrl) {
+        setStatusMessage('Bringing them on screen…');
+        const talkingVideoUrl = await generateTalkingVideo(avatarId, data.audioUrl, aiResponse);
+        setCurrentVideoUrl(talkingVideoUrl);
+      }
     } catch (error: any) {
       console.error('Error generating response:', error);
-      addToConversation('heaven', `I'm having trouble responding right now. Please try again.`);
+      const fallback = generateAIResponse(text);
+      addToConversation('heaven', fallback);
+      setStatusMessage(`I'm having trouble responding right now.`);
     } finally {
       setIsGeneratingVideo(false);
       setStatusMessage('');
@@ -229,6 +308,8 @@ const HeavenPage: React.FC = () => {
     setStatusMessage('');
     setVoiceId(null);
     setAvatarId(null);
+    setCharacterId(null);
+    setSessionId(null);
     setCurrentVideoUrl(null);
     setConversationHistory([]);
     setPerson(null);
@@ -414,6 +495,7 @@ const HeavenPage: React.FC = () => {
                 {initStep === 'extracting-audio' && '🎵'}
                 {initStep === 'cloning-voice' && '🎤'}
                 {initStep === 'creating-avatar' && '👤'}
+                {initStep === 'initializing-conversation' && '✨'}
                 {getStatusDisplay()}
               </p>
             </div>
