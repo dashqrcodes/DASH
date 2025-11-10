@@ -828,29 +828,41 @@ const SlideshowPage: React.FC = () => {
           onClick={() => setShowScanner(true)}
           style={{
             margin:'0 20px 16px',
-            padding:'16px 20px',
-            background:'linear-gradient(135deg, rgba(109,127,255,0.9) 0%, rgba(173,114,255,0.9) 100%)',
-            border:'none',
-            borderRadius:'9999px',
-            textAlign:'center',
+            padding:'18px 22px',
+            background:'rgba(102,126,234,0.16)',
+            border:'2px solid rgba(102,126,234,0.42)',
+            borderRadius:'18px',
             cursor:'pointer',
             display:'flex',
             alignItems:'center',
-            justifyContent:'center',
-            gap:'10px',
-            fontSize:'15px',
-            fontWeight:600,
-            color:'white',
-            WebkitTapHighlightColor:'transparent',
-            boxShadow:'0 12px 32px rgba(132,102,255,0.35)'
+            gap:'14px',
+            minHeight:'72px',
+            WebkitTapHighlightColor:'transparent'
           }}
         >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8">
-            <rect x="3" y="4" width="18" height="16" rx="2" />
-            <path d="M8 11h8" />
-            <path d="M12 7v8" />
-          </svg>
-          Scan Physical Photo
+          <div style={{
+            width:'56px',
+            height:'56px',
+            borderRadius:'14px',
+            background:'rgba(102,126,234,0.32)',
+            display:'flex',
+            alignItems:'center',
+            justifyContent:'center',
+            flexShrink:0
+          }}>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h6l2 3h3a2 2 0 0 1 2 2z"></path>
+              <circle cx="12" cy="13" r="4"></circle>
+            </svg>
+          </div>
+          <div style={{display:'flex',flexDirection:'column',alignItems:'flex-start',color:'white'}}>
+            <div style={{fontSize:'16px',fontWeight:700}}>
+              {t.scanPhysicalPhoto}
+            </div>
+            <div style={{fontSize:'13px',opacity:0.8,lineHeight:1.35}}>
+              {t.scanSubtitle}
+            </div>
+          </div>
         </button>
 
         <div
@@ -1026,74 +1038,6 @@ const SlideshowPage: React.FC = () => {
         )}
 
         {/* Add Photos Buttons */}
-        <div style={{
-          padding:'0 20px',
-          marginBottom:'16px',
-          display:'flex',
-          flexDirection:'column',
-          gap:'12px'
-        }}>
-          {/* Scan Physical Photo Button */}
-          <button 
-            onClick={() => setShowScanner(true)}
-            style={{
-              padding:'16px 20px',
-              background:'rgba(102,126,234,0.18)',
-              border:'1px solid rgba(102,126,234,0.35)',
-              borderRadius:'9999px',
-              textAlign:'center',
-              cursor:'pointer',
-              display:'flex',
-              alignItems:'center',
-              justifyContent:'flex-start',
-              gap:'12px',
-              transition:'all 0.2s',
-              WebkitTapHighlightColor:'transparent',
-              minHeight:'64px'
-            }}
-            onTouchStart={(e) => {
-              e.currentTarget.style.background = 'rgba(102,126,234,0.25)';
-            }}
-            onTouchEnd={(e) => {
-              e.currentTarget.style.background = 'rgba(102,126,234,0.15)';
-            }}
-          >
-            <div style={{
-              width:'48px',
-              height:'48px',
-              borderRadius:'12px',
-              background:'rgba(102,126,234,0.3)',
-              display:'flex',
-              alignItems:'center',
-              justifyContent:'center',
-              flexShrink:0
-            }}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M23 19C23 19.5304 22.7893 20.0391 22.4142 20.4142C22.0391 20.7893 21.5304 21 21 21H3C2.46957 21 1.96086 20.7893 1.58579 20.4142C1.21071 20.0391 1 19.5304 1 19V8C1 7.46957 1.21071 6.96086 1.58579 6.58579C1.96086 6.21071 2.46957 6 3 6H7L9 4H15L17 6H21C21.5304 6 22.0391 6.21071 22.4142 6.58579C22.7893 6.96086 23 7.46957 23 8V19Z"/>
-                <circle cx="12" cy="13" r="4"/>
-                                </svg>
-            </div>
-            <div style={{display:'flex',flexDirection:'column',alignItems:'flex-start',flex:1}}>
-              <div style={{
-                fontSize:'clamp(15px, 3.5vw, 17px)',
-                fontWeight:'700',
-                color:'white',
-                marginBottom:'2px'
-              }}>
-                {t.scanPhysicalPhoto}
-              </div>
-              <div style={{
-                fontSize:'clamp(11px, 2.5vw, 13px)',
-                opacity:0.8,
-                color:'white',
-                lineHeight:'1.3'
-              }}>
-                {t.scanSubtitle}
-                        </div>
-                    </div>
-                        </button>
-                        </div>
-                        
         {/* Photo Scanner Modal */}
         {showScanner && (
           <PhotoScanner 
@@ -1109,7 +1053,7 @@ const SlideshowPage: React.FC = () => {
           marginBottom: '20px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '12px'
+          gap: '18px'
         }}>
           <button
             onClick={handleOpenCollaboration}
