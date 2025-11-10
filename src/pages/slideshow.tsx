@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import PhotoScanner from '../components/PhotoScanner';
-import BottomNav from '../components/BottomNav';
 import MuxPlayerWrapper from '../components/MuxPlayerWrapper';
 import { initLazyLoading } from '../utils/lazy-loading';
 
@@ -142,7 +141,6 @@ const computeLifeBucket = (
 const SlideshowPage: React.FC = () => {
   const router = useRouter();
   const [photos, setPhotos] = useState<Array<MediaItem>>([]);
-  const [isProcessing, setIsProcessing] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [language, setLanguage] = useState<'en' | 'es'>('en');
     const [lovedOneName, setLovedOneName] = useState('');
@@ -263,7 +261,6 @@ const SlideshowPage: React.FC = () => {
           const files = e.target.files;
           if (!files || files.length === 0) return;
 
-          setIsProcessing(true);
           const newMedia: Array<MediaItem> = [];
 
           // Process each file (simplified version of handlePhotoUpload)
@@ -294,7 +291,6 @@ const SlideshowPage: React.FC = () => {
           });
 
           setPhotosAndPersist(() => allMedia);
-          setIsProcessing(false);
         };
         
         // Add to body temporarily and trigger click
@@ -340,10 +336,10 @@ const SlideshowPage: React.FC = () => {
         prime_years: 'Prime Years',
         legacy: 'Legacy & Wisdom',
       },
-      inviteCollaborators: 'Invite Collaborators',
-      inviteSubtitle: 'Send Mom, siblings, and friends a one-tap link to add photos.',
-      connectSpotify: 'Connect Spotify',
-      spotifySubtitle: 'Pick the playlist that should play with this memorial slideshow.',
+      inviteCollaborators: 'Collaborate',
+      inviteSubtitle: 'Invite friends and family.',
+      connectSpotify: 'Spotify',
+      spotifySubtitle: '',
       comingSoon: 'Coming soon – tap to preview the flow.',
       emptyBucket: 'No memories in this chapter yet.',
       emptyBucketCta: 'Add one or switch chapters above.'
@@ -382,10 +378,10 @@ const SlideshowPage: React.FC = () => {
         prime_years: 'Años de Plenitud',
         legacy: 'Legado y Sabiduría',
       },
-      inviteCollaborators: 'Invitar Colaboradores',
-      inviteSubtitle: 'Envía un enlace de un toque a mamá, hermanos y amigos.',
-      connectSpotify: 'Conectar Spotify',
-      spotifySubtitle: 'Elige la lista que acompañará esta presentación.',
+      inviteCollaborators: 'Colaborar',
+      inviteSubtitle: 'Invita a familiares y amigos.',
+      connectSpotify: 'Spotify',
+      spotifySubtitle: '',
       comingSoon: 'Próximamente: toca para ver el flujo.',
       emptyBucket: 'Aún no hay recuerdos en este capítulo.',
       emptyBucketCta: 'Agrega uno o cambia de capítulo arriba.'
@@ -471,7 +467,6 @@ const SlideshowPage: React.FC = () => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
 
-    setIsProcessing(true);
     const newMedia: Array<MediaItem> = [];
 
     // Process each file
@@ -564,7 +559,6 @@ const SlideshowPage: React.FC = () => {
     });
 
     setPhotosAndPersist(() => allMedia);
-    setIsProcessing(false);
   };
 
   const handleScannedPhoto = async (scannedFile: File) => {
@@ -709,24 +703,7 @@ const SlideshowPage: React.FC = () => {
     router.push('/heaven?call=true');
   };
 
-  const calculateTimelinePosition = (photoDate?: string): number => {
-    if (!photoDate || !sunrise || !sunset) return 50; // Middle if no dates
-    
-    const start = new Date(sunrise).getTime();
-    const end = new Date(sunset).getTime();
-    const current = new Date(photoDate).getTime();
-    
-    if (current < start) return 0;
-    if (current > end) return 100;
-    
-    return ((current - start) / (end - start)) * 100;
-  };
-
-  const handleInviteCollaborators = () => {
-    alert(`${t.inviteCollaborators}: ${t.comingSoon}`);
-  };
-
-  const handleConnectSpotify = () => {
+  const handleSpotify = () => {
     alert(`${t.connectSpotify}: ${t.comingSoon}`);
   };
 
@@ -798,143 +775,50 @@ const SlideshowPage: React.FC = () => {
         touchAction:'manipulation',
         overscrollBehavior:'none'
       }}>
-        {/* Status Bar */}
-        <div style={{
-          display:'flex',
-          justifyContent:'space-between',
-          paddingTop:'env(safe-area-inset-top, 8px)',
-          paddingBottom:'8px',
-          paddingLeft:'16px',
-          paddingRight:'16px',
-          marginBottom:'4px',
-          fontSize:'11px',
-          alignItems:'center',
-          background:'rgba(0,0,0,0.5)',
-          backdropFilter:'blur(10px)',
-          position:'sticky',
-          top:0,
-          zIndex:10
-        }}>
-          <div style={{display:'flex',alignItems:'center',gap:'12px'}}>
-            <button 
-              onClick={()=>router.back()} 
-              style={{
-                background:'transparent',
-                border:'none',
-                color:'white',
-                fontSize:'20px',
-                cursor:'pointer',
-                padding:'4px 8px',
-                WebkitTapHighlightColor:'transparent',
-                touchAction:'manipulation',
-                borderRadius:'8px',
-                display:'flex',
-                alignItems:'center',
-                justifyContent:'center',
-                minWidth:'44px',
-                minHeight:'44px'
-              }}
-            >
-              ←
-            </button>
-            <div style={{fontSize:'14px',fontWeight:'600'}}>9:41</div>
-                </div>
-          <div style={{display:'flex',alignItems:'center',gap:'6px',fontSize:'12px'}}>
-            <span>●●●●●</span>
-            <span>📶</span>
-            <span>🔋</span>
-                </div>
-            </div>
-
         {/* Header */}
         <div style={{
-          textAlign:'center',
-          marginBottom:'16px',
-          padding:'0 20px',
-          paddingTop:'8px'
+          display:'flex',
+          alignItems:'center',
+          justifyContent:'space-between',
+          paddingTop:'calc(env(safe-area-inset-top, 0px) + 16px)',
+          paddingBottom:'12px',
+          paddingLeft:'20px',
+          paddingRight:'20px',
+          gap:'12px',
+          zIndex:10
         }}>
+          <button
+            onClick={() => router.back()}
+            style={{
+              background:'rgba(255,255,255,0.08)',
+              border:'none',
+              color:'white',
+              fontSize:'20px',
+              cursor:'pointer',
+              padding:'10px 14px',
+              WebkitTapHighlightColor:'transparent',
+              touchAction:'manipulation',
+              borderRadius:'999px',
+              minWidth:'44px',
+              minHeight:'44px',
+              display:'flex',
+              alignItems:'center',
+              justifyContent:'center'
+            }}
+          >
+            ←
+          </button>
           <div style={{
+            flex:1,
+            textAlign:'center',
             fontSize:'clamp(20px, 5vw, 24px)',
             fontWeight:'700',
-            marginBottom:'6px',
             letterSpacing:'-0.5px'
           }}>
             {lovedOneName || t.createSlideshow}
-                </div>
-          <div style={{
-            fontSize:'clamp(13px, 3vw, 15px)',
-            opacity:0.8,
-            fontWeight:'500',
-            lineHeight:'1.4'
-          }}>
-            {t.addPhotosChronological}
-                </div>
-          {(sunrise || sunset) && (
-            <div style={{
-              display:'flex',
-              justifyContent:'center',
-              gap:'12px',
-              marginTop:'10px',
-              fontSize:'clamp(11px, 2.5vw, 13px)',
-              opacity:0.7,
-              flexWrap:'wrap'
-            }}>
-              {sunrise && <span>{t.born}: {sunrise}</span>}
-              {sunrise && sunset && <span>•</span>}
-              {sunset && <span>{t.passed}: {sunset}</span>}
-            </div>
-          )}
-                </div>
-
-        {/* Timeline Visualization */}
-        {sunrise && sunset && (
-          <div style={{
-            margin:'0 20px 16px',
-            position:'relative',
-            height:'6px',
-            background:'rgba(255,255,255,0.15)',
-            borderRadius:'3px',
-            overflow:'visible'
-          }}>
-            <div style={{
-              position:'absolute',
-              left:0,
-              top:'-20px',
-              fontSize:'10px',
-              opacity:0.6,
-              fontWeight:'500'
-            }}>
-              {t.birth}
-                                </div>
-            <div style={{
-              position:'absolute',
-              right:0,
-              top:'-20px',
-              fontSize:'10px',
-              opacity:0.6,
-              fontWeight:'500'
-            }}>
-              {t.present}
-                            </div>
-            {photos.map((photo, idx) => photo.date && (
-              <div 
-                key={photo.id}
-                style={{
-                  position:'absolute',
-                  left:`${calculateTimelinePosition(photo.date)}%`,
-                  top:'-6px',
-                  width:'12px',
-                  height:'18px',
-                  background:'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
-                  borderRadius:'50%',
-                  transform:'translateX(-50%)',
-                  boxShadow:'0 2px 8px rgba(102,126,234,0.5)'
-                }}
-                title={photo.date}
-              />
-            ))}
-                        </div>
-        )}
+          </div>
+          <div style={{width:'44px', height:'44px'}} />
+        </div>
 
         {/* Hero Preview */}
         <div
@@ -944,7 +828,7 @@ const SlideshowPage: React.FC = () => {
           style={{
             margin: '0 20px 18px',
             position: 'relative',
-            borderRadius: '22px',
+            borderRadius: '0px',
             overflow: 'hidden',
             background: photos.length
               ? 'rgba(255,255,255,0.08)'
@@ -982,6 +866,15 @@ const SlideshowPage: React.FC = () => {
             {photos.length === 0 ? 'TAP TO ADD' : `${photos.length} ${t.memories}`}
           </div>
         </div>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*,video/*"
+          multiple
+          onChange={handlePhotoUpload}
+          style={{ display: 'none' }}
+        />
 
         {/* Life Buckets Summary */}
         {photos.length > 0 && (
@@ -1074,10 +967,10 @@ const SlideshowPage: React.FC = () => {
           <button 
             onClick={() => setShowScanner(true)}
             style={{
-              padding:'16px',
-              background:'rgba(102,126,234,0.15)',
-              border:'2px solid rgba(102,126,234,0.4)',
-              borderRadius:'16px',
+              padding:'16px 20px',
+              background:'rgba(102,126,234,0.18)',
+              border:'1px solid rgba(102,126,234,0.35)',
+              borderRadius:'9999px',
               textAlign:'center',
               cursor:'pointer',
               display:'flex',
@@ -1129,47 +1022,6 @@ const SlideshowPage: React.FC = () => {
                         </div>
                     </div>
                         </button>
-                        
-          {/* Add Digital Photos Button */}
-          <label style={{display:'block',width:'100%'}}>
-            <input 
-              ref={fileInputRef}
-              type="file" 
-              accept="image/*,video/*" 
-              multiple 
-              onChange={handlePhotoUpload}
-              style={{display:'none'}}
-              disabled={isProcessing}
-            />
-            <div style={{
-              padding:'18px',
-              background:'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
-              borderRadius:'16px',
-              textAlign:'center',
-              cursor:'pointer',
-              boxShadow:'0 4px 20px rgba(102,126,234,0.4)',
-              transition:'all 0.2s',
-              minHeight:'64px',
-              display:'flex',
-              flexDirection:'column',
-              justifyContent:'center',
-              WebkitTapHighlightColor:'transparent'
-            }}>
-              <div style={{
-                fontSize:'clamp(16px, 4vw, 18px)',
-                fontWeight:'700',
-                marginBottom:'4px'
-              }}>
-                {isProcessing ? t.processing : photos.length === 0 ? t.addPhotosVideos : `${t.addMore} (${photos.length} ${t.memories})`}
-                            </div>
-              <div style={{
-                fontSize:'clamp(12px, 3vw, 14px)',
-                opacity:0.95
-              }}>
-                {t.startFromEarliest}
-                            </div>
-            </div>
-          </label>
                         </div>
                         
         {/* Photo Scanner Modal */}
@@ -1190,42 +1042,41 @@ const SlideshowPage: React.FC = () => {
           gap: '12px'
         }}>
           <button
-            onClick={handleInviteCollaborators}
+            onClick={handleOpenCollaboration}
             style={{
               border: 'none',
-              borderRadius: '16px',
-              padding: '18px 20px',
-              background: 'rgba(255,255,255,0.08)',
+              borderRadius: '9999px',
+              padding: '18px 22px',
+              background: 'linear-gradient(135deg, rgba(102,126,234,0.3) 0%, rgba(118,75,162,0.3) 100%)',
               color: 'white',
               textAlign: 'left',
               display: 'flex',
               flexDirection: 'column',
-              gap: '6px',
-              cursor: 'pointer'
+              gap: '4px',
+              cursor: 'pointer',
+              boxShadow: '0 12px 28px rgba(102,126,234,0.35)'
             }}
           >
             <span style={{ fontSize: '15px', fontWeight: 600 }}>{t.inviteCollaborators}</span>
-            <span style={{ fontSize: '13px', opacity: 0.8 }}>{t.inviteSubtitle}</span>
+            <span style={{ fontSize: '13px', opacity: 0.85 }}>{t.inviteSubtitle}</span>
           </button>
 
           <button
-            onClick={handleConnectSpotify}
+            onClick={handleSpotify}
             style={{
               border: 'none',
-              borderRadius: '16px',
-              padding: '18px 20px',
-              background: 'rgba(102,126,234,0.18)',
+              borderRadius: '9999px',
+              padding: '18px 22px',
+              background: 'rgba(255,255,255,0.1)',
               color: 'white',
               textAlign: 'left',
               display: 'flex',
               flexDirection: 'column',
-              gap: '6px',
-              cursor: 'pointer',
-              boxShadow: '0 6px 20px rgba(102,126,234,0.35)'
+              gap: '4px',
+              cursor: 'pointer'
             }}
           >
             <span style={{ fontSize: '15px', fontWeight: 700 }}>{t.connectSpotify}</span>
-            <span style={{ fontSize: '13px', opacity: 0.85 }}>{t.spotifySubtitle}</span>
           </button>
         </div>
  
@@ -1600,8 +1451,6 @@ const SlideshowPage: React.FC = () => {
                 </div>
         )}
 
-        {/* Bottom Navigation */}
-        <BottomNav activeTab="slideshow" />
             </div>
         </>
     );
