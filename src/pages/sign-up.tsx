@@ -60,17 +60,6 @@ const SignUpPage: React.FC = () => {
                 `}</style>
             </Head>
 
-            <div className="status-bar">
-                <div className="status-left">
-                    <span className="time">9:41</span>
-                </div>
-                <div className="status-right">
-                    <span className="signal">●●●●●</span>
-                    <span className="wifi">📶</span>
-                    <span className="battery">🔋</span>
-                </div>
-            </div>
-
             <div className="mobile-container">
                 {/* Header */}
                 <div className="signup-header">

@@ -34,7 +34,8 @@ const CollaborationPanel: React.FC<CollaborationPanelProps> = ({
   showCloseHandle = false
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [query, setQuery] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [commentText, setCommentText] = useState('');
 
   const handleSelectFile = () => {
     fileInputRef.current?.click();
@@ -44,11 +45,17 @@ const CollaborationPanel: React.FC<CollaborationPanelProps> = ({
     alert('Opening celebration fund contribution flow…');
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!query.trim()) return;
-    alert(`Shared to collaboration feed: ${query.trim()}`);
-    setQuery('');
+    if (!searchTerm.trim()) return;
+    alert(`Searching for: ${searchTerm.trim()}`);
+  };
+
+  const handleCommentSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!commentText.trim()) return;
+    alert(`Shared to collaboration feed: ${commentText.trim()}`);
+    setCommentText('');
   };
 
   return (
@@ -59,7 +66,7 @@ const CollaborationPanel: React.FC<CollaborationPanelProps> = ({
       display: 'flex',
       flexDirection: 'column',
       gap: '18px',
-      padding: '24px 20px 32px'
+      padding: '20px 20px 32px'
     }}>
       {showCloseHandle && (
         <div
@@ -70,53 +77,62 @@ const CollaborationPanel: React.FC<CollaborationPanelProps> = ({
             height: '5px',
             borderRadius: '999px',
             background: 'rgba(255,255,255,0.25)',
-            marginTop: '4px',
             cursor: 'pointer'
           }}
         />
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-        <h1 style={{
-          margin: 0,
-          fontSize: 'clamp(20px, 5vw, 26px)',
-          fontWeight: 700,
-          letterSpacing: '-0.2px'
-        }}>
-          Family & Friends
-        </h1>
-        <div style={{ fontSize: '13px', opacity: 0.75, lineHeight: 1.6 }}>
-          Everything added here syncs instantly to the slideshow, the memorial page, and HEAVEN.
-        </div>
-      </div>
-
-      <button
-        onClick={() => alert('Invite link copied to clipboard!')}
-        style={{
-          alignSelf: 'flex-start',
-          border: '1px solid rgba(255,255,255,0.2)',
-          background: 'rgba(255,255,255,0.05)',
-          color: 'white',
-          padding: '10px 18px',
-          borderRadius: '999px',
-          fontSize: '13px',
-          fontWeight: 600,
-          cursor: 'pointer'
-        }}
-      >
-        Share invite link
-      </button>
-
       <form
-        onSubmit={handleSubmit}
+        onSubmit={handleSearchSubmit}
         style={{
-          background: 'rgba(255,255,255,0.07)',
-          border: '1px solid rgba(255,255,255,0.12)',
-          borderRadius: '999px',
-          padding: '10px 14px',
           display: 'flex',
           alignItems: 'center',
-          gap: '10px'
+          gap: '12px',
+          background: 'rgba(255,255,255,0.08)',
+          border: '1px solid rgba(255,255,255,0.12)',
+          borderRadius: '999px',
+          padding: '10px 18px'
+        }}
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.75)" strokeWidth="1.8">
+          <circle cx="11" cy="11" r="7" />
+          <line x1="20" y1="20" x2="16.65" y2="16.65" />
+        </svg>
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Search memories, verses, support"
+          style={{
+            flex: 1,
+            background: 'transparent',
+            border: 'none',
+            outline: 'none',
+            color: 'white',
+            fontSize: '15px'
+          }}
+        />
+      </form>
+
+      <div style={{
+        fontSize: '12px',
+        letterSpacing: '0.14em',
+        textTransform: 'uppercase',
+        color: 'rgba(255,255,255,0.45)'
+      }}>
+        Family & Friends
+      </div>
+
+      <form
+        onSubmit={handleCommentSubmit}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          background: 'rgba(255,255,255,0.08)',
+          border: '1px solid rgba(255,255,255,0.12)',
+          borderRadius: '999px',
+          padding: '10px 14px'
         }}
       >
         <button
@@ -138,9 +154,9 @@ const CollaborationPanel: React.FC<CollaborationPanelProps> = ({
         </button>
         <input
           type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search or share a memory…"
+          value={commentText}
+          onChange={(e) => setCommentText(e.target.value)}
+          placeholder="Share a memory"
           style={{
             flex: 1,
             background: 'transparent',
@@ -158,8 +174,8 @@ const CollaborationPanel: React.FC<CollaborationPanelProps> = ({
             background: 'linear-gradient(135deg, rgba(255,99,132,0.9) 0%, rgba(255,64,129,0.9) 100%)',
             color: 'white',
             fontWeight: 700,
-            fontSize: '14px',
-            padding: '10px 14px',
+            fontSize: '15px',
+            padding: '10px 16px',
             borderRadius: '999px',
             cursor: 'pointer',
             display: 'flex',
@@ -197,6 +213,23 @@ const CollaborationPanel: React.FC<CollaborationPanelProps> = ({
           <li>Memorial donations: <strong>$820</strong> (goal $1,000)</li>
         </ul>
       </div>
+
+      <button
+        onClick={() => alert('Invite link copied to clipboard!')}
+        style={{
+          alignSelf: 'flex-start',
+          border: '1px solid rgba(255,255,255,0.2)',
+          background: 'rgba(255,255,255,0.05)',
+          color: 'white',
+          padding: '10px 18px',
+          borderRadius: '999px',
+          fontSize: '13px',
+          fontWeight: 600,
+          cursor: 'pointer'
+        }}
+      >
+        Share invite link
+      </button>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
         {sampleMessages.map((message) => (

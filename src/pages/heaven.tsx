@@ -343,21 +343,6 @@ const HeavenPage: React.FC = () => {
           padding: '20px',
           paddingBottom: '90px'
         }}>
-          {/* Status Bar */}
-          <div style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            display: 'flex',
-            justifyContent: 'space-between',
-            padding: '8px 16px',
-            fontSize: '14px'
-          }}>
-            <div>9:41</div>
-            <div>●●●●● 📶 🔋</div>
-          </div>
-
           {/* Header */}
           <div style={{
             textAlign: 'center',
