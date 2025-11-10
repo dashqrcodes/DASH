@@ -75,7 +75,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab }) => {
 
             {/* Profile */}
             <button
-                onClick={() => router.push('/profile')}
+                onClick={() => router.push('/profile?resume=true')}
                 style={{
                     background: 'transparent',
                     border: 'none',
