@@ -3,6 +3,7 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import PhotoScanner from '../components/PhotoScanner';
 import MuxPlayerWrapper from '../components/MuxPlayerWrapper';
+import CollaborationPanel from '../components/CollaborationPanel';
 import { initLazyLoading } from '../utils/lazy-loading';
 
 type LifeBucketKey =
@@ -147,7 +148,10 @@ const SlideshowPage: React.FC = () => {
   const [sunrise, setSunrise] = useState('');
   const [sunset, setSunset] = useState('');
   const [activeBucket, setActiveBucket] = useState<LifeBucketKey | 'all'>('all');
+  const [isCollaborationOpen, setIsCollaborationOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const peekTouchStartY = useRef<number | null>(null);
+  const drawerTouchStartY = useRef<number | null>(null);
 
   const persistMediaToStorage = (mediaItems: MediaItem[]) => {
     if (typeof window === 'undefined') return;
@@ -696,7 +700,39 @@ const SlideshowPage: React.FC = () => {
   };
 
   const handleOpenCollaboration = () => {
-    router.push('/collaboration');
+    setIsCollaborationOpen(true);
+  };
+
+  const handleCloseCollaboration = () => {
+    setIsCollaborationOpen(false);
+  };
+
+  const handlePeekTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
+    const touch = event.touches[0];
+    peekTouchStartY.current = touch ? touch.clientY : null;
+  };
+
+  const handlePeekTouchEnd = (event: React.TouchEvent<HTMLDivElement>) => {
+    if (peekTouchStartY.current === null) return;
+    const touch = event.changedTouches[0];
+    if (touch && peekTouchStartY.current - touch.clientY > 25) {
+      setIsCollaborationOpen(true);
+    }
+    peekTouchStartY.current = null;
+  };
+
+  const handleDrawerTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
+    const touch = event.touches[0];
+    drawerTouchStartY.current = touch ? touch.clientY : null;
+  };
+
+  const handleDrawerTouchEnd = (event: React.TouchEvent<HTMLDivElement>) => {
+    if (drawerTouchStartY.current === null) return;
+    const touch = event.changedTouches[0];
+    if (touch && touch.clientY - drawerTouchStartY.current > 25) {
+      setIsCollaborationOpen(false);
+    }
+    drawerTouchStartY.current = null;
   };
 
   const handleJumpToHeaven = () => {
@@ -866,86 +902,36 @@ const SlideshowPage: React.FC = () => {
         </button>
 
         <div
-          onClick={() => {
-            if (fileInputRef.current) fileInputRef.current.click();
-          }}
+          onClick={handleOpenCollaboration}
+          onTouchStart={handlePeekTouchStart}
+          onTouchEnd={handlePeekTouchEnd}
           style={{
-            margin: '0 20px 18px',
-            position: 'relative',
-            borderRadius: '8px',
-            overflow: 'hidden',
-            background: photos.length
-              ? 'rgba(12,12,16,0.9)'
-              : '#000',
-            border: photos.length
-              ? '1px solid rgba(255,255,255,0.15)'
-              : '1px solid rgba(114,210,255,0.45)',
-            aspectRatio: '16 / 9',
+            width: '100%',
             display: 'flex',
-            alignItems: 'center',
             justifyContent: 'center',
-            cursor: 'pointer',
-            boxShadow: '0 25px 50px rgba(8,8,18,0.35)'
+            marginBottom: '14px'
           }}
         >
-          {photos.length > 0 ? (
-            renderHeroMedia()
-          ) : (
-            <div style={{
-              textAlign: 'center',
-              color: 'rgba(255,255,255,0.88)',
-              display:'flex',
-              flexDirection:'column',
-              alignItems:'center',
-              gap:'10px'
-            }}>
-              <div style={{
-                width:'58px',
-                height:'58px',
-                borderRadius:'50%',
-                border:'1px solid rgba(255,255,255,0.35)',
-                display:'flex',
-                alignItems:'center',
-                justifyContent:'center',
-                position:'relative',
-                overflow:'hidden'
-              }}>
-                <video
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  style={{width:'220%',height:'220%',objectFit:'cover',opacity:0.65,transform:'translateY(2px)'}}
-                >
-                  <source src="https://storage.googleapis.com/dash-public-assets/slideshow-upload-loop.mp4" type="video/mp4" />
-                </video>
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.6" style={{position:'absolute'}}>
-                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h6l2 3h3a2 2 0 0 1 2 2z"></path>
-                  <circle cx="12" cy="13" r="4"></circle>
-                </svg>
-              </div>
-              <div style={{ fontSize:'16px', fontWeight:600 }}>
-                {t.addPhotosVideos}
-              </div>
-              <div style={{ fontSize:'13px', opacity:0.7 }}>
-                {t.startFromEarliest}
-              </div>
-            </div>
-          )}
           <div
             style={{
-              position: 'absolute',
-              bottom: '14px',
-              right: '14px',
-              background: 'rgba(0,0,0,0.6)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 18px',
               borderRadius: '999px',
-              padding: '8px 16px',
-              fontSize: '12px',
-              letterSpacing: '0.1em',
-              opacity: 0.8
+              background: 'rgba(255,255,255,0.08)',
+              border: '1px solid rgba(255,255,255,0.12)',
+              color: 'rgba(255,255,255,0.85)',
+              fontSize: '13px',
+              fontWeight: 600,
+              letterSpacing: '0.3px',
+              boxShadow: '0 6px 18px rgba(0,0,0,0.25)',
+              WebkitTapHighlightColor: 'transparent',
+              touchAction: 'manipulation'
             }}
           >
-            {photos.length === 0 ? 'TAP TO ADD' : `${photos.length} ${t.memories}`}
+            <span style={{ fontSize: '16px', transform: 'translateY(-1px)' }}>▲</span>
+            <span>Family feed</span>
           </div>
         </div>
 
@@ -1055,23 +1041,6 @@ const SlideshowPage: React.FC = () => {
           flexDirection: 'column',
           gap: '18px'
         }}>
-          <button
-            onClick={handleOpenCollaboration}
-            style={{
-              border: 'none',
-              borderRadius: '9999px',
-              padding: '18px 22px',
-              background: 'linear-gradient(135deg, rgba(114,210,255,0.35) 0%, rgba(193,152,255,0.35) 100%)',
-              color: 'white',
-              textAlign: 'center',
-              fontSize: '15px',
-              fontWeight: 600,
-              cursor: 'pointer'
-            }}
-          >
-            {t.inviteCollaborators}
-          </button>
-
           <button
             onClick={handleSpotify}
             style={{
@@ -1398,42 +1367,23 @@ const SlideshowPage: React.FC = () => {
               {t.completeSlideshow} ({photos.length} {t.memories})
             </button>
             <div style={{
-              marginTop:'14px',
-              display:'flex',
-              gap:'10px',
-              flexWrap:'wrap'
+              marginTop:'14px'
             }}>
-              <button
-                onClick={handleOpenCollaboration}
-                style={{
-                  flex:1,
-                  minWidth:'140px',
-                  border:'none',
-                  borderRadius:'14px',
-                  padding:'14px 16px',
-                  background:'rgba(255,255,255,0.08)',
-                  color:'white',
-                  fontSize:'14px',
-                  fontWeight:600,
-                  cursor:'pointer'
-                }}
-              >
-                Share with family
-              </button>
               <button
                 onClick={handleJumpToHeaven}
                 style={{
-                  flex:1,
-                  minWidth:'140px',
+                  width:'100%',
                   border:'none',
                   borderRadius:'14px',
-                  padding:'14px 16px',
+                  padding:'16px 18px',
                   background:'linear-gradient(135deg,#12c2e9 0%,#c471ed 50%,#f64f59 100%)',
                   color:'white',
-                  fontSize:'14px',
+                  fontSize:'15px',
                   fontWeight:700,
                   cursor:'pointer',
-                  boxShadow:'0 12px 28px rgba(18,194,233,0.35)'
+                  boxShadow:'0 12px 28px rgba(18,194,233,0.35)',
+                  WebkitTapHighlightColor:'transparent',
+                  touchAction:'manipulation'
                 }}
               >
                 Launch HEAVEN →
@@ -1441,6 +1391,54 @@ const SlideshowPage: React.FC = () => {
             </div>
                 </div>
         )}
+
+            </div>
+      {isCollaborationOpen && (
+        <div
+          onClick={handleCloseCollaboration}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.55)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            zIndex: 1000,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'flex-end'
+          }}
+        >
+          <div
+            onClick={(event) => event.stopPropagation()}
+            style={{
+              background: '#05040c',
+              borderTopLeftRadius: '28px',
+              borderTopRightRadius: '28px',
+              paddingBottom: 'env(safe-area-inset-bottom, 24px)',
+              maxHeight: '88vh',
+              overflowY: 'auto',
+              boxShadow: '0 -18px 40px rgba(0,0,0,0.45)'
+            }}
+          >
+            <div
+              onClick={handleCloseCollaboration}
+              onTouchStart={handleDrawerTouchStart}
+              onTouchEnd={handleDrawerTouchEnd}
+              style={{
+                width: '64px',
+                height: '6px',
+                borderRadius: '999px',
+                background: 'rgba(255,255,255,0.25)',
+                margin: '12px auto 8px',
+                cursor: 'pointer'
+              }}
+            />
+            <div style={{ paddingTop: '4px' }}>
+              <CollaborationPanel onClose={handleCloseCollaboration} />
+            </div>
+          </div>
+        </div>
+      )}
 
             </div>
         </>
