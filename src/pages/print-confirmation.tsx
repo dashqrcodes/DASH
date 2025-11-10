@@ -24,27 +24,13 @@ const PrintConfirmationPage: React.FC = () => {
   };
 
   useEffect(() => {
-    // Auto-advance to slideshow after a brief pause so the flow continues
-    const timeout = setTimeout(() => {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('orderComplete', 'true');
-        if (customerName) localStorage.setItem('lovedOneName', customerName);
-        if (sunrise) localStorage.setItem('sunrise', sunrise);
-        if (sunset) localStorage.setItem('sunset', sunset);
-      }
-      router.push({
-        pathname: '/slideshow',
-        query: {
-          autoOpen,
-          name: customerName,
-          sunrise,
-          sunset
-        }
-      });
-    }, 3500);
-
-    return () => clearTimeout(timeout);
-  }, [router, autoOpen, customerName, sunrise, sunset]);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('orderComplete', 'true');
+      if (customerName) localStorage.setItem('lovedOneName', customerName);
+      if (sunrise) localStorage.setItem('sunrise', sunrise);
+      if (sunset) localStorage.setItem('sunset', sunset);
+    }
+  }, [customerName, sunrise, sunset]);
 
   const headline = useMemo(() => {
     if (!customerName || customerName === 'your loved one') {
@@ -132,7 +118,7 @@ const PrintConfirmationPage: React.FC = () => {
             </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', width: '100%' }}>
             <h1 style={{
               fontSize: 'clamp(22px, 5vw, 28px)',
               margin: 0,
@@ -147,63 +133,32 @@ const PrintConfirmationPage: React.FC = () => {
               color: 'rgba(255,255,255,0.8)',
               lineHeight: 1.5
             }}>
-              Your cards and mounted portrait are on their way to <strong>{funeralHome}</strong>. The print team is getting to work right now.
+              We are working on your order and will notify you when it has been delivered.
             </p>
           </div>
 
           <div style={{
             width: '100%',
             borderRadius: '18px',
-            background: 'rgba(255,255,255,0.06)',
-            border: '1px solid rgba(255,255,255,0.08)',
-            padding: '18px 20px',
-            textAlign: 'left',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '12px'
+            background: 'rgba(102,126,234,0.12)',
+            border: '1px solid rgba(102,126,234,0.25)',
+            padding: '16px 18px',
+            color: '#e4e9ff',
+            fontSize: '14px',
+            lineHeight: 1.6,
+            textAlign: 'left'
           }}>
-            <div>
-              <div style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px', color: 'rgba(255,255,255,0.5)' }}>
-                Print Shop
-              </div>
-              <div style={{ fontSize: '16px', fontWeight: 600, marginTop: '4px', color: '#FFFFFF' }}>
-                B O Printing
-              </div>
+            <strong>Order details</strong>
+            <div style={{ marginTop: '8px', opacity: 0.9 }}>
+              {customerName && <div>{customerName}</div>}
+              <div>{funeralHome}</div>
+              <div>{deliveryAddress}</div>
+              <div>{serviceDate}</div>
             </div>
-
-            <div>
-              <div style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px', color: 'rgba(255,255,255,0.5)' }}>
-                Order Status
-              </div>
-              <div style={{ fontSize: '15px', marginTop: '4px', color: '#FFFFFF' }}>
-                Working on your order now
-              </div>
-            </div>
-
-            <div>
-              <div style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px', color: 'rgba(255,255,255,0.5)' }}>
-                Delivery
-              </div>
-              <div style={{ fontSize: '15px', marginTop: '4px', color: '#FFFFFF', lineHeight: 1.4 }}>
-                Cards & poster will be delivered to<br />
-                <strong>{deliveryAddress}</strong><br />
-                by <strong>{serviceDate}</strong>
-              </div>
-            </div>
-          </div>
-
-          <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>
-            Redirecting you to Slideshow builder…
           </div>
 
           <button
             onClick={() => {
-              if (typeof window !== 'undefined') {
-                localStorage.setItem('orderComplete', 'true');
-                if (customerName) localStorage.setItem('lovedOneName', customerName);
-                if (sunrise) localStorage.setItem('sunrise', sunrise);
-                if (sunset) localStorage.setItem('sunset', sunset);
-              }
               router.push({
                 pathname: '/slideshow',
                 query: {
@@ -232,7 +187,7 @@ const PrintConfirmationPage: React.FC = () => {
             onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
             onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}
           >
-            Continue
+            Next
           </button>
         </div>
       </div>
