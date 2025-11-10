@@ -1105,27 +1105,7 @@ const SlideshowPage: React.FC = () => {
             div::-webkit-scrollbar { display: none; }
           `}</style>
           {photos.length === 0 ? (
-            <div style={{
-              textAlign:'center',
-              padding:'60px 20px',
-              opacity:0.6
-            }}>
-              <div style={{
-                fontSize:'clamp(16px, 4vw, 18px)',
-                marginBottom:'12px',
-                fontWeight:'600'
-              }}>
-                {t.storyBegins}
-                    </div>
-              <div style={{
-                fontSize:'clamp(13px, 3vw, 15px)',
-                lineHeight:'1.6',
-                opacity:0.8
-              }}>
-                {t.addPhotosHelp}<br/>
-                {t.arrangeChronologically}
-                    </div>
-                </div>
+            <div style={{height:'40vh'}} />
           ) : (
             <div style={{display:'flex',flexDirection:'column',gap:'14px',paddingBottom:'20px'}}>
               {filteredPhotos.length === 0 ? (
