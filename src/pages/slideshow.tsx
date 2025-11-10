@@ -1145,6 +1145,7 @@ const SlideshowPage: React.FC = () => {
             {t.connectSpotify}
           </button>
         </div>
+
  
         {/* Photo Grid - Chronological */}
         <div style={{
