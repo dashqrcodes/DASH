@@ -136,18 +136,6 @@ const LifeChaptersPage: React.FC = () => {
                 <title>Life Chapters - DASH</title>
             </Head>
 
-            {/* iOS Status Bar */}
-            <div className="status-bar">
-                <div className="status-left">
-                    <span className="time">9:41</span>
-                </div>
-                <div className="status-right">
-                    <span className="signal">●●●●●</span>
-                    <span className="wifi">📶</span>
-                    <span className="battery">🔋</span>
-                </div>
-            </div>
-
             {/* Top Icon Bar */}
             <div className="top-icon-bar">
                 <div className="icon-item" onClick={goBack}>

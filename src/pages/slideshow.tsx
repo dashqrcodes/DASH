@@ -859,6 +859,91 @@ const SlideshowPage: React.FC = () => {
           Gather the memories that celebrate their life. Start with the moment they were born.
         </div>
 
+        <div
+          style={{
+            textAlign:'center',
+            fontSize:'11px',
+            letterSpacing:'0.12em',
+            textTransform:'uppercase',
+            color:'rgba(255,255,255,0.5)',
+            marginBottom:'8px'
+          }}
+        >
+          Start here
+        </div>
+
+        <div
+          onClick={() => {
+            if (fileInputRef.current) fileInputRef.current.click();
+          }}
+          style={{
+            margin: '0 20px 18px',
+            position: 'relative',
+            borderRadius: '8px',
+            overflow: 'hidden',
+            background: photos.length
+              ? 'rgba(12,12,16,0.9)'
+              : '#000',
+            border: photos.length
+              ? '1px solid rgba(255,255,255,0.15)'
+              : '1px solid rgba(114,210,255,0.45)',
+            aspectRatio: '16 / 9',
+            minHeight: '220px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            boxShadow: '0 25px 50px rgba(8,8,18,0.35)'
+          }}
+        >
+          {photos.length > 0 ? (
+            renderHeroMedia()
+          ) : (
+            <div style={{
+              textAlign: 'center',
+              color: 'rgba(255,255,255,0.88)',
+              display:'flex',
+              flexDirection:'column',
+              alignItems:'center',
+              gap:'10px',
+              minHeight:'100%',
+              justifyContent:'center'
+            }}>
+              <div style={{
+                width:'58px',
+                height:'58px',
+                borderRadius:'50%',
+                border:'1px solid rgba(255,255,255,0.35)',
+                display:'flex',
+                alignItems:'center',
+                justifyContent:'center',
+                position:'relative',
+                overflow:'hidden'
+              }}>
+                <video
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  style={{width:'220%',height:'220%',objectFit:'cover',opacity:0.65,transform:'translateY(2px)'}}
+                >
+                  <source src="https://storage.googleapis.com/dash-public-assets/slideshow-upload-loop.mp4" type="video/mp4" />
+                </video>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.6" style={{position:'absolute'}}>
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h6l2 3h3a2 2 0 0 1 2 2z"></path>
+                  <circle cx="12" cy="13" r="4"></circle>
+                </svg>
+              </div>
+              <div style={{ fontSize:'16px', fontWeight:600 }}>
+                {t.addPhotosVideos}
+              </div>
+              <div style={{ fontSize:'13px', opacity:0.7 }}>
+                {t.startFromEarliest}
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Hero Preview */}
         <button 
           onClick={() => setShowScanner(true)}
@@ -1389,10 +1474,10 @@ const SlideshowPage: React.FC = () => {
                 Launch HEAVEN →
               </button>
             </div>
-                </div>
+          </div>
         )}
+      </div>
 
-            </div>
       {isCollaborationOpen && (
         <div
           onClick={handleCloseCollaboration}
@@ -1439,8 +1524,8 @@ const SlideshowPage: React.FC = () => {
           </div>
         </div>
       )}
-  </>
-);
+    </>
+  );
 };
 
 export default SlideshowPage;

@@ -41,25 +41,6 @@ const FaceIDPage: React.FC = () => {
                 touchAction: 'manipulation',
                 overflow: 'hidden'
             }}>
-                {/* Status Bar */}
-                <div style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    paddingTop: 'env(safe-area-inset-top, 8px)',
-                    paddingBottom: '8px',
-                    paddingLeft: '20px',
-                    paddingRight: '20px',
-                    fontSize: '14px',
-                    fontWeight: '600'
-                }}>
-                    <div>9:41</div>
-                    <div>●●●●● 📶 🔋</div>
-                </div>
-
                 {/* Face ID Animation */}
                 <div style={{
                     display: 'flex',

@@ -102,18 +102,6 @@ const CheckoutPage: React.FC = () => {
                 maxWidth: '100vw',
                 overflow: 'hidden'
             }}>
-                {/* Status Bar */}
-                <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    padding: '8px 16px',
-                    marginBottom: '20px',
-                    fontSize: '14px'
-                }}>
-                    <div>9:41</div>
-                    <div>●●●●● 📶 🔋</div>
-                </div>
-
                 {/* Header */}
                 <div style={{
                     textAlign: 'center',

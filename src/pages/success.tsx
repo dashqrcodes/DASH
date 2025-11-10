@@ -22,17 +22,6 @@ const SuccessPage: React.FC = () => {
                 <link rel="stylesheet" href="/signup.css" />
                 <title>DASH - Order Complete!</title>
             </Head>
-            <div className="status-bar">
-                <div className="status-left">
-                    <span className="time">9:41</span>
-                </div>
-                <div className="status-right">
-                    <span className="signal">●●●●●</span>
-                    <span className="wifi">📶</span>
-                    <span className="battery">🔋</span>
-                </div>
-            </div>
-
             <div className="mobile-container">
                 <div className="signup-header">
                     <h1>🎉 Order Approved!</h1>
