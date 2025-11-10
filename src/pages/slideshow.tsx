@@ -773,10 +773,10 @@ const SlideshowPage: React.FC = () => {
           display:'flex',
           alignItems:'center',
           justifyContent:'space-between',
-          paddingTop:'calc(env(safe-area-inset-top, 0px) + 16px)',
-          paddingBottom:'12px',
-          paddingLeft:'20px',
-          paddingRight:'20px',
+          paddingTop:'calc(env(safe-area-inset-top, 0px) + 12px)',
+          paddingBottom:'6px',
+          paddingLeft:'16px',
+          paddingRight:'16px',
           gap:'12px',
           zIndex:10
         }}>
@@ -788,12 +788,12 @@ const SlideshowPage: React.FC = () => {
               color:'white',
               fontSize:'20px',
               cursor:'pointer',
-              padding:'10px 14px',
+              padding:'8px 12px',
               WebkitTapHighlightColor:'transparent',
               touchAction:'manipulation',
               borderRadius:'999px',
-              minWidth:'44px',
-              minHeight:'44px',
+              minWidth:'40px',
+              minHeight:'40px',
               display:'flex',
               alignItems:'center',
               justifyContent:'center'
@@ -806,14 +806,53 @@ const SlideshowPage: React.FC = () => {
             textAlign:'center',
             fontSize:'clamp(20px, 5vw, 24px)',
             fontWeight:'700',
-            letterSpacing:'-0.5px'
+            letterSpacing:'-0.4px'
           }}>
             {lovedOneName || t.createSlideshow}
           </div>
-          <div style={{width:'44px', height:'44px'}} />
+          <div style={{width:'40px', height:'40px'}} />
+        </div>
+        <div style={{
+          textAlign:'center',
+          padding:'0 32px',
+          marginBottom:'18px',
+          fontSize:'13px',
+          color:'rgba(255,255,255,0.72)',
+          lineHeight:1.6
+        }}>
+          Gather the memories that celebrate their life. Start with the moment they were born.
         </div>
 
         {/* Hero Preview */}
+        <button 
+          onClick={() => setShowScanner(true)}
+          style={{
+            margin:'0 20px 16px',
+            padding:'16px 20px',
+            background:'linear-gradient(135deg, rgba(109,127,255,0.9) 0%, rgba(173,114,255,0.9) 100%)',
+            border:'none',
+            borderRadius:'9999px',
+            textAlign:'center',
+            cursor:'pointer',
+            display:'flex',
+            alignItems:'center',
+            justifyContent:'center',
+            gap:'10px',
+            fontSize:'15px',
+            fontWeight:600,
+            color:'white',
+            WebkitTapHighlightColor:'transparent',
+            boxShadow:'0 12px 32px rgba(132,102,255,0.35)'
+          }}
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8">
+            <rect x="3" y="4" width="18" height="16" rx="2" />
+            <path d="M8 11h8" />
+            <path d="M12 7v8" />
+          </svg>
+          Scan Physical Photo
+        </button>
+
         <div
           onClick={() => {
             if (fileInputRef.current) fileInputRef.current.click();
@@ -855,9 +894,20 @@ const SlideshowPage: React.FC = () => {
                 border:'1px solid rgba(255,255,255,0.35)',
                 display:'flex',
                 alignItems:'center',
-                justifyContent:'center'
+                justifyContent:'center',
+                position:'relative',
+                overflow:'hidden'
               }}>
-                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8">
+                <video
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  style={{width:'220%',height:'220%',objectFit:'cover',opacity:0.65,transform:'translateY(2px)'}}
+                >
+                  <source src="https://storage.googleapis.com/dash-public-assets/slideshow-upload-loop.mp4" type="video/mp4" />
+                </video>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.6" style={{position:'absolute'}}>
                   <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h6l2 3h3a2 2 0 0 1 2 2z"></path>
                   <circle cx="12" cy="13" r="4"></circle>
                 </svg>
