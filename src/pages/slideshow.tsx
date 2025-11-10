@@ -753,27 +753,20 @@ const SlideshowPage: React.FC = () => {
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
             </Head>
       <div style={{
-        width:'100vw',
-        height:'100dvh',
-        maxHeight:'100dvh',
+        minHeight:'100vh',
         background:'#000000',
         fontFamily:'-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
         color:'white',
         padding:'0',
-        paddingBottom:'calc(env(safe-area-inset-bottom, 0px) + 80px)',
+        paddingBottom:'calc(env(safe-area-inset-bottom, 0px) + 40px)',
         display:'flex',
         flexDirection:'column',
-        maxWidth:'100vw',
-        overflow:'hidden',
-        position:'fixed',
-        top:0,
-        left:0,
-        right:0,
-        bottom:0,
+        width:'100%',
+        overflowY:'auto',
+        overscrollBehavior:'contain',
         WebkitTouchCallout:'none',
         WebkitUserSelect:'none',
-        touchAction:'manipulation',
-        overscrollBehavior:'none'
+        touchAction:'manipulation'
       }}>
         {/* Header */}
         <div style={{
@@ -828,11 +821,14 @@ const SlideshowPage: React.FC = () => {
           style={{
             margin: '0 20px 18px',
             position: 'relative',
-            borderRadius: '0px',
+            borderRadius: '8px',
             overflow: 'hidden',
             background: photos.length
-              ? 'rgba(255,255,255,0.08)'
-              : 'linear-gradient(135deg, rgba(102,126,234,0.28) 0%, rgba(118,75,162,0.22) 100%)',
+              ? 'rgba(12,12,16,0.9)'
+              : '#000',
+            border: photos.length
+              ? '1px solid rgba(255,255,255,0.15)'
+              : '1px solid rgba(114,210,255,0.45)',
             aspectRatio: '16 / 9',
             display: 'flex',
             alignItems: 'center',
@@ -844,10 +840,34 @@ const SlideshowPage: React.FC = () => {
           {photos.length > 0 ? (
             renderHeroMedia()
           ) : (
-            <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.85)', padding: '0 32px' }}>
-              <div style={{ fontSize: '28px', marginBottom: '12px' }}>+</div>
-              <div style={{ fontSize: '16px', fontWeight: 600 }}>{t.addPhotosVideos}</div>
-              <div style={{ fontSize: '13px', opacity: 0.75, marginTop: '6px' }}>{t.startFromEarliest}</div>
+            <div style={{
+              textAlign: 'center',
+              color: 'rgba(255,255,255,0.88)',
+              display:'flex',
+              flexDirection:'column',
+              alignItems:'center',
+              gap:'10px'
+            }}>
+              <div style={{
+                width:'58px',
+                height:'58px',
+                borderRadius:'50%',
+                border:'1px solid rgba(255,255,255,0.35)',
+                display:'flex',
+                alignItems:'center',
+                justifyContent:'center'
+              }}>
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h6l2 3h3a2 2 0 0 1 2 2z"></path>
+                  <circle cx="12" cy="13" r="4"></circle>
+                </svg>
+              </div>
+              <div style={{ fontSize:'16px', fontWeight:600 }}>
+                {t.addPhotosVideos}
+              </div>
+              <div style={{ fontSize:'13px', opacity:0.7 }}>
+                {t.startFromEarliest}
+              </div>
             </div>
           )}
           <div
