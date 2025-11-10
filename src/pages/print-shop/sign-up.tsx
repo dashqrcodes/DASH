@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
+import dynamic from 'next/dynamic';
 
 const PrintShopSignUpPage: React.FC = () => {
   const router = useRouter();
@@ -461,5 +462,5 @@ const PrintShopSignUpPage: React.FC = () => {
   );
 };
 
-export default PrintShopSignUpPage;
+export default dynamic(() => Promise.resolve(PrintShopSignUpPage), { ssr: false });
 

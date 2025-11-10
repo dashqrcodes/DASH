@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
+import dynamic from 'next/dynamic';
 
 interface InviteData {
   token: string;
@@ -156,6 +157,6 @@ const InviteLandingPage: React.FC = () => {
   );
 };
 
-export default InviteLandingPage;
+export default dynamic(() => Promise.resolve(InviteLandingPage), { ssr: false });
 
 
