@@ -1421,9 +1421,9 @@ const SlideshowPage: React.FC = () => {
             }}
           >
             <div
-              onClick={handleCloseCollaboration}
               onTouchStart={handleDrawerTouchStart}
               onTouchEnd={handleDrawerTouchEnd}
+              onClick={handleCloseCollaboration}
               style={{
                 width: '64px',
                 height: '6px',
@@ -1439,10 +1439,8 @@ const SlideshowPage: React.FC = () => {
           </div>
         </div>
       )}
-
-            </div>
-        </>
-    );
+  </>
+);
 };
 
 export default SlideshowPage;
