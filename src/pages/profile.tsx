@@ -145,24 +145,6 @@ const ProfilePage: React.FC = () => {
         input.click();
     };
 
-    const handleStartNew = () => {
-        if (typeof window !== 'undefined') {
-            const hasAny = Boolean(name || sunrise || sunset || photo);
-            if (hasAny) {
-                const confirmReset = window.confirm('Start a new profile? This will clear the current tribute details.');
-                if (!confirmReset) return;
-            }
-            localStorage.removeItem('profileData');
-            localStorage.removeItem('profileResume');
-        }
-        setName('');
-        setSunrise('');
-        setSunset('');
-        setPhoto(null);
-        isDataLoaded.current = true;
-        router.replace('/profile?resume=false', undefined, { shallow: true });
-    };
-
     const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
         // Auto-capitalize first letter of each word
@@ -413,24 +395,8 @@ const ProfilePage: React.FC = () => {
                 transform: 'translateX(0)',
                 position: 'relative'
             }}>
-                {/* Header Actions */}
-                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'20px',paddingTop:'10px',gap:'12px'}}>
-                    <button
-                        onClick={handleStartNew}
-                        style={{
-                            border:'1px solid rgba(255,255,255,0.2)',
-                            background:'rgba(255,255,255,0.08)',
-                            color:'white',
-                            padding:'8px 16px',
-                            borderRadius:'999px',
-                            cursor:'pointer',
-                            fontSize:'13px',
-                            fontWeight:600,
-                            WebkitTapHighlightColor:'transparent'
-                        }}
-                    >
-                        New
-                    </button>
+                {/* Language Toggle */}
+                <div style={{display:'flex',justifyContent:'center',alignItems:'center',marginBottom:'20px',paddingTop:'10px'}}>
                     <div 
                         onClick={()=>{
                             const newLang = language === 'en' ? 'es' : 'en';
