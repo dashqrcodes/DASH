@@ -1047,18 +1047,15 @@ const SlideshowPage: React.FC = () => {
               border: 'none',
               borderRadius: '9999px',
               padding: '18px 22px',
-              background: 'linear-gradient(135deg, rgba(102,126,234,0.3) 0%, rgba(118,75,162,0.3) 100%)',
+              background: 'linear-gradient(135deg, rgba(114,210,255,0.35) 0%, rgba(193,152,255,0.35) 100%)',
               color: 'white',
-              textAlign: 'left',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '4px',
-              cursor: 'pointer',
-              boxShadow: '0 12px 28px rgba(102,126,234,0.35)'
+              textAlign: 'center',
+              fontSize: '15px',
+              fontWeight: 600,
+              cursor: 'pointer'
             }}
           >
-            <span style={{ fontSize: '15px', fontWeight: 600 }}>{t.inviteCollaborators}</span>
-            <span style={{ fontSize: '13px', opacity: 0.85 }}>{t.inviteSubtitle}</span>
+            {t.inviteCollaborators}
           </button>
 
           <button
@@ -1066,17 +1063,16 @@ const SlideshowPage: React.FC = () => {
             style={{
               border: 'none',
               borderRadius: '9999px',
-              padding: '18px 22px',
-              background: 'rgba(255,255,255,0.1)',
+              padding: '20px 22px',
+              background: 'linear-gradient(135deg, rgba(30,214,96,0.85) 0%, rgba(12,174,57,0.85) 100%)',
               color: 'white',
-              textAlign: 'left',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '4px',
+              textAlign: 'center',
+              fontSize: '16px',
+              fontWeight: 700,
               cursor: 'pointer'
             }}
           >
-            <span style={{ fontSize: '15px', fontWeight: 700 }}>{t.connectSpotify}</span>
+            {t.connectSpotify}
           </button>
         </div>
  
