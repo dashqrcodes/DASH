@@ -848,16 +848,6 @@ const SlideshowPage: React.FC = () => {
           </div>
           <div style={{width:'40px', height:'40px'}} />
         </div>
-        <div style={{
-          textAlign:'center',
-          padding:'0 32px',
-          marginBottom:'18px',
-          fontSize:'13px',
-          color:'rgba(255,255,255,0.72)',
-          lineHeight:1.6
-        }}>
-          Gather the memories that celebrate their life. Start with the moment they were born.
-        </div>
 
         <div
           style={{
@@ -1401,22 +1391,22 @@ const SlideshowPage: React.FC = () => {
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
-              padding: '12px 20px',
+              gap: '10px',
+              padding: '14px 32px',
               borderRadius: '999px',
               background: 'rgba(255,255,255,0.08)',
               border: '1px solid rgba(255,255,255,0.12)',
-              color: 'rgba(255,255,255,0.85)',
-              fontSize: '13px',
+              color: 'rgba(255,255,255,0.9)',
+              fontSize: '14px',
               fontWeight: 600,
-              letterSpacing: '0.3px',
+              letterSpacing: '0.32px',
               boxShadow: '0 6px 18px rgba(0,0,0,0.25)',
               WebkitTapHighlightColor: 'transparent',
               touchAction: 'manipulation'
             }}
           >
-            <span style={{ fontSize: '16px', transform: 'translateY(-1px)' }}>▲</span>
-            <span>Family feed</span>
+            <span style={{ fontSize: '18px', transform: 'translateY(-1px)' }}>▲</span>
+            <span>Share a memory</span>
           </div>
         </div>
 
