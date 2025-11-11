@@ -986,40 +986,6 @@ const SlideshowPage: React.FC = () => {
           </div>
         </button>
 
-        <div
-          onClick={handleOpenCollaboration}
-          onTouchStart={handlePeekTouchStart}
-          onTouchEnd={handlePeekTouchEnd}
-          style={{
-            width: '100%',
-            display: 'flex',
-            justifyContent: 'center',
-            marginBottom: '14px'
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '10px 18px',
-              borderRadius: '999px',
-              background: 'rgba(255,255,255,0.08)',
-              border: '1px solid rgba(255,255,255,0.12)',
-              color: 'rgba(255,255,255,0.85)',
-              fontSize: '13px',
-              fontWeight: 600,
-              letterSpacing: '0.3px',
-              boxShadow: '0 6px 18px rgba(0,0,0,0.25)',
-              WebkitTapHighlightColor: 'transparent',
-              touchAction: 'manipulation'
-            }}
-          >
-            <span style={{ fontSize: '16px', transform: 'translateY(-1px)' }}>▲</span>
-            <span>Family feed</span>
-          </div>
-        </div>
-
         <input
           ref={fileInputRef}
           type="file"
@@ -1418,6 +1384,42 @@ const SlideshowPage: React.FC = () => {
           )}
                 </div>
                 
+        <div
+          onClick={handleOpenCollaboration}
+          onTouchStart={handlePeekTouchStart}
+          onTouchEnd={handlePeekTouchEnd}
+          style={{
+            width: '100%',
+            display: 'flex',
+            justifyContent: 'center',
+            padding: '0 20px',
+            marginTop: 'auto',
+            marginBottom: photos.length > 0 ? '20px' : '28px'
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '12px 20px',
+              borderRadius: '999px',
+              background: 'rgba(255,255,255,0.08)',
+              border: '1px solid rgba(255,255,255,0.12)',
+              color: 'rgba(255,255,255,0.85)',
+              fontSize: '13px',
+              fontWeight: 600,
+              letterSpacing: '0.3px',
+              boxShadow: '0 6px 18px rgba(0,0,0,0.25)',
+              WebkitTapHighlightColor: 'transparent',
+              touchAction: 'manipulation'
+            }}
+          >
+            <span style={{ fontSize: '16px', transform: 'translateY(-1px)' }}>▲</span>
+            <span>Family feed</span>
+          </div>
+        </div>
+
         {/* Complete Button */}
         {photos.length > 0 && (
           <div style={{
