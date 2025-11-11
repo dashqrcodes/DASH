@@ -34,7 +34,6 @@ const CollaborationPanel: React.FC<CollaborationPanelProps> = ({
   showCloseHandle = false
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [searchTerm, setSearchTerm] = useState('');
   const [commentText, setCommentText] = useState('');
 
   const handleSelectFile = () => {
@@ -43,12 +42,6 @@ const CollaborationPanel: React.FC<CollaborationPanelProps> = ({
 
   const handleDonation = () => {
     alert('Opening celebration fund contribution flow…');
-  };
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchTerm.trim()) return;
-    alert(`Searching for: ${searchTerm.trim()}`);
   };
 
   const handleCommentSubmit = (e: React.FormEvent) => {
@@ -81,38 +74,6 @@ const CollaborationPanel: React.FC<CollaborationPanelProps> = ({
           }}
         />
       )}
-
-      <form
-        onSubmit={handleSearchSubmit}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          background: 'rgba(255,255,255,0.08)',
-          border: '1px solid rgba(255,255,255,0.12)',
-          borderRadius: '999px',
-          padding: '10px 18px'
-        }}
-      >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.75)" strokeWidth="1.8">
-          <circle cx="11" cy="11" r="7" />
-          <line x1="20" y1="20" x2="16.65" y2="16.65" />
-        </svg>
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Search memories, verses, support"
-          style={{
-            flex: 1,
-            background: 'transparent',
-            border: 'none',
-            outline: 'none',
-            color: 'white',
-            fontSize: '15px'
-          }}
-        />
-      </form>
 
       <div style={{
         fontSize: '12px',
