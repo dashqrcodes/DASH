@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 
@@ -31,13 +31,6 @@ const PrintConfirmationPage: React.FC = () => {
       if (sunset) localStorage.setItem('sunset', sunset);
     }
   }, [customerName, sunrise, sunset]);
-
-  const headline = useMemo(() => {
-    if (!customerName || customerName === 'your loved one') {
-      return 'Order in Motion';
-    }
-    return `Celebrating ${customerName}`;
-  }, [customerName]);
 
   return (
     <>
@@ -119,36 +112,31 @@ const PrintConfirmationPage: React.FC = () => {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', width: '100%' }}>
-            <h1 style={{
-              fontSize: 'clamp(22px, 5vw, 28px)',
-              margin: 0,
-              fontWeight: 700,
-              color: '#FFFFFF'
-            }}>
-              {headline}
-            </h1>
-            <p style={{
-              margin: 0,
-              fontSize: 'clamp(14px, 3.5vw, 16px)',
-              color: 'rgba(255,255,255,0.8)',
-              lineHeight: 1.5
-            }}>
-              We are working on your order and will notify you when it has been delivered.
+            <p
+              style={{
+                margin: 0,
+                fontSize: 'clamp(14px, 3.5vw, 16px)',
+                color: 'rgba(255,255,255,0.8)',
+                lineHeight: 1.5
+              }}
+            >
+              We are working on your order.
             </p>
           </div>
 
-          <div style={{
-            width: '100%',
-            borderRadius: '18px',
-            background: 'rgba(102,126,234,0.12)',
-            border: '1px solid rgba(102,126,234,0.25)',
-            padding: '16px 18px',
-            color: '#e4e9ff',
-            fontSize: '14px',
-            lineHeight: 1.6,
-            textAlign: 'left'
-          }}>
-            <strong>Order details</strong>
+          <div
+            style={{
+              width: '100%',
+              borderRadius: '18px',
+              background: 'rgba(102,126,234,0.12)',
+              padding: '16px 18px',
+              color: '#e4e9ff',
+              fontSize: '14px',
+              lineHeight: 1.6,
+              textAlign: 'left'
+            }}
+          >
+            <strong>Delivery Address</strong>
             <div style={{ marginTop: '8px', opacity: 0.9 }}>
               {customerName && <div>{customerName}</div>}
               <div>{funeralHome}</div>
