@@ -149,6 +149,11 @@ const SlideshowPage: React.FC = () => {
   const [sunset, setSunset] = useState('');
   const [activeBucket, setActiveBucket] = useState<LifeBucketKey | 'all'>('all');
   const [isCollaborationOpen, setIsCollaborationOpen] = useState(false);
+  const [transferMode, setTransferMode] = useState<'file-transfer' | 'make-usb'>('file-transfer');
+  const [supportsFileSystemAccess, setSupportsFileSystemAccess] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
+  const [isPreparingUsb, setIsPreparingUsb] = useState(false);
+  const [transferFeedback, setTransferFeedback] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const peekTouchStartY = useRef<number | null>(null);
   const drawerTouchStartY = useRef<number | null>(null);
@@ -238,6 +243,22 @@ const SlideshowPage: React.FC = () => {
 
     return () => {
       cleanup();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const desktopMatch = window.matchMedia('(pointer: fine)');
+    const updateDesktop = () => setIsDesktop(desktopMatch.matches);
+    updateDesktop();
+    desktopMatch.addEventListener('change', updateDesktop);
+
+    const supportsAccess = 'showDirectoryPicker' in window;
+    setSupportsFileSystemAccess(supportsAccess);
+    setTransferMode(supportsAccess ? 'make-usb' : 'file-transfer');
+
+    return () => {
+      desktopMatch.removeEventListener('change', updateDesktop);
     };
   }, []);
 
@@ -690,6 +711,102 @@ const SlideshowPage: React.FC = () => {
         item.id === photoId ? { ...item, bucket: bucketId } : item
       )
     );
+  };
+
+  const handleFileTransfer = async () => {
+    if (typeof window === 'undefined') return;
+    const memorialLink = window.location.href;
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: 'DASH Memorial',
+          text: 'Access the memorial slideshow.',
+          url: memorialLink,
+        });
+        setTransferFeedback('Shared using your device options.');
+        return;
+      }
+
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(memorialLink);
+        setTransferFeedback('Memorial link copied to clipboard.');
+        return;
+      }
+    } catch (error) {
+      console.error('Error sharing memorial link', error);
+    }
+
+    setTransferFeedback(`Share this link manually: ${memorialLink}`);
+  };
+
+  const handleMakeUsb = async () => {
+    if (typeof window === 'undefined') return;
+
+    if (!photos.length) {
+      setTransferFeedback('Add memories before creating a USB keepsake.');
+      return;
+    }
+
+    if (!supportsFileSystemAccess) {
+      setTransferFeedback('Make a USB works best on desktop Chrome or Edge. Choose File transfer or switch browsers.');
+      return;
+    }
+
+    try {
+      setIsPreparingUsb(true);
+      setTransferFeedback('Select your USB drive to begin.');
+      const directoryHandle = await (window as any).showDirectoryPicker({
+        id: 'dash-usb',
+        startIn: 'documents',
+        mode: 'readwrite',
+      });
+
+      const memorialLink = window.location.href;
+
+      for (let index = 0; index < photos.length; index += 1) {
+        const item = photos[index];
+        const fileName =
+          item.file?.name ??
+          `memory-${String(index + 1).padStart(2, '0')}.${item.type === 'video' ? 'mp4' : 'jpg'}`;
+
+        let blob: Blob;
+        if (item.file) {
+          blob = item.file;
+        } else {
+          const sourceUrl = item.preview || item.url;
+          const response = await fetch(sourceUrl);
+          blob = await response.blob();
+        }
+
+        const fileHandle = await directoryHandle.getFileHandle(fileName, {
+          create: true,
+        });
+        const writable = await fileHandle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+      }
+
+      const instructionsHandle = await directoryHandle.getFileHandle('READ_ME.txt', {
+        create: true,
+      });
+      const writable = await instructionsHandle.createWritable();
+      await writable.write(
+        `Your DASH memorial keepsake is ready.\n\nVisit ${memorialLink} to view the full slideshow and share it with family and friends.\n\nThese files were saved directly from your memorial session.`
+      );
+      await writable.close();
+
+      setTransferFeedback('Memories copied to your USB drive. You can safely remove it now.');
+    } catch (error) {
+      if ((error as DOMException)?.name === 'AbortError') {
+        setTransferFeedback('USB save cancelled.');
+      } else {
+        console.error('Error creating USB keepsake', error);
+        setTransferFeedback('We could not save to your USB drive. Please try again.');
+      }
+    } finally {
+      setIsPreparingUsb(false);
+    }
   };
 
   const handleComplete = () => {
@@ -1374,6 +1491,132 @@ const SlideshowPage: React.FC = () => {
           )}
                 </div>
                 
+        {isDesktop && (
+          <div
+            style={{
+              padding: '0 20px',
+              marginTop: photos.length ? '22px' : '12px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                gap: '6px',
+                background: 'rgba(255,255,255,0.06)',
+                borderRadius: '999px',
+                padding: '6px',
+                alignSelf: 'flex-start',
+              }}
+            >
+              {(['file-transfer', 'make-usb'] as Array<'file-transfer' | 'make-usb'>).map((mode) => {
+                const isActive = transferMode === mode;
+                const label = mode === 'file-transfer' ? 'File transfer' : 'Make a USB';
+                return (
+                  <button
+                    key={mode}
+                    onClick={() => setTransferMode(mode)}
+                    style={{
+                      border: 'none',
+                      borderRadius: '999px',
+                      padding: '10px 18px',
+                      fontSize: '14px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      background: isActive
+                        ? 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)'
+                        : 'transparent',
+                      color: 'white',
+                      boxShadow: isActive ? '0 6px 16px rgba(102,126,234,0.35)' : 'none',
+                      transition: 'all 0.2s ease',
+                      WebkitTapHighlightColor: 'transparent',
+                    }}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '12px',
+              }}
+            >
+              {transferMode === 'file-transfer' ? (
+                <button
+                  onClick={handleFileTransfer}
+                  style={{
+                    padding: '14px 20px',
+                    borderRadius: '14px',
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    background: 'rgba(255,255,255,0.12)',
+                    color: 'white',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    minWidth: '200px',
+                    WebkitTapHighlightColor: 'transparent',
+                  }}
+                >
+                  File transfer
+                </button>
+              ) : (
+                <button
+                  onClick={handleMakeUsb}
+                  disabled={isPreparingUsb}
+                  title="Plug in a USB drive to enable"
+                  style={{
+                    padding: '14px 20px',
+                    borderRadius: '14px',
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    background: isPreparingUsb
+                      ? 'rgba(255,255,255,0.08)'
+                      : 'linear-gradient(135deg,#12c2e9 0%,#c471ed 50%,#f64f59 100%)',
+                    color: 'white',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    cursor: isPreparingUsb ? 'wait' : 'pointer',
+                    minWidth: '200px',
+                    opacity: isPreparingUsb ? 0.6 : 1,
+                    WebkitTapHighlightColor: 'transparent',
+                  }}
+                >
+                  {isPreparingUsb ? 'Saving to USB…' : 'Make a USB'}
+                </button>
+              )}
+            </div>
+
+            {transferMode === 'make-usb' && !supportsFileSystemAccess && (
+              <div
+                style={{
+                  fontSize: '12px',
+                  color: 'rgba(255,255,255,0.65)',
+                  lineHeight: 1.5,
+                }}
+              >
+                Make a USB is available on desktop Chrome or Edge. Choose File transfer or switch browsers.
+              </div>
+            )}
+
+            {transferFeedback && (
+              <div
+                style={{
+                  fontSize: '12px',
+                  color: 'rgba(255,255,255,0.7)',
+                  lineHeight: 1.5,
+                }}
+              >
+                {transferFeedback}
+              </div>
+            )}
+          </div>
+        )}
+
         <div
           onClick={handleOpenCollaboration}
           onTouchStart={handlePeekTouchStart}
