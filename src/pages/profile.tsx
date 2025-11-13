@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
+
+const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
 const ProfilePage: React.FC = () => {
     const router = useRouter();
@@ -32,6 +34,7 @@ const ProfilePage: React.FC = () => {
     };
     
     const t = translations[language];
+    const todayISO = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
     // Function to load profile data
     const loadProfileData = (resume: boolean) => {
@@ -40,6 +43,7 @@ const ProfilePage: React.FC = () => {
         if (savedLanguage) {
             setLanguage(savedLanguage);
         }
+        const langForConversion = savedLanguage ?? language;
  
         if (resume) {
             const savedProfile = localStorage.getItem('profileData');
@@ -47,8 +51,8 @@ const ProfilePage: React.FC = () => {
                 try {
                     const data = JSON.parse(savedProfile);
                     setName(data.name || '');
-                    setSunrise(data.sunrise || '');
-                    setSunset(data.sunset || '');
+                    setSunrise(toISODate(data.sunrise || '', langForConversion));
+                    setSunset(toISODate(data.sunset || '', langForConversion));
                     setPhoto(data.photo || null);
                 } catch (e) {
                     console.error('Error loading profile data:', e);
@@ -152,11 +156,6 @@ const ProfilePage: React.FC = () => {
         setName(capitalized);
     };
 
-    const handleDateChange = (value: string, setter: (val: string) => void) => {
-        // Allow natural typing - just auto-format on blur
-        setter(value);
-    };
-    
     interface ProfileSnapshot {
         name: string;
         sunrise: string;
@@ -279,6 +278,46 @@ const ProfilePage: React.FC = () => {
         }
 
         return trimmed;
+    };
+
+    const toISODate = (value: string, lang: 'en' | 'es'): string => {
+        if (!value) return '';
+        const trimmed = value.trim();
+        if (ISO_DATE_REGEX.test(trimmed)) {
+            return trimmed;
+        }
+
+        const normalized = normalizeDateInput(trimmed, lang);
+        const candidates = normalized ? [normalized, trimmed] : [trimmed];
+
+        for (const candidate of candidates) {
+            const parsed = new Date(candidate);
+            if (!Number.isNaN(parsed.getTime())) {
+                const year = parsed.getFullYear();
+                const month = String(parsed.getMonth() + 1).padStart(2, '0');
+                const day = String(parsed.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            }
+        }
+
+        return '';
+    };
+
+    const formatDateForPreview = (value: string, lang: 'en' | 'es'): string => {
+        if (!value) return '';
+        const locale = lang === 'es' ? 'es-ES' : 'en-US';
+        try {
+            const baseValue = ISO_DATE_REGEX.test(value) ? `${value}T00:00:00` : value;
+            const date = new Date(baseValue);
+            if (Number.isNaN(date.getTime())) return value;
+            return new Intl.DateTimeFormat(locale, {
+                month: 'long',
+                day: '2-digit',
+                year: 'numeric'
+            }).format(date);
+        } catch (error) {
+            return value;
+        }
     };
 
     const handleFieldBlur = (overrides?: Partial<ProfileSnapshot>) => {
@@ -587,15 +626,14 @@ const ProfilePage: React.FC = () => {
                                 {t.sunrise}
                             </label>
                             <input
-                                type="text"
+                                type="date"
                                 value={sunrise}
-                                onChange={(e) => handleDateChange(e.target.value, setSunrise)}
-                                onBlur={() => {
-                                    const normalized = normalizeDateInput(sunrise, language);
-                                    setSunrise(normalized);
-                                    handleFieldBlur({ sunrise: normalized });
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    setSunrise(value);
+                                    handleFieldBlur({ sunrise: value });
                                 }}
-                                placeholder={t.birthDate}
+                                max={todayISO}
                                 style={{
                                     width: '100%',
                                     background: 'rgba(255,255,255,0.05)',
@@ -608,6 +646,16 @@ const ProfilePage: React.FC = () => {
                                     textAlign: 'center'
                                 }}
                             />
+                            {sunrise && (
+                                <div style={{
+                                    marginTop: '6px',
+                                    fontSize: '11px',
+                                    color: 'rgba(255,255,255,0.65)',
+                                    textAlign: 'center'
+                                }}>
+                                    {formatDateForPreview(sunrise, language)}
+                                </div>
+                            )}
                         </div>
                         <div>
                             <label style={{
@@ -620,15 +668,14 @@ const ProfilePage: React.FC = () => {
                                 {t.sunset}
                             </label>
                             <input
-                                type="text"
+                                type="date"
                                 value={sunset}
-                                onChange={(e) => handleDateChange(e.target.value, setSunset)}
-                                onBlur={() => {
-                                    const normalized = normalizeDateInput(sunset, language);
-                                    setSunset(normalized);
-                                    handleFieldBlur({ sunset: normalized });
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    setSunset(value);
+                                    handleFieldBlur({ sunset: value });
                                 }}
-                                placeholder={t.dateOfPassing}
+                                max={todayISO}
                                 style={{
                                     width: '100%',
                                     background: 'rgba(255,255,255,0.05)',
@@ -641,6 +688,16 @@ const ProfilePage: React.FC = () => {
                                     textAlign: 'center'
                                 }}
                             />
+                            {sunset && (
+                                <div style={{
+                                    marginTop: '6px',
+                                    fontSize: '11px',
+                                    color: 'rgba(255,255,255,0.65)',
+                                    textAlign: 'center'
+                                }}>
+                                    {formatDateForPreview(sunset, language)}
+                                </div>
+                            )}
                         </div>
                     </div>
 

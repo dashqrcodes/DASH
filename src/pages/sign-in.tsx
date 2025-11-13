@@ -18,6 +18,13 @@ const SignInPage: React.FC = () => {
     }, []);
     const router = useRouter();
 
+    useEffect(() => {
+        const { order } = router.query;
+        if (typeof order === 'string') {
+            localStorage.setItem('currentOrder', order);
+        }
+    }, [router.query]);
+
     const formatPhoneNumber = (value: string) => {
         const numbers = value.replace(/\D/g, '');
         if (numbers.length === 0) return '';
@@ -79,8 +86,18 @@ const SignInPage: React.FC = () => {
         // Simulate OTP verification
         setTimeout(() => {
             setIsLoading(false);
-            // Success - redirect to dashboard
-            router.push('/dashboard');
+            const { order } = router.query;
+            const query: Record<string, string> = { returnTo: '/profile' };
+            if (typeof order === 'string') {
+                query.order = order;
+                localStorage.setItem('currentOrder', order);
+            }
+
+            localStorage.setItem('userAuthenticated', 'true');
+            router.push({
+                pathname: '/face-id',
+                query
+            });
         }, 1000);
     };
 
