@@ -1,6 +1,7 @@
 import type { AppProps } from 'next/app';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import Head from 'next/head';
+import { LanguageProvider } from '../context/LanguageContext';
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
@@ -105,8 +106,10 @@ export default function App({ Component, pageProps }: AppProps) {
           `
         }} />
       </Head>
-      <Component {...pageProps} />
-      <SpeedInsights />
+      <LanguageProvider>
+        <Component {...pageProps} />
+        <SpeedInsights />
+      </LanguageProvider>
     </>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 
@@ -6,6 +6,39 @@ const SignUpPage: React.FC = () => {
     const router = useRouter();
     const [phoneNumber, setPhoneNumber] = useState('');
     const [showPhoneOtpSection, setShowPhoneOtpSection] = useState(true);
+    const [language, setLanguage] = useState<'en' | 'es'>('en');
+
+    const translations = {
+        en: {
+            headline: 'Welcome to DASH',
+            subheadline: "Let's build memories",
+            phoneLabel: 'Continue with phone number',
+            phonePlaceholder: '(555) 123-4567',
+            phoneHelp: 'Receive a One Time Passcode',
+            or: 'or',
+            continueEmail: 'Continue with email',
+            terms: 'By continuing I agree to the',
+            termsLink: 'Terms of Service',
+            privacyLink: 'Privacy Policy',
+            toggleEnglish: 'English',
+            toggleSpanish: 'Español'
+        },
+        es: {
+            headline: 'Bienvenido a DASH',
+            subheadline: 'Construyamos recuerdos',
+            phoneLabel: 'Continuar con número de teléfono',
+            phonePlaceholder: '(555) 123-4567',
+            phoneHelp: 'Recibe un código de acceso único',
+            or: 'o',
+            continueEmail: 'Continuar con correo electrónico',
+            terms: 'Al continuar acepto los',
+            termsLink: 'Términos de servicio',
+            privacyLink: 'Política de privacidad',
+            toggleEnglish: 'English',
+            toggleSpanish: 'Español'
+        }
+    };
+    const t = translations[language];
 
     // Format phone number as user types
     const formatPhoneNumber = (value: string) => {
@@ -39,6 +72,13 @@ const SignUpPage: React.FC = () => {
     const handleEmailLinkClick = () => {
         alert('Email sign-up integration coming soon!');
     };
+
+    useEffect(() => {
+        const savedLanguage = localStorage.getItem('appLanguage') as 'en' | 'es' | null;
+        if (savedLanguage) {
+            setLanguage(savedLanguage);
+        }
+    }, []);
 
     return (
         <>
@@ -85,8 +125,8 @@ const SignUpPage: React.FC = () => {
                             DASH
                         </span>
                     </div>
-                    <h1 style={{ fontSize: 'clamp(24px, 6vw, 28px)', fontWeight: '600', color: 'white', margin: '8px 0', letterSpacing: '0.5px' }}>Welcome to DASH</h1>
-                    <p style={{ fontSize: 'clamp(14px, 3.5vw, 16px)', color: 'rgba(255,255,255,0.7)', marginTop: '4px' }}>Let&apos;s build memories</p>
+                    <h1 style={{ fontSize: 'clamp(24px, 6vw, 28px)', fontWeight: '600', color: 'white', margin: '8px 0', letterSpacing: '0.5px' }}>{t.headline}</h1>
+                    <p style={{ fontSize: 'clamp(14px, 3.5vw, 16px)', color: 'rgba(255,255,255,0.7)', marginTop: '4px' }}>{t.subheadline}</p>
                 </div>
 
                 {/* Phone Section - Zero Friction */}
@@ -95,14 +135,14 @@ const SignUpPage: React.FC = () => {
                         <form onSubmit={(e) => e.preventDefault()} className="signup-form">
                             {/* Phone Number Section with Colorful Border */}
                             <div className="phone-number-section">
-                                <label htmlFor="phoneNumber" style={{ fontSize: '14px', marginBottom: '8px', display: 'block', textAlign: 'center' }}>Signup with Phone Number</label>
-                                <div className="phone-input-container colorful-border" style={{ maxWidth: '280px', margin: '0 auto' }}>
+                                <label htmlFor="phoneNumber" style={{ fontSize: '14px', marginBottom: '8px', display: 'block', textAlign: 'center' }}>{t.phoneLabel}</label>
+                                <div className="phone-input-container colorful-border">
                                     <input
                                         type="tel"
                                         id="phoneNumber"
                                         value={phoneNumber}
                                         onChange={handlePhoneInputChange}
-                                        placeholder="(555) 123-4567"
+                                        placeholder={t.phonePlaceholder}
                                         required
                                         className="phone-input"
                                         style={{
@@ -121,7 +161,7 @@ const SignUpPage: React.FC = () => {
                                     marginTop: '8px',
                                     textAlign: 'center'
                                 }}>
-                                    Enter your phone number to continue
+                                    {t.phoneHelp}
                                 </p>
                             </div>
                         </form>
@@ -141,7 +181,7 @@ const SignUpPage: React.FC = () => {
                             gap: '12px'
                         }}>
                             <div style={{ height: '1px', flex: 1, background: 'rgba(255,255,255,0.1)' }}></div>
-                            <span>or</span>
+                            <span>{t.or}</span>
                             <div style={{ height: '1px', flex: 1, background: 'rgba(255,255,255,0.1)' }}></div>
                         </div>
 
@@ -156,8 +196,75 @@ const SignUpPage: React.FC = () => {
                                 display: 'block'
                             }}
                         >
-                            Continue with email
+                            {t.continueEmail}
                         </a>
+                    </div>
+                )}
+
+                {showPhoneOtpSection && (
+                    <div style={{ marginTop: '32px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                        <div
+                            onClick={() => {
+                                const newLang = language === 'en' ? 'es' : 'en';
+                                setLanguage(newLang);
+                                localStorage.setItem('appLanguage', newLang);
+                            }}
+                            style={{
+                                position: 'relative',
+                                width: '200px',
+                                height: '40px',
+                                background: 'rgba(255,255,255,0.1)',
+                                borderRadius: '20px',
+                                padding: '3px',
+                                cursor: 'pointer',
+                                border: '1px solid rgba(255,255,255,0.2)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                transition: 'all 0.3s ease'
+                            }}
+                        >
+                            <div
+                                style={{
+                                    position: 'absolute',
+                                    width: '50%',
+                                    height: 'calc(100% - 6px)',
+                                    background: 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
+                                    borderRadius: '17px',
+                                    top: '3px',
+                                    left: language === 'en' ? '3px' : 'calc(50% - 3px)',
+                                    transition: 'left 0.3s ease',
+                                    boxShadow: '0 2px 8px rgba(102,126,234,0.4)'
+                                }}
+                            />
+                            <div
+                                style={{
+                                    position: 'relative',
+                                    width: '50%',
+                                    textAlign: 'center',
+                                    fontSize: '14px',
+                                    fontWeight: '600',
+                                    color: language === 'en' ? 'white' : 'rgba(255,255,255,0.5)',
+                                    transition: 'color 0.3s ease',
+                                    zIndex: 1
+                                }}
+                            >
+                                {t.toggleEnglish}
+                            </div>
+                            <div
+                                style={{
+                                    position: 'relative',
+                                    width: '50%',
+                                    textAlign: 'center',
+                                    fontSize: '14px',
+                                    fontWeight: '600',
+                                    color: language === 'es' ? 'white' : 'rgba(255,255,255,0.5)',
+                                    transition: 'color 0.3s ease',
+                                    zIndex: 1
+                                }}
+                            >
+                                {t.toggleSpanish}
+                            </div>
+                        </div>
                     </div>
                 )}
 
@@ -165,13 +272,14 @@ const SignUpPage: React.FC = () => {
                 {showPhoneOtpSection && (
                     <div className="terms-agreement" style={{ marginTop: 'auto', paddingTop: '20px' }}>
                         <p className="terms-text">
-                            By signing up I agree to the{' '}
-                            <a href="#" className="terms-link">Terms of Service</a>
+                            {t.terms}{' '}
+                            <a href="#" className="terms-link">{t.termsLink}</a>
                             {' '}and{' '}
-                            <a href="#" className="terms-link">Privacy Policy</a>
+                            <a href="#" className="terms-link">{t.privacyLink}</a>
                         </p>
                     </div>
                 )}
+
             </div>
         </>
     );
