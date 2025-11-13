@@ -905,22 +905,36 @@ const SlideshowPage: React.FC = () => {
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
             </Head>
-      <div style={{
-        minHeight:'100vh',
-        background:'#000000',
-        fontFamily:'-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
-        color:'white',
-        padding:'0',
-        paddingBottom:'calc(env(safe-area-inset-bottom, 0px) + 40px)',
-        display:'flex',
-        flexDirection:'column',
-        width:'100%',
-        overflowY:'auto',
-        overscrollBehavior:'contain',
-        WebkitTouchCallout:'none',
-        WebkitUserSelect:'none',
-        touchAction:'manipulation'
-      }}>
+      <div
+        style={{
+          minHeight: '100vh',
+          width: '100%',
+          background: '#000000',
+          display: 'flex',
+          justifyContent: 'center'
+        }}
+      >
+        <div
+          style={{
+            width: '100%',
+            maxWidth: '420px',
+            minHeight: '100vh',
+            background: '#000000',
+            fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
+            color: 'white',
+            padding: '0 20px',
+            paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 40px)',
+            display: 'flex',
+            flexDirection: 'column',
+            margin: '0 auto',
+            overflowX: 'hidden',
+            overflowY: 'auto',
+            overscrollBehavior: 'contain',
+            WebkitTouchCallout: 'none',
+            WebkitUserSelect: 'none',
+            touchAction: 'manipulation'
+          }}
+        >
         {/* Header */}
         <div style={{
           display:'flex',
@@ -928,8 +942,6 @@ const SlideshowPage: React.FC = () => {
           justifyContent:'space-between',
           paddingTop:'calc(env(safe-area-inset-top, 0px) + 12px)',
           paddingBottom:'6px',
-          paddingLeft:'16px',
-          paddingRight:'16px',
           gap:'12px',
           zIndex:10
         }}>
@@ -984,7 +996,7 @@ const SlideshowPage: React.FC = () => {
             if (fileInputRef.current) fileInputRef.current.click();
           }}
           style={{
-            margin: '0 20px 18px',
+            margin: '0 0 18px',
             position: 'relative',
             borderRadius: '8px',
             overflow: 'hidden',
@@ -1106,7 +1118,7 @@ const SlideshowPage: React.FC = () => {
         {photos.length > 0 && (
           <div
             style={{
-              margin: '0 20px 18px',
+              margin: '0 0 18px',
               display: 'flex',
               flexDirection: 'column',
               gap: '10px',
@@ -1711,6 +1723,7 @@ const SlideshowPage: React.FC = () => {
             </div>
           </div>
         )}
+        </div>
       </div>
 
       {isCollaborationOpen && (
