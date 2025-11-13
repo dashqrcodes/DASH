@@ -47,6 +47,13 @@ const AccountCreatedPage: React.FC = () => {
             opacity: 0.65,
         },
         {
+            bottom: '28%',
+            left: '18%',
+            size: 62,
+            gradient: 'linear-gradient(135deg, #1a2a6c 0%, #2a5298 100%)',
+            opacity: 0.7,
+        },
+        {
             bottom: '20%',
             right: '10%',
             size: 56,

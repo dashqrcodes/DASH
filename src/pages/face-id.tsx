@@ -90,14 +90,16 @@ const FaceIDPage: React.FC = () => {
                             }}>
                                 Face ID
                             </h1>
-                            <p style={{
-                                fontSize: 'clamp(14px, 3.5vw, 16px)',
-                                color: 'rgba(255,255,255,0.7)',
-                                lineHeight: '1.5',
-                                textAlign: 'center',
-                                marginBottom: '10px'
-                            }}>
-                                Allow Face ID for signin
+                            <p
+                                style={{
+                                    fontSize: 'clamp(14px, 3.5vw, 16px)',
+                                    color: 'rgba(255,255,255,0.78)',
+                                    lineHeight: '1.6',
+                                    textAlign: 'center',
+                                    marginBottom: '10px'
+                                }}
+                            >
+                                For a better experience, enable Face ID for signin.
                             </p>
                             
                             {/* Pill Button */}
@@ -122,25 +124,25 @@ const FaceIDPage: React.FC = () => {
                                     transition: 'all 0.2s ease',
                                     textTransform: 'uppercase',
                                     letterSpacing: '1px',
-                                    background: 'linear-gradient(135deg, #c77dff 0%, #ff6b9d 45%, #4ecdc4 100%)',
-                                    backgroundSize: '180% 180%',
+                                    background: 'linear-gradient(45deg, #9d4edd, #c77dff, #ff6b6b, #4ecdc4, #1a2a6c, #c77dff, #45b7d1)',
+                                    backgroundSize: '300% 300%',
+                                    animation: 'buttonGradient 4s ease-in-out infinite',
                                     color: 'white',
-                                    boxShadow: '0 8px 24px rgba(199, 125, 255, 0.35)',
+                                    boxShadow: '0 4px 15px rgba(157, 78, 221, 0.3)',
                                     minHeight: '56px',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     gap: '10px',
-                                    position: 'relative',
-                                    animation: 'buttonGradient 3s ease-in-out infinite'
+                                    position: 'relative'
                                 }}
                                 onMouseEnter={(e) => {
                                     e.currentTarget.style.transform = 'translateY(-2px)';
-                                    e.currentTarget.style.boxShadow = '0 14px 32px rgba(199, 125, 255, 0.45)';
+                                    e.currentTarget.style.boxShadow = '0 6px 20px rgba(157, 78, 221, 0.4)';
                                 }}
                                 onMouseLeave={(e) => {
                                     e.currentTarget.style.transform = 'translateY(0)';
-                                    e.currentTarget.style.boxShadow = '0 8px 24px rgba(199, 125, 255, 0.35)';
+                                    e.currentTarget.style.boxShadow = '0 4px 15px rgba(157, 78, 221, 0.3)';
                                 }}
                             >
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

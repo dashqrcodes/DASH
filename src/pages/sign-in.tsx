@@ -9,6 +9,7 @@ const SignInPage: React.FC = () => {
     const [showOtp, setShowOtp] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const otpInputs = useRef<(HTMLInputElement | null)[]>([]);
+    const [language, setLanguage] = useState<'en' | 'es'>('en');
     
     // Initialize array with correct length
     useEffect(() => {
@@ -18,10 +19,48 @@ const SignInPage: React.FC = () => {
     }, []);
     const router = useRouter();
 
+    const translations = {
+        en: {
+            heading: 'Sign In',
+            subheading: 'Welcome back to DASH',
+            phoneLabel: 'Phone Number',
+            phonePlaceholder: '(555) 123-4567',
+            sendCode: 'Send Code',
+            sending: 'Sending...',
+            otpLabel: 'Enter verification code',
+            otpHint: (value: string) => `We sent a 5-digit code to ${value}`,
+            resend: 'Resend Code',
+            noAccount: "Don't have an account?",
+            signUp: 'Sign Up',
+            toggleEnglish: 'English',
+            toggleSpanish: 'Español'
+        },
+        es: {
+            heading: 'Iniciar sesión',
+            subheading: 'Bienvenido de nuevo a DASH',
+            phoneLabel: 'Número de teléfono',
+            phonePlaceholder: '(555) 123-4567',
+            sendCode: 'Enviar código',
+            sending: 'Enviando...',
+            otpLabel: 'Ingrese el código de verificación',
+            otpHint: (value: string) => `Enviamos un código de 5 dígitos a ${value}`,
+            resend: 'Reenviar código',
+            noAccount: '¿No tienes una cuenta?',
+            signUp: 'Regístrate',
+            toggleEnglish: 'English',
+            toggleSpanish: 'Español'
+        }
+    };
+    const t = translations[language];
+
     useEffect(() => {
         const { order } = router.query;
         if (typeof order === 'string') {
             localStorage.setItem('currentOrder', order);
+        }
+        const savedLanguage = localStorage.getItem('appLanguage') as 'en' | 'es' | null;
+        if (savedLanguage) {
+            setLanguage(savedLanguage);
         }
     }, [router.query]);
 
@@ -127,20 +166,20 @@ const SignInPage: React.FC = () => {
             </div>
             <div className="mobile-container">
                 <div className="signup-header">
-                    <h1>Sign In</h1>
-                    <p>Welcome back to DASH</p>
+                    <h1>{t.heading}</h1>
+                    <p>{t.subheading}</p>
                 </div>
 
                 {!showOtp ? (
                     <>
                         <div className="mobile-section">
-                            <label htmlFor="phoneNumber">Phone Number</label>
+                            <label htmlFor="phoneNumber">{t.phoneLabel}</label>
                             <input
                                 type="tel"
                                 id="phoneNumber"
                                 value={phoneNumber}
                                 onChange={handlePhoneChange}
-                                placeholder="(555) 123-4567"
+                                placeholder={t.phonePlaceholder}
                                 maxLength={14}
                                 autoFocus
                                 style={{
@@ -168,15 +207,15 @@ const SignInPage: React.FC = () => {
                                     cursor: phoneNumber.replace(/\D/g, '').length !== 10 ? 'not-allowed' : 'pointer'
                                 }}
                             >
-                                {isLoading ? 'Sending...' : 'Send Code'}
+                                {isLoading ? t.sending : t.sendCode}
                             </button>
                         </div>
                     </>
                 ) : (
                     <>
                         <div className="otp-section">
-                            <label htmlFor="otp">Enter verification code</label>
-                            <p className="otp-hint">We sent a 5-digit code to {phoneNumber}</p>
+                            <label htmlFor="otp">{t.otpLabel}</label>
+                            <p className="otp-hint">{t.otpHint(phoneNumber)}</p>
                             <div className="otp-container">
                                 {otp.map((digit, index) => (
                                     <input
@@ -201,14 +240,79 @@ const SignInPage: React.FC = () => {
                                 onClick={handleResendCode}
                                 disabled={isLoading}
                             >
-                                Resend Code
+                                {t.resend}
                             </button>
                         </div>
                     </>
                 )}
 
                 <div className="login-link">
-                    <p>Don't have an account? <Link href="/sign-up" className="login-text">Sign Up</Link></p>
+                    <p>{t.noAccount} <Link href="/sign-up" className="login-text">{t.signUp}</Link></p>
+                </div>
+
+                <div style={{ marginTop: '32px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    <div
+                        onClick={() => {
+                            const newLang = language === 'en' ? 'es' : 'en';
+                            setLanguage(newLang);
+                            localStorage.setItem('appLanguage', newLang);
+                        }}
+                        style={{
+                            position: 'relative',
+                            width: '200px',
+                            height: '40px',
+                            background: 'rgba(255,255,255,0.1)',
+                            borderRadius: '20px',
+                            padding: '3px',
+                            cursor: 'pointer',
+                            border: '1px solid rgba(255,255,255,0.2)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            transition: 'all 0.3s ease'
+                        }}
+                    >
+                        <div
+                            style={{
+                                position: 'absolute',
+                                width: '50%',
+                                height: 'calc(100% - 6px)',
+                                background: 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
+                                borderRadius: '17px',
+                                top: '3px',
+                                left: language === 'en' ? '3px' : 'calc(50% - 3px)',
+                                transition: 'left 0.3s ease',
+                                boxShadow: '0 2px 8px rgba(102,126,234,0.4)'
+                            }}
+                        />
+                        <div
+                            style={{
+                                position: 'relative',
+                                width: '50%',
+                                textAlign: 'center',
+                                fontSize: '14px',
+                                fontWeight: '600',
+                                color: language === 'en' ? 'white' : 'rgba(255,255,255,0.5)',
+                                transition: 'color 0.3s ease',
+                                zIndex: 1
+                            }}
+                        >
+                            {t.toggleEnglish}
+                        </div>
+                        <div
+                            style={{
+                                position: 'relative',
+                                width: '50%',
+                                textAlign: 'center',
+                                fontSize: '14px',
+                                fontWeight: '600',
+                                color: language === 'es' ? 'white' : 'rgba(255,255,255,0.5)',
+                                transition: 'color 0.3s ease',
+                                zIndex: 1
+                            }}
+                        >
+                            {t.toggleSpanish}
+                        </div>
+                    </div>
                 </div>
             </div>
         </>

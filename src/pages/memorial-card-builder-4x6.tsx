@@ -319,11 +319,11 @@ const MemorialCardBuilder4x6Page: React.FC = () => {
         }
       }
       
-      const desiredY = 42;
-      const adjustedX = Math.max(38, Math.min(62, faceX));
-      const adjustedY = Math.max(32, Math.min(55, desiredY + (faceY - desiredY) * 0.4));
-      const zoomBoost = Math.abs(faceY - desiredY) / 120 + Math.abs(adjustedX - 50) / 160;
-      const zoom = Math.max(1.38, Math.min(1.75, 1.38 + zoomBoost));
+      const desiredY = 36; // keep faces nearer the vertical center
+      const adjustedX = Math.max(35, Math.min(65, faceX));
+      const adjustedY = Math.max(28, Math.min(48, desiredY + (faceY - desiredY) * 0.35));
+      const zoomBoost = Math.abs(faceY - desiredY) / 140 + Math.abs(adjustedX - 50) / 180;
+      const zoom = Math.max(1.28, Math.min(1.58, 1.32 + zoomBoost));
       
       setImageEnhancement({
         zoom,
