@@ -66,6 +66,13 @@ const formatDateForLocale = (
   }
 };
 
+interface VisionFaceBox {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
 const MemorialCardBuilder4x6Page: React.FC = () => {
   const router = useRouter();
   const [photo, setPhoto] = useState<string | null>(null);
@@ -92,6 +99,7 @@ const MemorialCardBuilder4x6Page: React.FC = () => {
   const [isFlipping, setIsFlipping] = useState(false);
   const [showBack, setShowBack] = useState(false);
   const [showPhotoPicker, setShowPhotoPicker] = useState(false);
+  const faceDetections = useRef<Record<string, VisionFaceBox | null>>({});
   
   // Back card states
   const [skyPhoto, setSkyPhoto] = useState<string | null>(null);
@@ -253,6 +261,45 @@ const MemorialCardBuilder4x6Page: React.FC = () => {
   };
   
   // Automatic image enhancement with face detection
+  const callVisionFaceDetection = async (imageUrl: string, canvas: HTMLCanvasElement): Promise<VisionFaceBox | null> => {
+    if (faceDetections.current[imageUrl] !== undefined) {
+      return faceDetections.current[imageUrl];
+    }
+
+    try {
+      const base64 = canvas.toDataURL('image/jpeg', 0.92).split(',')[1];
+      const response = await fetch('/api/vision-face', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64: base64 }),
+      });
+
+      if (!response.ok) {
+        faceDetections.current[imageUrl] = null;
+        return null;
+      }
+
+      const data = await response.json();
+      if (data?.face?.width && data?.face?.height) {
+        const box: VisionFaceBox = {
+          left: data.face.left,
+          top: data.face.top,
+          width: data.face.width,
+          height: data.face.height,
+        };
+        faceDetections.current[imageUrl] = box;
+        return box;
+      }
+
+      faceDetections.current[imageUrl] = null;
+      return null;
+    } catch (error) {
+      console.error('Vision face detection failed', error);
+      faceDetections.current[imageUrl] = null;
+      return null;
+    }
+  };
+
   const enhanceImage = async (imageUrl: string) => {
     try {
       const img = new Image();
@@ -267,7 +314,6 @@ const MemorialCardBuilder4x6Page: React.FC = () => {
         };
       });
       
-      // Create canvas for analysis
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
@@ -276,6 +322,31 @@ const MemorialCardBuilder4x6Page: React.FC = () => {
       canvas.height = img.height;
       ctx.drawImage(img, 0, 0);
       
+      const visionFace = await callVisionFaceDetection(imageUrl, canvas);
+
+      if (visionFace) {
+        const faceCenterXPercent = ((visionFace.left + visionFace.width / 2) / img.width) * 100;
+        const faceCenterYPercent = ((visionFace.top + visionFace.height / 2) / img.height) * 100;
+        const faceHeightRatio = visionFace.height / img.height;
+
+        const adjustedX = Math.max(45, Math.min(55, faceCenterXPercent));
+        const adjustedY = Math.max(28, Math.min(46, faceCenterYPercent - faceHeightRatio * 22));
+
+        const targetHeadRatio = 0.42;
+        const zoom = Math.max(0.85, Math.min(1.45, targetHeadRatio / Math.max(faceHeightRatio, 0.05)));
+
+        setImageEnhancement({
+          zoom,
+          brightness: 1.05,
+          contrast: 1.1,
+          sharpness: 1.2,
+          saturation: 1.05,
+          facePosition: { x: adjustedX, y: adjustedY },
+        });
+
+        return;
+      }
+
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const data = imageData.data;
       
@@ -319,11 +390,11 @@ const MemorialCardBuilder4x6Page: React.FC = () => {
         }
       }
       
-      const desiredY = 36; // keep faces nearer the vertical center
-      const adjustedX = Math.max(35, Math.min(65, faceX));
-      const adjustedY = Math.max(28, Math.min(48, desiredY + (faceY - desiredY) * 0.35));
-      const zoomBoost = Math.abs(faceY - desiredY) / 140 + Math.abs(adjustedX - 50) / 180;
-      const zoom = Math.max(1.28, Math.min(1.58, 1.32 + zoomBoost));
+      const adjustedX = Math.max(38, Math.min(62, faceX));
+      const adjustedY = Math.max(32, Math.min(50, faceY - 6));
+
+      const verticalOffset = Math.abs(faceY - 40);
+      const zoom = Math.max(1.2, Math.min(1.5, 1.3 + verticalOffset / 240));
       
       setImageEnhancement({
         zoom,
