@@ -339,9 +339,6 @@ const MemorialCardBuilder4x6Page: React.FC = () => {
       console.error('Image enhancement error:', error);
       setImageEnhancement(defaultEnhancement);
     }
-    img.onerror = () => {
-      setImageEnhancement(defaultEnhancement);
-    };
   };
   
   // Back card translations
