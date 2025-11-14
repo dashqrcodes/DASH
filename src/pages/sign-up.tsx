@@ -276,14 +276,37 @@ const SignUpPage: React.FC = () => {
 
                 {/* Terms Agreement - Moved to Bottom */}
                 {showPhoneOtpSection && (
-                    <div className="terms-agreement" style={{ marginTop: 'auto', paddingTop: '20px' }}>
-                        <p className="terms-text">
-                            {t.terms}{' '}
-                            <a href="#" className="terms-link">{t.termsLink}</a>
-                            {' '}and{' '}
-                            <a href="#" className="terms-link">{t.privacyLink}</a>
-                        </p>
-                    </div>
+                    <p
+                        style={{
+                            marginTop: 'auto',
+                            paddingTop: '24px',
+                            textAlign: 'center',
+                            fontSize: '11px',
+                            color: 'rgba(255,255,255,0.45)',
+                            lineHeight: 1.6,
+                        }}
+                    >
+                        {t.terms}{' '}
+                        <a
+                            href="#"
+                            style={{
+                                color: 'rgba(255,255,255,0.65)',
+                                textDecoration: 'underline',
+                            }}
+                        >
+                            {t.termsLink}
+                        </a>
+                        {' '}and{' '}
+                        <a
+                            href="#"
+                            style={{
+                                color: 'rgba(255,255,255,0.65)',
+                                textDecoration: 'underline',
+                            }}
+                        >
+                            {t.privacyLink}
+                        </a>
+                    </p>
                 )}
 
             </div>
