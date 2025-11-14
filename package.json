@@ -8,6 +8,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@elevenlabs/elevenlabs-js": "^2.24.0",
     "@mux/mux-node": "^12.8.0",
     "@mux/mux-player": "^3.8.0",
     "@mux/mux-player-react": "^3.8.0",
