@@ -865,6 +865,14 @@ const SlideshowPage: React.FC = () => {
     alert(`${t.connectSpotify}: ${t.comingSoon}`);
   };
 
+  const handleBackClick = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      router.back();
+      return;
+    }
+    router.push('/profile');
+  };
+
   const renderHeroMedia = () => {
     const hero = photos[0];
     if (!hero) return null;
@@ -937,7 +945,8 @@ const SlideshowPage: React.FC = () => {
             overscrollBehavior: 'contain',
             WebkitTouchCallout: 'none',
             WebkitUserSelect: 'none',
-            touchAction: 'manipulation'
+            touchAction: 'manipulation',
+            boxSizing: 'border-box'
           }}
         >
         {/* Header */}
@@ -951,7 +960,7 @@ const SlideshowPage: React.FC = () => {
           zIndex:10
         }}>
           <button
-            onClick={() => router.back()}
+            onClick={handleBackClick}
             style={{
               background:'rgba(255,255,255,0.08)',
               border:'none',
