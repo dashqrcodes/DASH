@@ -5,7 +5,7 @@ import React from 'react';
 import { useRouter } from 'next/router';
 
 interface BottomNavProps {
-    activeTab?: 'home' | 'heaven' | 'music' | 'slideshow';
+    activeTab?: 'home' | 'heaven' | 'music' | 'heart';
 }
 
 const BottomNav: React.FC<BottomNavProps> = ({ activeTab }) => {
@@ -187,11 +187,15 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab }) => {
                 }}>Music</span>
             </button>
 
-            {/* Slideshow */}
+            {/* Heart - Donate, Share, Comment */}
             <button
-                onClick={() => router.push('/slideshow')}
+                onClick={() => {
+                    // This will be handled by the page component to show heart menu
+                    const event = new CustomEvent('heartIconClick');
+                    window.dispatchEvent(event);
+                }}
                 style={{
-                    background: activeTab === 'slideshow' ? 'rgba(102,126,234,0.2)' : 'transparent',
+                    background: activeTab === 'heart' ? 'rgba(255,77,77,0.2)' : 'transparent',
                     border: 'none',
                     display: 'flex',
                     flexDirection: 'column',
@@ -206,22 +210,22 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab }) => {
                     WebkitTapHighlightColor: 'transparent'
                 }}
                 onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                    e.currentTarget.style.background = 'rgba(255,77,77,0.15)';
                     e.currentTarget.style.opacity = '1';
                 }}
                 onMouseLeave={(e) => {
-                    e.currentTarget.style.background = activeTab === 'slideshow' ? 'rgba(102,126,234,0.2)' : 'transparent';
+                    e.currentTarget.style.background = activeTab === 'heart' ? 'rgba(255,77,77,0.2)' : 'transparent';
                     e.currentTarget.style.opacity = '1';
                 }}
             >
-                <svg width="clamp(20px, 5vw, 24px)" height="clamp(20px, 5vw, 24px)" viewBox="0 0 24 24" fill="none" stroke={activeTab === 'slideshow' ? 'white' : 'rgba(255,255,255,0.7)'} strokeWidth="2">
-                    <path d="M8 5v14l11-7z"/>
+                <svg width="clamp(20px, 5vw, 24px)" height="clamp(20px, 5vw, 24px)" viewBox="0 0 24 24" fill={activeTab === 'heart' ? '#ff4d4d' : 'none'} stroke={activeTab === 'heart' ? '#ff4d4d' : 'rgba(255,255,255,0.7)'} strokeWidth="2">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                 </svg>
                 <span style={{
                     fontSize: 'clamp(9px, 2.5vw, 10px)',
                     fontWeight: '500',
-                    color: activeTab === 'slideshow' ? 'white' : 'rgba(255,255,255,0.7)'
-                }}>Slideshow</span>
+                    color: activeTab === 'heart' ? '#ff4d4d' : 'rgba(255,255,255,0.7)'
+                }}>Heart</span>
             </button>
         </div>
     );

@@ -821,6 +821,12 @@ const SlideshowPage: React.FC = () => {
     alert(`✅ Slideshow complete with ${photos.length} ${t.memories}!`);
   };
 
+  const handleNext = () => {
+    // Save all data and navigate to finalized profile
+    persistMediaToStorage(photos);
+    router.push('/finalized-profile');
+  };
+
   const handlePlaySlideshow = () => {
     if (photos.length === 0) {
       if (fileInputRef.current) fileInputRef.current.click();
@@ -1876,6 +1882,27 @@ const SlideshowPage: React.FC = () => {
               }}
             >
               {t.completeSlideshow} ({photos.length} {t.memories})
+            </button>
+            <button
+              onClick={handleNext}
+              style={{
+                width:'100%',
+                border:'none',
+                borderRadius:'16px',
+                padding:'18px',
+                background:'linear-gradient(135deg,#4caf50 0%,#45a049 100%)',
+                color:'white',
+                fontSize:'clamp(16px, 4vw, 18px)',
+                fontWeight:'700',
+                cursor:'pointer',
+                boxShadow:'0 4px 20px rgba(76,175,80,0.5)',
+                minHeight:'56px',
+                WebkitTapHighlightColor:'transparent',
+                touchAction:'manipulation',
+                letterSpacing:'0.5px'
+              }}
+            >
+              Next →
             </button>
             <button
               onClick={handleJumpToHeaven}
