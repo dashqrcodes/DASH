@@ -131,12 +131,18 @@ const SignUpPage: React.FC = () => {
 
                 {/* Phone Section - Zero Friction */}
                 {showPhoneOtpSection && (
-                    <div className="phone-otp-section" style={{ display: 'block' }}>
-                        <form onSubmit={(e) => e.preventDefault()} className="signup-form">
+                <div className="phone-otp-section" style={{ display: 'block', width: '100%' }}>
+                        <form onSubmit={(e) => e.preventDefault()} className="signup-form" style={{ width: '100%' }}>
                             {/* Phone Number Section with Colorful Border */}
                             <div className="phone-number-section">
                                 <label htmlFor="phoneNumber" style={{ fontSize: '14px', marginBottom: '8px', display: 'block', textAlign: 'center' }}>{t.phoneLabel}</label>
-                                <div className="phone-input-container colorful-border">
+                                <div
+                                    className="phone-input-container colorful-border"
+                                    style={{
+                                        maxWidth: '320px',
+                                        margin: '0 auto'
+                                    }}
+                                >
                                     <input
                                         type="tel"
                                         id="phoneNumber"
