@@ -11,31 +11,35 @@ const translations = {
     title: 'Scan Photo',
     alignPhoto: 'Align photo within frame',
     processing: 'Processing...',
-    autoCrop: 'Auto-crop edges',
-    removeGlare: 'Remove glare',
-    enhanceColors: 'Enhance colors',
-    faceDetection: 'Auto-face detection',
-    reprocess: 'Re-process',
+    detectingEdges: 'Detecting edges...',
+    enhancing: 'Enhancing quality...',
     retake: 'Retake',
     savePhoto: 'Save Photo',
     cameraError: 'Unable to access camera. Please ensure permissions are granted.',
-    detectingFaces: 'Detecting faces...',
-    enhancing: 'Enhancing photo quality...'
+    processingSteps: {
+      detecting: 'Detecting document edges...',
+      cropping: 'Auto-cropping...',
+      enhancing: 'Enhancing colors...',
+      removingGlare: 'Removing glare...',
+      complete: 'Ready!'
+    }
   },
   es: {
     title: 'Escanear Foto',
     alignPhoto: 'Alinea la foto dentro del marco',
     processing: 'Procesando...',
-    autoCrop: 'Recortar bordes automáticamente',
-    removeGlare: 'Eliminar resplandor',
-    enhanceColors: 'Mejorar colores',
-    faceDetection: 'Detección automática de rostros',
-    reprocess: 'Re-procesar',
+    detectingEdges: 'Detectando bordes...',
+    enhancing: 'Mejorando calidad...',
     retake: 'Volver a tomar',
     savePhoto: 'Guardar Foto',
     cameraError: 'No se puede acceder a la cámara. Por favor, asegúrese de que se hayan otorgado los permisos.',
-    detectingFaces: 'Detectando rostros...',
-    enhancing: 'Mejorando la calidad de la foto...'
+    processingSteps: {
+      detecting: 'Detectando bordes del documento...',
+      cropping: 'Recortando automáticamente...',
+      enhancing: 'Mejorando colores...',
+      removingGlare: 'Eliminando resplandor...',
+      complete: '¡Listo!'
+    }
   }
 };
 
@@ -47,39 +51,23 @@ export default function PhotoScanner({ onScanComplete, onClose, language = 'en' 
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [processedImage, setProcessedImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [edgeDetectionMode, setEdgeDetectionMode] = useState(true);
-  const [glareRemoval, setGlareRemoval] = useState(true);
-  const [enhancement, setEnhancement] = useState(true);
-  const [faceDetection, setFaceDetection] = useState(true);
-  const [faceDetectionModel, setFaceDetectionModel] = useState<any>(null);
+  const [processingStep, setProcessingStep] = useState<string>('');
+  const [processingProgress, setProcessingProgress] = useState(0);
 
   const t = translations[language];
 
   useEffect(() => {
     startCamera();
-    loadFaceDetection();
     return () => {
       stopCamera();
     };
   }, []);
 
-  const loadFaceDetection = async () => {
-    try {
-      // Try to load MediaPipe Face Detection if available
-      // For now, we'll use a simpler face detection approach
-      // In production, you could integrate MediaPipe or TensorFlow.js
-      setFaceDetectionModel(true);
-    } catch (e) {
-      console.log('Face detection model not available, using basic detection');
-      setFaceDetectionModel(false);
-    }
-  };
-
   const startCamera = async () => {
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: {
-          facingMode: 'environment', // Use back camera
+          facingMode: 'environment',
           width: { ideal: 1920 },
           height: { ideal: 1080 }
         }
@@ -115,217 +103,145 @@ export default function PhotoScanner({ onScanComplete, onClose, language = 'en' 
 
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
-    
-    // Draw video frame to canvas
     ctx.drawImage(video, 0, 0);
     
     const imageData = canvas.toDataURL('image/jpeg', 0.95);
     setCapturedImage(imageData);
     
-    // Process the image
-    processImage(canvas);
+    processImageWithVision(canvas);
   };
 
-  const detectFaces = async (imageData: ImageData): Promise<Array<{x: number, y: number, width: number, height: number}>> => {
-    // Simple face detection using skin tone detection and symmetry
-    // In production, integrate MediaPipe Face Detection or TensorFlow.js
-    const faces: Array<{x: number, y: number, width: number, height: number}> = [];
-    
-    // For now, return center region as face approximation
-    // Real implementation would use ML model
-    const centerX = imageData.width / 2;
-    const centerY = imageData.height / 2;
-    const faceSize = Math.min(imageData.width, imageData.height) * 0.3;
-    
-    faces.push({
-      x: centerX - faceSize / 2,
-      y: centerY - faceSize / 2,
-      width: faceSize,
-      height: faceSize
-    });
-    
-    return faces;
-  };
-
-  const processImage = async (sourceCanvas: HTMLCanvasElement) => {
+  const processImageWithVision = async (sourceCanvas: HTMLCanvasElement) => {
     setIsProcessing(true);
-    
-    const canvas = document.createElement('canvas');
-    let ctx = canvas.getContext('2d', { willReadFrequently: true });
-    if (!ctx) {
-      setIsProcessing(false);
-      return;
-    }
+    setProcessingProgress(0);
+    setProcessingStep(t.processingSteps.detecting);
 
-    canvas.width = sourceCanvas.width;
-    canvas.height = sourceCanvas.height;
+    try {
+      // Convert canvas to base64
+      const base64 = sourceCanvas.toDataURL('image/jpeg', 0.92).split(',')[1];
+      
+      setProcessingProgress(20);
+      
+      // Call Google Vision API for document edge detection
+      const response = await fetch('/api/vision-document', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64: base64 }),
+      });
 
-    // Copy source image
-    ctx.drawImage(sourceCanvas, 0, 0);
+      const visionData = await response.json();
+      
+      setProcessingProgress(40);
+      setProcessingStep(t.processingSteps.cropping);
 
-    let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    let cropRegion = { x: 0, y: 0, width: canvas.width, height: canvas.height };
-
-    // Step 1: Auto-detect edges and crop (if enabled)
-    if (edgeDetectionMode) {
-      const edges = detectEdges(imageData);
-      if (edges) {
-        cropRegion = edges;
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = edges.width;
-        tempCanvas.height = edges.height;
-        const tempCtx = tempCanvas.getContext('2d');
-        if (tempCtx) {
-          tempCtx.drawImage(sourceCanvas, edges.x, edges.y, edges.width, edges.height, 0, 0, edges.width, edges.height);
-          canvas.width = edges.width;
-          canvas.height = edges.height;
-          ctx = canvas.getContext('2d', { willReadFrequently: true })!;
-          ctx.drawImage(tempCanvas, 0, 0);
-          imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        }
+      const canvas = document.createElement('canvas');
+      let ctx = canvas.getContext('2d', { willReadFrequently: true });
+      if (!ctx) {
+        setIsProcessing(false);
+        return;
       }
-    }
 
-    // Step 2: Face detection and 16:9 cropping with face focus
-    if (faceDetection && canvas.width > 0 && canvas.height > 0) {
-      const faces = await detectFaces(imageData);
-      if (faces.length > 0) {
-        const face = faces[0]; // Use first detected face
-        
-        // Calculate 16:9 crop centered on face
-        const targetAspect = 16 / 9;
-        const currentAspect = canvas.width / canvas.height;
-        
-        let cropWidth = canvas.width;
-        let cropHeight = canvas.height;
-        let cropX = 0;
-        let cropY = 0;
-        
-        if (currentAspect > targetAspect) {
-          // Image is wider than 16:9, crop width
-          cropWidth = canvas.height * targetAspect;
-          cropX = Math.max(0, Math.min(face.x + face.width / 2 - cropWidth / 2, canvas.width - cropWidth));
-        } else {
-          // Image is taller than 16:9, crop height
-          cropHeight = canvas.width / targetAspect;
-          cropY = Math.max(0, Math.min(face.y + face.height / 2 - cropHeight / 2, canvas.height - cropHeight));
-        }
-        
-        // Ensure crop region fits within image bounds
-        cropX = Math.max(0, Math.min(cropX, canvas.width - cropWidth));
-        cropY = Math.max(0, Math.min(cropY, canvas.height - cropHeight));
-        cropWidth = Math.min(cropWidth, canvas.width - cropX);
-        cropHeight = Math.min(cropHeight, canvas.height - cropY);
-        
-        // Apply crop
-        const croppedCanvas = document.createElement('canvas');
-        croppedCanvas.width = cropWidth;
-        croppedCanvas.height = cropHeight;
-        const croppedCtx = croppedCanvas.getContext('2d');
-        if (croppedCtx) {
-          croppedCtx.drawImage(canvas, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
-          canvas.width = cropWidth;
-          canvas.height = cropHeight;
-          ctx = canvas.getContext('2d', { willReadFrequently: true })!;
-          ctx.drawImage(croppedCanvas, 0, 0);
-          imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        }
+      // If Vision API detected document edges, use them for perspective correction
+      if (visionData.document?.vertices && visionData.document.vertices.length >= 4) {
+        const vertices = visionData.document.vertices;
+        const sourceWidth = sourceCanvas.width;
+        const sourceHeight = sourceCanvas.height;
+
+        // Calculate destination corners (normalized to image dimensions)
+        const srcPoints = vertices.map((v: {x: number, y: number}) => ({
+          x: (v.x / sourceWidth) * sourceCanvas.width,
+          y: (v.y / sourceHeight) * sourceCanvas.height
+        }));
+
+        // Calculate bounding box
+        const minX = Math.min(...srcPoints.map((p: {x: number, y: number}) => p.x));
+        const maxX = Math.max(...srcPoints.map((p: {x: number, y: number}) => p.x));
+        const minY = Math.min(...srcPoints.map((p: {x: number, y: number}) => p.y));
+        const maxY = Math.max(...srcPoints.map((p: {x: number, y: number}) => p.y));
+
+        const width = maxX - minX;
+        const height = maxY - minY;
+
+        // Set canvas size to cropped dimensions
+        canvas.width = width;
+        canvas.height = height;
+
+        // Use perspective transformation (simplified - using bounding box for now)
+        // In production, you'd use proper perspective transform with the 4 corners
+        ctx.drawImage(
+          sourceCanvas,
+          minX, minY, width, height,
+          0, 0, width, height
+        );
+      } else {
+        // Fallback: use full image
+        canvas.width = sourceCanvas.width;
+        canvas.height = sourceCanvas.height;
+        ctx.drawImage(sourceCanvas, 0, 0);
       }
-    }
 
-    // Step 3: Remove glare (if enabled)
-    if (glareRemoval) {
-      imageData = removeGlare(imageData);
-    }
+      setProcessingProgress(60);
+      setProcessingStep(t.processingSteps.enhancing);
 
-    // Step 4: Enhance contrast and brightness (if enabled)
-    if (enhancement) {
+      // Enhance image quality
+      let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       imageData = enhanceImage(imageData);
-    }
+      
+      setProcessingProgress(80);
+      setProcessingStep(t.processingSteps.removingGlare);
 
-    // Apply processed image
-    ctx.putImageData(imageData, 0, 0);
-    setProcessedImage(canvas.toDataURL('image/jpeg', 0.95));
-    setIsProcessing(false);
+      // Remove glare
+      imageData = removeGlare(imageData);
+      
+      ctx.putImageData(imageData, 0, 0);
+      
+      setProcessingProgress(100);
+      setProcessingStep(t.processingSteps.complete);
+      
+      setProcessedImage(canvas.toDataURL('image/jpeg', 0.95));
+    } catch (error) {
+      console.error('Processing error:', error);
+      // Fallback to basic processing
+      const canvas = document.createElement('canvas');
+      canvas.width = sourceCanvas.width;
+      canvas.height = sourceCanvas.height;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(sourceCanvas, 0, 0);
+        setProcessedImage(canvas.toDataURL('image/jpeg', 0.95));
+      }
+    } finally {
+      setIsProcessing(false);
+      setProcessingProgress(0);
+      setProcessingStep('');
+    }
   };
 
-  const detectEdges = (imageData: ImageData): { x: number, y: number, width: number, height: number } | null => {
+  const enhanceImage = (imageData: ImageData): ImageData => {
     const data = imageData.data;
-    const width = imageData.width;
-    const height = imageData.height;
-    
-    // Find top edge
-    let top = 0;
-    for (let y = 0; y < height; y++) {
-      const rowContrast = calculateRowContrast(data, width, y, height);
-      if (rowContrast > 0.1) {
-        top = Math.max(0, y - 5);
-        break;
-      }
+    const newData = new Uint8ClampedArray(data);
+
+    let totalBrightness = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      totalBrightness += (data[i] + data[i + 1] + data[i + 2]) / 3;
+    }
+    const avgBrightness = totalBrightness / (data.length / 4);
+
+    const contrastFactor = 1.25;
+    const brightnessAdjust = 128 - avgBrightness * 0.25;
+
+    for (let i = 0; i < data.length; i += 4) {
+      let r = (data[i] - 128) * contrastFactor + 128 + brightnessAdjust;
+      let g = (data[i + 1] - 128) * contrastFactor + 128 + brightnessAdjust;
+      let b = (data[i + 2] - 128) * contrastFactor + 128 + brightnessAdjust;
+
+      newData[i] = Math.max(0, Math.min(255, r));
+      newData[i + 1] = Math.max(0, Math.min(255, g));
+      newData[i + 2] = Math.max(0, Math.min(255, b));
+      newData[i + 3] = data[i + 3];
     }
 
-    // Find bottom edge
-    let bottom = height;
-    for (let y = height - 1; y >= 0; y--) {
-      const rowContrast = calculateRowContrast(data, width, y, height);
-      if (rowContrast > 0.1) {
-        bottom = Math.min(height, y + 5);
-        break;
-      }
-    }
-
-    // Find left edge
-    let left = 0;
-    for (let x = 0; x < width; x++) {
-      const colContrast = calculateColContrast(data, width, x, height);
-      if (colContrast > 0.1) {
-        left = Math.max(0, x - 5);
-        break;
-      }
-    }
-
-    // Find right edge
-    let right = width;
-    for (let x = width - 1; x >= 0; x--) {
-      const colContrast = calculateColContrast(data, width, x, height);
-      if (colContrast > 0.1) {
-        right = Math.min(width, x + 5);
-        break;
-      }
-    }
-
-    const detectedWidth = right - left;
-    const detectedHeight = bottom - top;
-
-    if (detectedWidth > width * 0.3 && detectedHeight > height * 0.3) {
-      return { x: left, y: top, width: detectedWidth, height: detectedHeight };
-    }
-
-    return null;
-  };
-
-  const calculateRowContrast = (data: Uint8ClampedArray, width: number, y: number, height: number): number => {
-    let contrast = 0;
-    for (let x = 0; x < width - 1; x++) {
-      const idx = (y * width + x) * 4;
-      const idxNext = (y * width + x + 1) * 4;
-      const brightness = (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
-      const brightnessNext = (data[idxNext] + data[idxNext + 1] + data[idxNext + 2]) / 3;
-      contrast += Math.abs(brightness - brightnessNext);
-    }
-    return contrast / width;
-  };
-
-  const calculateColContrast = (data: Uint8ClampedArray, width: number, x: number, height: number): number => {
-    let contrast = 0;
-    for (let y = 0; y < height - 1; y++) {
-      const idx = (y * width + x) * 4;
-      const idxNext = ((y + 1) * width + x) * 4;
-      const brightness = (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
-      const brightnessNext = (data[idxNext] + data[idxNext + 1] + data[idxNext + 2]) / 3;
-      contrast += Math.abs(brightness - brightnessNext);
-    }
-    return contrast / height;
+    return new ImageData(newData, imageData.width, imageData.height);
   };
 
   const removeGlare = (imageData: ImageData): ImageData => {
@@ -338,47 +254,16 @@ export default function PhotoScanner({ onScanComplete, onClose, language = 'en' 
       const b = data[i + 2];
       const brightness = (r + g + b) / 3;
 
-      if (brightness > 220) {
-        const reduction = (brightness - 220) * 0.5;
+      if (brightness > 230) {
+        const reduction = (brightness - 230) * 0.6;
         newData[i] = Math.max(0, r - reduction);
         newData[i + 1] = Math.max(0, g - reduction);
         newData[i + 2] = Math.max(0, b - reduction);
+      } else {
+        newData[i] = r;
+        newData[i + 1] = g;
+        newData[i + 2] = b;
       }
-    }
-
-    return new ImageData(newData, imageData.width, imageData.height);
-  };
-
-  const enhanceImage = (imageData: ImageData): ImageData => {
-    const data = imageData.data;
-    const newData = new Uint8ClampedArray(data);
-
-    // Calculate average brightness
-    let totalBrightness = 0;
-    for (let i = 0; i < data.length; i += 4) {
-      totalBrightness += (data[i] + data[i + 1] + data[i + 2]) / 3;
-    }
-    const avgBrightness = totalBrightness / (data.length / 4);
-
-    // Enhance contrast and adjust brightness
-    const contrastFactor = 1.3; // Increased for better enhancement
-    const brightnessAdjust = 128 - avgBrightness * 0.3;
-    const sharpnessFactor = 1.1; // Added sharpness
-
-    for (let i = 0; i < data.length; i += 4) {
-      // Enhance contrast
-      let r = (data[i] - 128) * contrastFactor + 128 + brightnessAdjust;
-      let g = (data[i + 1] - 128) * contrastFactor + 128 + brightnessAdjust;
-      let b = (data[i + 2] - 128) * contrastFactor + 128 + brightnessAdjust;
-
-      // Apply sharpness
-      r = Math.max(0, Math.min(255, r * sharpnessFactor));
-      g = Math.max(0, Math.min(255, g * sharpnessFactor));
-      b = Math.max(0, Math.min(255, b * sharpnessFactor));
-
-      newData[i] = r;
-      newData[i + 1] = g;
-      newData[i + 2] = b;
       newData[i + 3] = data[i + 3];
     }
 
@@ -399,119 +284,341 @@ export default function PhotoScanner({ onScanComplete, onClose, language = 'en' 
   const handleRetake = () => {
     setCapturedImage(null);
     setProcessedImage(null);
+    setIsProcessing(false);
+    setProcessingStep('');
+    setProcessingProgress(0);
   };
 
   return (
-    <div style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.95)',zIndex:2000,display:'flex',flexDirection:'column',width:'100vw',height:'100dvh',aspectRatio:'9/16'}}>
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: '#000000',
+      zIndex: 2000,
+      display: 'flex',
+      flexDirection: 'column',
+      width: '100vw',
+      height: '100dvh',
+      fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif'
+    }}>
       {/* Header */}
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'env(safe-area-inset-top, 12px) 16px 12px',borderBottom:'1px solid rgba(255,255,255,0.1)'}}>
-        <button onClick={onClose} style={{background:'transparent',border:'none',color:'white',fontSize:'18px',cursor:'pointer',padding:'8px'}}>✕</button>
-        <div style={{fontSize:'clamp(16px, 4vw, 18px)',fontWeight:'700',color:'white'}}>{t.title}</div>
-        <div style={{width:'36px'}}></div>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 'calc(env(safe-area-inset-top, 0px) + 12px) 20px 16px',
+        borderBottom: '1px solid rgba(255,255,255,0.1)',
+        background: 'rgba(0,0,0,0.8)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)'
+      }}>
+        <button 
+          onClick={onClose} 
+          style={{
+            background: 'rgba(255,255,255,0.1)',
+            border: 'none',
+            color: 'white',
+            fontSize: '20px',
+            cursor: 'pointer',
+            padding: '8px 12px',
+            borderRadius: '10px',
+            minWidth: '44px',
+            minHeight: '44px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'background 0.2s'
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+          onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+        >
+          ✕
+        </button>
+        <div style={{
+          fontSize: 'clamp(18px, 4.5vw, 20px)',
+          fontWeight: '700',
+          color: 'white',
+          letterSpacing: '-0.3px'
+        }}>
+          {t.title}
+        </div>
+        <div style={{ width: '44px' }}></div>
       </div>
 
       {/* Camera View / Preview */}
-      <div style={{flex:1,position:'relative',display:'flex',alignItems:'center',justifyContent:'center',background:'#000000',overflow:'hidden'}}>
+      <div style={{
+        flex: 1,
+        position: 'relative',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: '#000000',
+        overflow: 'hidden'
+      }}>
         {!capturedImage ? (
           <>
-            {/* Live Camera Feed */}
             <video 
               ref={videoRef}
               autoPlay
               playsInline
-              style={{width:'100%',height:'100%',objectFit:'contain'}}
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'contain'
+              }}
             />
             
-            {/* Scanning Guide Overlay - 16:9 aspect ratio */}
-            <div style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%, -50%)',width:'85%',aspectRatio:'16/9',border:'3px dashed rgba(102,126,234,0.8)',borderRadius:'12px',pointerEvents:'none',boxShadow:'0 0 0 9999px rgba(0,0,0,0.5)'}}>
-              <div style={{position:'absolute',top:'-30px',left:'50%',transform:'translateX(-50%)',color:'white',fontSize:'clamp(12px, 3vw, 14px)',fontWeight:'600',whiteSpace:'nowrap'}}>
-                {t.alignPhoto}
-              </div>
+            {/* Scanning Guide Overlay - Clean Modern Design */}
+            <div style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              width: '85%',
+              maxWidth: '400px',
+              aspectRatio: '4/3',
+              border: '2px solid rgba(102,126,234,0.95)',
+              borderRadius: '12px',
+              pointerEvents: 'none',
+              boxShadow: '0 0 0 9999px rgba(0,0,0,0.65), 0 0 0 2px rgba(102,126,234,0.3) inset',
+              background: 'transparent'
+            }}>
+              {/* Corner indicators - clean and minimal */}
+              {[
+                { top: '-1px', left: '-1px', borderRight: 'none', borderBottom: 'none' },
+                { top: '-1px', right: '-1px', borderLeft: 'none', borderBottom: 'none' },
+                { bottom: '-1px', left: '-1px', borderRight: 'none', borderTop: 'none' },
+                { bottom: '-1px', right: '-1px', borderLeft: 'none', borderTop: 'none' }
+              ].map((pos, i) => (
+                <div
+                  key={i}
+                  style={{
+                    position: 'absolute',
+                    ...pos,
+                    width: '24px',
+                    height: '24px',
+                    border: '3px solid rgba(102,126,234,1)',
+                    borderRadius: '0',
+                    background: 'transparent'
+                  }}
+                />
+              ))}
+            </div>
+            
+            {/* Instruction Text */}
+            <div style={{
+              position: 'absolute',
+              top: 'calc(50% + 25%)',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              color: 'white',
+              fontSize: 'clamp(14px, 3.5vw, 16px)',
+              fontWeight: '600',
+              textAlign: 'center',
+              background: 'rgba(0,0,0,0.7)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              padding: '10px 20px',
+              borderRadius: '12px',
+              pointerEvents: 'none'
+            }}>
+              {t.alignPhoto}
             </div>
           </>
         ) : (
-          <div style={{width:'100%',height:'100%',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:'16px',padding:'20px'}}>
+          <div style={{
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '24px',
+            padding: '24px',
+            background: '#000000'
+          }}>
             {isProcessing ? (
-              <div style={{textAlign:'center',color:'white'}}>
-                <div style={{fontSize:'18px',marginBottom:'12px'}}>{t.processing}</div>
-                <div style={{width:'50px',height:'50px',border:'3px solid rgba(102,126,234,0.3)',borderTopColor:'#667eea',borderRadius:'50%',margin:'0 auto',animation:'spin 1s linear infinite'}}></div>
+              <div style={{
+                textAlign: 'center',
+                color: 'white',
+                width: '100%',
+                maxWidth: '400px'
+              }}>
+                <div style={{
+                  width: '80px',
+                  height: '80px',
+                  border: '4px solid rgba(102,126,234,0.3)',
+                  borderTopColor: '#667eea',
+                  borderRadius: '50%',
+                  margin: '0 auto 24px',
+                  animation: 'spin 1s linear infinite'
+                }}></div>
+                <div style={{
+                  fontSize: 'clamp(16px, 4vw, 18px)',
+                  fontWeight: '600',
+                  marginBottom: '12px'
+                }}>
+                  {processingStep || t.processing}
+                </div>
+                <div style={{
+                  width: '100%',
+                  height: '6px',
+                  background: 'rgba(255,255,255,0.1)',
+                  borderRadius: '999px',
+                  overflow: 'hidden',
+                  marginTop: '16px'
+                }}>
+                  <div style={{
+                    width: `${processingProgress}%`,
+                    height: '100%',
+                    background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
+                    borderRadius: '999px',
+                    transition: 'width 0.3s ease'
+                  }}></div>
+                </div>
               </div>
             ) : (
               <>
-                <div style={{maxWidth:'100%',maxHeight:'60%',borderRadius:'12px',overflow:'hidden',boxShadow:'0 8px 32px rgba(0,0,0,0.5)'}}>
-                  <img src={processedImage || capturedImage} alt="Scanned" style={{width:'100%',height:'100%',objectFit:'contain'}} />
-                </div>
-                
-                {/* Processing Options */}
-                <div style={{display:'flex',flexDirection:'column',gap:'8px',width:'100%',maxWidth:'400px'}}>
-                  <label style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px',background:'rgba(255,255,255,0.05)',borderRadius:'8px',cursor:'pointer'}}>
-                    <span style={{fontSize:'clamp(13px, 3.5vw, 15px)',color:'white'}}>{t.autoCrop}</span>
-                    <input type="checkbox" checked={edgeDetectionMode} onChange={(e)=>setEdgeDetectionMode(e.target.checked)} style={{width:'20px',height:'20px'}} />
-                  </label>
-                  <label style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px',background:'rgba(255,255,255,0.05)',borderRadius:'8px',cursor:'pointer'}}>
-                    <span style={{fontSize:'clamp(13px, 3.5vw, 15px)',color:'white'}}>{t.removeGlare}</span>
-                    <input type="checkbox" checked={glareRemoval} onChange={(e)=>setGlareRemoval(e.target.checked)} style={{width:'20px',height:'20px'}} />
-                  </label>
-                  <label style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px',background:'rgba(255,255,255,0.05)',borderRadius:'8px',cursor:'pointer'}}>
-                    <span style={{fontSize:'clamp(13px, 3.5vw, 15px)',color:'white'}}>{t.enhanceColors}</span>
-                    <input type="checkbox" checked={enhancement} onChange={(e)=>setEnhancement(e.target.checked)} style={{width:'20px',height:'20px'}} />
-                  </label>
-                  <label style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px',background:'rgba(255,255,255,0.05)',borderRadius:'8px',cursor:'pointer'}}>
-                    <span style={{fontSize:'clamp(13px, 3.5vw, 15px)',color:'white'}}>{t.faceDetection}</span>
-                    <input type="checkbox" checked={faceDetection} onChange={(e)=>setFaceDetection(e.target.checked)} style={{width:'20px',height:'20px'}} />
-                  </label>
-                  
-                  {processedImage && (edgeDetectionMode || glareRemoval || enhancement || faceDetection) && (
-                    <button 
-                      onClick={() => {
-                        if (canvasRef.current && videoRef.current) {
-                          const canvas = document.createElement('canvas');
-                          canvas.width = videoRef.current.videoWidth;
-                          canvas.height = videoRef.current.videoHeight;
-                          const ctx = canvas.getContext('2d');
-                          if (ctx && videoRef.current) {
-                            ctx.drawImage(videoRef.current, 0, 0);
-                            processImage(canvas);
-                          }
-                        }
-                      }}
-                      style={{padding:'10px',background:'rgba(102,126,234,0.2)',border:'1px solid rgba(102,126,234,0.5)',borderRadius:'8px',color:'white',fontSize:'clamp(13px, 3.5vw, 15px)',cursor:'pointer',marginTop:'8px'}}
-                    >
-                      {t.reprocess}
-                    </button>
-                  )}
+                <div style={{
+                  maxWidth: '100%',
+                  maxHeight: '70%',
+                  borderRadius: '16px',
+                  overflow: 'hidden',
+                  boxShadow: '0 12px 48px rgba(0,0,0,0.6)',
+                  border: '2px solid rgba(255,255,255,0.1)'
+                }}>
+                  <img 
+                    src={processedImage || capturedImage} 
+                    alt="Scanned" 
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'contain',
+                      display: 'block'
+                    }} 
+                  />
                 </div>
               </>
             )}
           </div>
         )}
         
-        {/* Hidden canvas for processing */}
-        <canvas ref={canvasRef} style={{display:'none'}} />
+        <canvas ref={canvasRef} style={{ display: 'none' }} />
       </div>
 
       {/* Controls */}
-      <div style={{padding:'16px',background:'rgba(0,0,0,0.8)',display:'flex',gap:'12px',justifyContent:'center'}}>
+      <div style={{
+        padding: '20px',
+        paddingBottom: 'calc(20px + env(safe-area-inset-bottom, 0px))',
+        background: 'rgba(0,0,0,0.9)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        borderTop: '1px solid rgba(255,255,255,0.1)',
+        display: 'flex',
+        gap: '12px',
+        justifyContent: 'center'
+      }}>
         {!capturedImage ? (
           <button 
             onClick={capturePhoto}
             disabled={!isScanning}
-            style={{width:'70px',height:'70px',borderRadius:'50%',border:'4px solid white',background:'rgba(255,255,255,0.2)',cursor:isScanning ? 'pointer' : 'not-allowed',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 4px 15px rgba(0,0,0,0.3)'}}
+            style={{
+              width: '80px',
+              height: '80px',
+              borderRadius: '50%',
+              border: '5px solid white',
+              background: isScanning ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.1)',
+              cursor: isScanning ? 'pointer' : 'not-allowed',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+              transition: 'all 0.2s ease',
+              opacity: isScanning ? 1 : 0.5
+            }}
+            onMouseEnter={(e) => {
+              if (isScanning) {
+                e.currentTarget.style.transform = 'scale(1.1)';
+                e.currentTarget.style.boxShadow = '0 12px 32px rgba(0,0,0,0.6)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.4)';
+            }}
           >
-            <div style={{width:'60px',height:'60px',borderRadius:'50%',background:'white'}}></div>
+            <div style={{
+              width: '60px',
+              height: '60px',
+              borderRadius: '50%',
+              background: 'white'
+            }}></div>
           </button>
         ) : (
           <>
             <button 
               onClick={handleRetake}
-              style={{flex:1,padding:'14px',background:'rgba(255,255,255,0.1)',border:'1px solid rgba(255,255,255,0.2)',borderRadius:'12px',color:'white',fontSize:'clamp(14px, 4vw, 16px)',fontWeight:'600',cursor:'pointer'}}
+              style={{
+                flex: 1,
+                padding: '16px',
+                background: 'rgba(255,255,255,0.1)',
+                border: '2px solid rgba(255,255,255,0.2)',
+                borderRadius: '14px',
+                color: 'white',
+                fontSize: 'clamp(15px, 4vw, 17px)',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                maxWidth: '160px'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(255,255,255,0.15)';
+                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)';
+              }}
             >
               {t.retake}
             </button>
             <button 
               onClick={handleSave}
               disabled={!processedImage || isProcessing}
-              style={{flex:1,padding:'14px',background:'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',border:'none',borderRadius:'12px',color:'white',fontSize:'clamp(14px, 4vw, 16px)',fontWeight:'700',cursor:processedImage && !isProcessing ? 'pointer' : 'not-allowed',opacity:processedImage && !isProcessing ? 1 : 0.5,boxShadow:'0 4px 15px rgba(102,126,234,0.4)'}}
+              style={{
+                flex: 1,
+                padding: '16px',
+                background: processedImage && !isProcessing 
+                  ? 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)'
+                  : 'rgba(102,126,234,0.3)',
+                border: 'none',
+                borderRadius: '14px',
+                color: 'white',
+                fontSize: 'clamp(15px, 4vw, 17px)',
+                fontWeight: '700',
+                cursor: processedImage && !isProcessing ? 'pointer' : 'not-allowed',
+                opacity: processedImage && !isProcessing ? 1 : 0.6,
+                boxShadow: processedImage && !isProcessing 
+                  ? '0 8px 24px rgba(102,126,234,0.4)'
+                  : 'none',
+                transition: 'all 0.2s ease',
+                maxWidth: '200px'
+              }}
+              onMouseEnter={(e) => {
+                if (processedImage && !isProcessing) {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 12px 32px rgba(102,126,234,0.5)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = processedImage && !isProcessing 
+                  ? '0 8px 24px rgba(102,126,234,0.4)'
+                  : 'none';
+              }}
             >
               {t.savePhoto}
             </button>
@@ -519,7 +626,11 @@ export default function PhotoScanner({ onScanComplete, onClose, language = 'en' 
         )}
       </div>
 
+      <style>{`
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }
-

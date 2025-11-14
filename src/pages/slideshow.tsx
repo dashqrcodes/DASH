@@ -821,6 +821,16 @@ const SlideshowPage: React.FC = () => {
     alert(`✅ Slideshow complete with ${photos.length} ${t.memories}!`);
   };
 
+  const handlePlaySlideshow = () => {
+    if (photos.length === 0) {
+      if (fileInputRef.current) fileInputRef.current.click();
+      return;
+    }
+    // Navigate to slideshow preview/playback page
+    // For now, show alert - can be enhanced to fullscreen slideshow
+    alert(`Playing slideshow with ${photos.length} ${t.memories}...`);
+  };
+
   const handleOpenCollaboration = () => {
     setIsCollaborationOpen(true);
   };
@@ -1009,9 +1019,6 @@ const SlideshowPage: React.FC = () => {
         </div>
 
         <div
-          onClick={() => {
-            if (fileInputRef.current) fileInputRef.current.click();
-          }}
           style={{
             margin: '0 0 18px',
             position: 'relative',
@@ -1028,23 +1035,112 @@ const SlideshowPage: React.FC = () => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            cursor: 'pointer',
             boxShadow: '0 25px 50px rgba(8,8,18,0.35)'
           }}
         >
           {photos.length > 0 ? (
-            renderHeroMedia()
+            <>
+              {renderHeroMedia()}
+              {/* Play Button Overlay */}
+              <div
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handlePlaySlideshow();
+                }}
+                style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  width: '72px',
+                  height: '72px',
+                  borderRadius: '50%',
+                  background: 'rgba(0,0,0,0.6)',
+                  backdropFilter: 'blur(12px)',
+                  WebkitBackdropFilter: 'blur(12px)',
+                  border: '3px solid rgba(255,255,255,0.9)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  zIndex: 10,
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.4)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translate(-50%, -50%) scale(1.1)';
+                  e.currentTarget.style.background = 'rgba(0,0,0,0.8)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translate(-50%, -50%) scale(1)';
+                  e.currentTarget.style.background = 'rgba(0,0,0,0.6)';
+                }}
+              >
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="white" style={{ marginLeft: '4px' }}>
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
+              </div>
+              {/* Camera Button - Top Right */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (fileInputRef.current) fileInputRef.current.click();
+                }}
+                style={{
+                  position: 'absolute',
+                  top: '12px',
+                  right: '12px',
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '50%',
+                  background: 'rgba(0,0,0,0.7)',
+                  backdropFilter: 'blur(12px)',
+                  WebkitBackdropFilter: 'blur(12px)',
+                  border: '2px solid rgba(255,255,255,0.3)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  zIndex: 10,
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(102,126,234,0.8)';
+                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.6)';
+                  e.currentTarget.style.transform = 'scale(1.1)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(0,0,0,0.7)';
+                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)';
+                  e.currentTarget.style.transform = 'scale(1)';
+                }}
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h6l2 3h3a2 2 0 0 1 2 2z"></path>
+                  <circle cx="12" cy="13" r="4"></circle>
+                </svg>
+              </button>
+            </>
           ) : (
-            <div style={{
-              textAlign: 'center',
-              color: 'rgba(255,255,255,0.88)',
-              display:'flex',
-              flexDirection:'column',
-              alignItems:'center',
-              gap:'10px',
-              minHeight:'100%',
-              justifyContent:'center'
-            }}>
+            <div
+              onClick={() => {
+                if (fileInputRef.current) fileInputRef.current.click();
+              }}
+              style={{
+                textAlign: 'center',
+                color: 'rgba(255,255,255,0.88)',
+                display:'flex',
+                flexDirection:'column',
+                alignItems:'center',
+                gap:'10px',
+                minHeight:'100%',
+                justifyContent:'center',
+                cursor: 'pointer',
+                width: '100%',
+                height: '100%'
+              }}
+            >
               <div style={{
                 width:'58px',
                 height:'58px',
