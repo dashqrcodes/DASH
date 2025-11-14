@@ -190,6 +190,7 @@ const generateCardBackPdf = async ({
     sunrise,
     sunset,
     qrCodeUrl,
+    memorialUrl,
     psalmText,
     fdName,
     fdPhone
@@ -197,6 +198,7 @@ const generateCardBackPdf = async ({
     sunrise: string;
     sunset: string;
     qrCodeUrl?: string | null;
+    memorialUrl?: string | null;
     psalmText?: string;
     fdName?: string;
     fdPhone?: string;
@@ -284,12 +286,34 @@ const generateCardBackPdf = async ({
         const qrImage = await embedImage(pdfDoc, qrBuffer);
         if (qrImage) {
             const qrSize = 64;
+            const qrX = width / 2 - qrSize / 2;
             page.drawImage(qrImage, {
-                x: width / 2 - qrSize / 2,
+                x: qrX,
                 y: rowY + 6,
                 width: qrSize,
                 height: qrSize
             });
+            
+            // Add URL text below QR code
+            if (memorialUrl) {
+                // Extract domain and path for display
+                try {
+                    const urlObj = new URL(memorialUrl);
+                    const displayUrl = `${urlObj.hostname}${urlObj.pathname}${urlObj.search}`;
+                    const urlFontSize = 7;
+                    const urlTextWidth = regularFont.widthOfTextAtSize(displayUrl, urlFontSize);
+                    const urlX = (width - urlTextWidth) / 2;
+                    page.drawText(displayUrl, {
+                        x: urlX,
+                        y: rowY - 8,
+                        size: urlFontSize,
+                        font: regularFont,
+                        color: rgb(0.83, 0.84, 0.95)
+                    });
+                } catch (e) {
+                    // If URL parsing fails, skip URL text
+                }
+            }
         }
     }
 
@@ -310,6 +334,7 @@ const generatePosterPdf = async ({
     sunset,
     photo,
     qrCodeUrl,
+    memorialUrl,
     imageEnhancement
 }: {
     name: string;
@@ -317,6 +342,7 @@ const generatePosterPdf = async ({
     sunset: string;
     photo?: string | null;
     qrCodeUrl?: string | null;
+    memorialUrl?: string | null;
     imageEnhancement?: ImageEnhancementInput;
 }) => {
     const pdfDoc = await PDFDocument.create();
@@ -392,12 +418,33 @@ const generatePosterPdf = async ({
     });
 
     if (qrEmbedded) {
+        const qrX = startX + sunriseWidth + 18;
         page.drawImage(qrEmbedded, {
-            x: startX + sunriseWidth + 18,
+            x: qrX,
             y: baseY - 10,
             width: qrSize,
             height: qrSize
         });
+        
+        // Add URL text below QR code
+        if (memorialUrl) {
+            try {
+                const urlObj = new URL(memorialUrl);
+                const displayUrl = `${urlObj.hostname}${urlObj.pathname}${urlObj.search}`;
+                const urlFontSize = 12;
+                const urlTextWidth = regularFont.widthOfTextAtSize(displayUrl, urlFontSize);
+                const urlX = qrX + (qrSize - urlTextWidth) / 2;
+                page.drawText(displayUrl, {
+                    x: urlX,
+                    y: baseY - 25,
+                    size: urlFontSize,
+                    font: regularFont,
+                    color: rgb(1, 1, 1)
+                });
+            } catch (e) {
+                // If URL parsing fails, skip URL text
+            }
+        }
     }
 
     page.drawText(formattedSunset, {
@@ -466,7 +513,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     try {
-        const { name, sunrise, sunset, photo, qrCodeUrl, email, orderDetails, imageEnhancement } = req.body;
+        const { name, sunrise, sunset, photo, qrCodeUrl, memorialUrl, email, orderDetails, imageEnhancement } = req.body;
 
         if (!name || !email || !orderDetails) {
             return res.status(400).json({ error: 'Name, email, and order details are required' });
@@ -528,11 +575,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 sunrise,
                 sunset,
                 qrCodeUrl,
+                memorialUrl,
                 psalmText: orderDetails?.psalmText,
                 fdName: orderDetails?.funeralDirector,
                 fdPhone: orderDetails?.fdPhone
             }),
-            generatePosterPdf({ name, sunrise, sunset, photo, qrCodeUrl, imageEnhancement })
+            generatePosterPdf({ name, sunrise, sunset, photo, qrCodeUrl, memorialUrl, imageEnhancement })
         ]);
 
         const attachments = [

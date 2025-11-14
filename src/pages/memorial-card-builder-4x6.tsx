@@ -740,10 +740,20 @@ const MemorialCardBuilder4x6Page: React.FC = () => {
   // Generate QR code with color matching
   const generateQRCode = async (customUrl?: string) => {
     try {
-      // Use custom URL (from profile) or generate from name
+      // Generate URL to finalized-profile page (what QR code scanners will see)
+      // Use the name to create a slug for the URL
+      const nameSlug = name 
+        ? name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+        : 'loved-one';
+      
       const memorialUrl = customUrl || (typeof window !== 'undefined' 
-        ? `${window.location.origin}/memorial/${encodeURIComponent(name || 'loved-one')}`
-        : `http://localhost:3000/memorial/${encodeURIComponent(name || 'loved-one')}`);
+        ? `${window.location.origin}/finalized-profile?name=${encodeURIComponent(nameSlug)}`
+        : `http://localhost:3000/finalized-profile?name=${encodeURIComponent(nameSlug)}`);
+      
+      // Store the URL for PDF generation
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('memorialUrl', memorialUrl);
+      }
       
       const response = await fetch('/api/generate-qr', {
         method: 'POST',

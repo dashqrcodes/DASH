@@ -115,11 +115,19 @@ const PosterBuilderPage: React.FC = () => {
   // Generate QR code
   const generateQRCode = async () => {
     try {
-      // Use SHORT URL format to reduce QR complexity for better printing
-      const nameSlug = name ? name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') : 'profile';
-      const shortUrl = typeof window !== 'undefined' 
-        ? `${window.location.origin}/m/${nameSlug}` 
-        : `http://localhost:3000/m/${nameSlug}`;
+      // Generate URL to finalized-profile page (what QR code scanners will see)
+      const nameSlug = name 
+        ? name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+        : 'loved-one';
+      
+      const memorialUrl = typeof window !== 'undefined' 
+        ? `${window.location.origin}/finalized-profile?name=${encodeURIComponent(nameSlug)}`
+        : `http://localhost:3000/finalized-profile?name=${encodeURIComponent(nameSlug)}`;
+      
+      // Store the URL for PDF generation
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('memorialUrl', memorialUrl);
+      }
       
       const response = await fetch('/api/generate-qr', {
         method: 'POST',
@@ -127,7 +135,7 @@ const PosterBuilderPage: React.FC = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          url: shortUrl,
+          url: memorialUrl,
           lovedOneName: name,
           color: '#667eea' // Blue QR code for poster
         }),
@@ -269,6 +277,14 @@ const PosterBuilderPage: React.FC = () => {
         psalmText: typeof window !== 'undefined' ? localStorage.getItem('psalm23Text') || undefined : undefined
       };
 
+      // Get memorial URL from localStorage or generate it
+      const nameSlug = name 
+        ? name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+        : 'loved-one';
+      const memorialUrl = typeof window !== 'undefined' 
+        ? (localStorage.getItem('memorialUrl') || `${window.location.origin}/finalized-profile?name=${encodeURIComponent(nameSlug)}`)
+        : `http://localhost:3000/finalized-profile?name=${encodeURIComponent(nameSlug)}`;
+
       // Generate PDFs for both card and poster
       const response = await fetch('/api/generate-print-pdfs', {
         method: 'POST',
@@ -281,6 +297,7 @@ const PosterBuilderPage: React.FC = () => {
           sunset,
           photo,
           qrCodeUrl,
+          memorialUrl,
           imageEnhancement,
           email: 'david@dashqrcodes.com',
           orderDetails

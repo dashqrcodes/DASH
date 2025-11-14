@@ -189,13 +189,28 @@ const FinalizedProfilePage: React.FC = () => {
   useEffect(() => {
     // Load all profile data from localStorage
     if (typeof window !== 'undefined') {
-      // Load name and dates
+      // Check URL query parameter first (for QR code links)
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlName = urlParams.get('name');
+      
+      if (urlName) {
+        // Decode the name slug from URL
+        const decodedName = decodeURIComponent(urlName).replace(/-/g, ' ');
+        // Capitalize first letter of each word
+        const formattedName = decodedName
+          .split(' ')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ');
+        setLovedOneName(formattedName);
+      }
+      
+      // Load name and dates from localStorage
       const savedName = localStorage.getItem('lovedOneName');
       const cardDesign = localStorage.getItem('cardDesign');
       
-      if (savedName) {
+      if (!urlName && savedName) {
         setLovedOneName(savedName);
-      } else if (cardDesign) {
+      } else if (!urlName && cardDesign) {
         try {
           const card = JSON.parse(cardDesign);
           if (card.front?.name) setLovedOneName(card.front.name);
