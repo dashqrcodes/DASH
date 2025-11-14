@@ -10,6 +10,7 @@
   "dependencies": {
     "@ai-sdk/openai": "^2.0.65",
     "@elevenlabs/elevenlabs-js": "^2.24.0",
+    "@heygen/streaming-avatar": "^2.1.0",
     "@mux/mux-node": "^12.8.0",
     "@mux/mux-player": "^3.8.0",
     "@mux/mux-player-react": "^3.8.0",
@@ -23,6 +24,7 @@
     "canvas": "^3.2.0",
     "cloudinary": "^2.8.0",
     "formidable": "^3.5.4",
+    "livekit-client": "^2.15.15",
     "next": "latest",
     "nodemailer": "^7.0.10",
     "pdf-lib": "^1.17.1",
