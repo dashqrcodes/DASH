@@ -1693,8 +1693,8 @@ const SlideshowPage: React.FC = () => {
             display: 'flex',
             justifyContent: 'center',
             padding: '0 20px',
-            marginTop: 'auto',
-            marginBottom: photos.length > 0 ? '32px' : '36px',
+            marginTop: photos.length > 0 ? '16px' : 'auto',
+            marginBottom: photos.length > 0 ? '180px' : '36px',
           }}
         >
           <div
@@ -1738,13 +1738,13 @@ const SlideshowPage: React.FC = () => {
             style={{
               width: '100%',
               padding: '0 20px',
-              margin: '0 auto 16px',
+              margin: '24px auto 0',
               position: 'sticky',
-              bottom: 0,
+              bottom: '120px',
               background:
                 'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.85) 70%, transparent 100%)',
-              paddingTop: '16px',
-              paddingBottom: 'calc(18px + env(safe-area-inset-bottom, 0px))',
+              paddingTop: '20px',
+              paddingBottom: 'calc(20px + env(safe-area-inset-bottom, 0px))',
               zIndex: 5,
               display: 'flex',
               justifyContent: 'center',
