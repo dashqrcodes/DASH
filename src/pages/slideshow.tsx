@@ -1507,10 +1507,11 @@ const SlideshowPage: React.FC = () => {
           <div
             style={{
               padding: '0 20px',
-              marginTop: photos.length ? '22px' : '12px',
+              marginTop: photos.length ? '36px' : '28px',
               display: 'flex',
               flexDirection: 'column',
               gap: '16px',
+              alignItems: 'center',
             }}
           >
             <div
@@ -1544,6 +1545,7 @@ const SlideshowPage: React.FC = () => {
                       boxShadow: isActive ? '0 6px 16px rgba(102,126,234,0.35)' : 'none',
                       transition: 'all 0.2s ease',
                       WebkitTapHighlightColor: 'transparent',
+                      width: '50%',
                     }}
                   >
                     {label}
@@ -1557,6 +1559,8 @@ const SlideshowPage: React.FC = () => {
                 display: 'flex',
                 flexWrap: 'wrap',
                 gap: '12px',
+                justifyContent: 'center',
+                width: '100%',
               }}
             >
               {transferMode === 'file-transfer' ? (
@@ -1639,7 +1643,7 @@ const SlideshowPage: React.FC = () => {
             justifyContent: 'center',
             padding: '0 20px',
             marginTop: 'auto',
-            marginBottom: photos.length > 0 ? '36px' : '44px',
+            marginBottom: photos.length > 0 ? '48px' : '56px',
           }}
         >
           <div
