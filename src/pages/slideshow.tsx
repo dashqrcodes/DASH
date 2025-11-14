@@ -1639,44 +1639,68 @@ const SlideshowPage: React.FC = () => {
             justifyContent: 'center',
             padding: '0 20px',
             marginTop: 'auto',
-            marginBottom: photos.length > 0 ? '20px' : '28px'
+            marginBottom: photos.length > 0 ? '36px' : '44px',
           }}
         >
           <div
             style={{
+              width: '100%',
+              maxWidth: '360px',
               display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              padding: '14px 32px',
-              borderRadius: '999px',
-              background: 'rgba(255,255,255,0.08)',
-              border: '1px solid rgba(255,255,255,0.12)',
-              color: 'rgba(255,255,255,0.9)',
-              fontSize: '14px',
-              fontWeight: 600,
-              letterSpacing: '0.32px',
-              boxShadow: '0 6px 18px rgba(0,0,0,0.25)',
-              WebkitTapHighlightColor: 'transparent',
-              touchAction: 'manipulation'
+              justifyContent: 'center',
             }}
           >
-            <span style={{ fontSize: '18px', transform: 'translateY(-1px)' }}>▲</span>
-            <span>Share a memory</span>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                padding: '14px 32px',
+                borderRadius: '999px',
+                background: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                color: 'rgba(255,255,255,0.9)',
+                fontSize: '14px',
+                fontWeight: 600,
+                letterSpacing: '0.32px',
+                boxShadow: '0 6px 18px rgba(0,0,0,0.25)',
+                WebkitTapHighlightColor: 'transparent',
+                touchAction: 'manipulation',
+                width: '100%',
+                maxWidth: '320px',
+                justifyContent: 'center',
+              }}
+            >
+              <span style={{ fontSize: '18px', transform: 'translateY(-1px)' }}>▲</span>
+              <span>Share a memory</span>
+            </div>
           </div>
         </div>
 
         {/* Complete Button */}
         {photos.length > 0 && (
-          <div style={{
-            padding:'0 20px',
-            marginBottom:'20px',
-            position:'sticky',
-            bottom:0,
-            background:'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.85) 70%, transparent 100%)',
-            paddingTop:'16px',
-            paddingBottom:'16px',
-            zIndex:5
-          }}>
+          <div
+            style={{
+              width: '100%',
+              padding: '0 20px',
+              margin: '0 auto 48px',
+              position: 'sticky',
+              bottom: 32,
+              background:
+                'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.85) 70%, transparent 100%)',
+              paddingTop: '20px',
+              paddingBottom: '24px',
+              zIndex: 5,
+              display: 'flex',
+              justifyContent: 'center',
+            }}
+          >
+            <div
+              style={{
+                width: '100%',
+                maxWidth: '360px',
+              }}
+            >
             <button 
               onClick={handleComplete}
               style={{
@@ -1720,6 +1744,7 @@ const SlideshowPage: React.FC = () => {
               >
                 Launch HEAVEN →
               </button>
+            </div>
             </div>
           </div>
         )}
