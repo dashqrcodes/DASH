@@ -29,7 +29,7 @@ const HeavenPage: React.FC = () => {
   const [person, setPerson] = useState<Person | null>(null);
   
   // Initialization states
-  const [initStep, setInitStep] = useState<'idle' | 'loading-media' | 'extracting-audio' | 'cloning-voice' | 'creating-avatar' | 'initializing-conversation' | 'ready'>('idle');
+  const [initStep, setInitStep] = useState<'idle' | 'loading-media' | 'extracting-audio' | 'cloning-voice' | 'creating-agent' | 'creating-avatar' | 'initializing-conversation' | 'ready'>('idle');
   const [statusMessage, setStatusMessage] = useState('');
   
   // Avatar and voice IDs
@@ -37,6 +37,7 @@ const HeavenPage: React.FC = () => {
   const [avatarId, setAvatarId] = useState<string | null>(null);
   const [characterId, setCharacterId] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [agentId, setAgentId] = useState<string | null>(null);
   
   // Call UI states
   const [currentVideoUrl, setCurrentVideoUrl] = useState<string | null>(null);
@@ -144,6 +145,19 @@ const HeavenPage: React.FC = () => {
   /**
    * Initialize HEAVEN call - 3-step process
    */
+  const createHeavenAgent = async () => {
+    const response = await fetch('/api/heaven/create-agent', { method: 'POST' });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => null);
+      throw new Error(error?.error || 'Failed to create HEAVEN agent');
+    }
+
+    const agent = await response.json();
+    setAgentId((agent?.id as string) ?? (agent?.agentId as string) ?? null);
+    return agent;
+  };
+
   const handleStartCall = async () => {
     // Step 0: Load person data
     setInitStep('loading-media');
@@ -181,7 +195,12 @@ const HeavenPage: React.FC = () => {
       const clonedVoiceId = await cloneVoiceFromAudio(audioUrl, `${personData.name}'s Voice`);
       setVoiceId(clonedVoiceId);
 
-      // STEP 3: Create avatar from primary photo
+      // STEP 3: Create conversational agent shell
+      setInitStep('creating-agent');
+      setStatusMessage('Preparing conversational presence…');
+      await createHeavenAgent();
+
+      // STEP 4: Create avatar from primary photo
       setInitStep('creating-avatar');
       setStatusMessage('Bringing them on screen…');
 
@@ -310,6 +329,7 @@ const HeavenPage: React.FC = () => {
     setAvatarId(null);
     setCharacterId(null);
     setSessionId(null);
+    setAgentId(null);
     setCurrentVideoUrl(null);
     setConversationHistory([]);
     setPerson(null);
