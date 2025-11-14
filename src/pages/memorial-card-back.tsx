@@ -7,24 +7,34 @@ const MemorialCardBackPage: React.FC = () => {
     const router = useRouter();
     const [language, setLanguage] = useState<'en' | 'es'>('en');
 
-    // Format date to abbreviate months (except June and July)
+    const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
+    // Format date to match the front card (abbr months except June/July for English)
     const formatDateForCard = (dateStr: string): string => {
-        if (!dateStr) return dateStr;
-        
-        const monthMap: { [key: string]: string } = {
-            'January': 'Jan', 'February': 'Feb', 'March': 'Mar',
-            'April': 'Apr', 'May': 'May', 'June': 'June',
-            'July': 'July', 'August': 'Aug', 'September': 'Sep',
-            'October': 'Oct', 'November': 'Nov', 'December': 'Dec'
-        };
-        
-        let result = dateStr;
-        Object.keys(monthMap).forEach(fullMonth => {
-            const regex = new RegExp(fullMonth, 'gi');
-            result = result.replace(regex, monthMap[fullMonth]);
-        });
-        
-        return result;
+        if (!dateStr) return '';
+
+        const baseValue = ISO_DATE_REGEX.test(dateStr) ? `${dateStr}T00:00:00` : dateStr;
+        const parsed = new Date(baseValue);
+        if (Number.isNaN(parsed.getTime())) {
+            return dateStr;
+        }
+
+        if (language === 'es') {
+            return new Intl.DateTimeFormat('es-ES', {
+                day: '2-digit',
+                month: 'long',
+                year: 'numeric'
+            }).format(parsed);
+        }
+
+        const monthFull = new Intl.DateTimeFormat('en-US', { month: 'long' }).format(parsed);
+        const monthDisplay = monthFull === 'June' || monthFull === 'July'
+            ? monthFull
+            : monthFull.slice(0, 3);
+        const day = String(parsed.getDate()).padStart(2, '0');
+        const year = parsed.getFullYear();
+
+        return `${monthDisplay} ${day}, ${year}`;
     };
     const [name, setName] = useState('');
     const [sunrise, setSunrise] = useState('');

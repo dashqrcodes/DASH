@@ -4,6 +4,298 @@ import { useRouter } from 'next/router';
 
 const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
+interface DateScrollPickerProps {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  maxDate: string;
+  language: 'en' | 'es';
+}
+
+const DateScrollPicker: React.FC<DateScrollPickerProps> = ({ label, value, onChange, maxDate, language }) => {
+  const [showPicker, setShowPicker] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState(1);
+  const [selectedDay, setSelectedDay] = useState(1);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  
+  const months = language === 'es' 
+    ? ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+    : ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  
+  const maxDateObj = new Date(maxDate);
+  const maxYear = maxDateObj.getFullYear();
+  const maxMonth = maxDateObj.getMonth() + 1;
+  const maxDay = maxDateObj.getDate();
+  
+  const years = Array.from({ length: maxYear - 1900 + 1 }, (_, i) => maxYear - i);
+  
+  const getDaysInMonth = (month: number, year: number) => {
+    return new Date(year, month, 0).getDate();
+  };
+  
+  const days = useMemo(() => {
+    return Array.from({ length: getDaysInMonth(selectedMonth, selectedYear) }, (_, i) => i + 1);
+  }, [selectedMonth, selectedYear]);
+  
+  useEffect(() => {
+    if (value && ISO_DATE_REGEX.test(value)) {
+      const date = new Date(value);
+      setSelectedMonth(date.getMonth() + 1);
+      setSelectedDay(date.getDate());
+      setSelectedYear(date.getFullYear());
+    }
+  }, [value]);
+  
+  useEffect(() => {
+    const maxDays = getDaysInMonth(selectedMonth, selectedYear);
+    if (selectedDay > maxDays) {
+      setSelectedDay(maxDays);
+    }
+  }, [selectedMonth, selectedYear, selectedDay]);
+  
+  const handleConfirm = () => {
+    const isoDate = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`;
+    onChange(isoDate);
+    setShowPicker(false);
+  };
+  
+  const formatDisplayDate = (dateStr: string) => {
+    if (!dateStr || !ISO_DATE_REGEX.test(dateStr)) return '';
+    const date = new Date(dateStr);
+    if (language === 'es') {
+      return new Intl.DateTimeFormat('es-ES', { day: '2-digit', month: 'long', year: 'numeric' }).format(date);
+    }
+    const monthName = months[date.getMonth()];
+    return `${monthName} ${date.getDate()}, ${date.getFullYear()}`;
+  };
+  
+  return (
+    <div>
+      <label style={{
+        display: 'block',
+        fontSize: '12px',
+        color: 'rgba(255,255,255,0.6)',
+        marginBottom: '8px',
+        fontWeight: '600'
+      }}>
+        {label}
+      </label>
+      <button
+        type="button"
+        onClick={() => setShowPicker(true)}
+        style={{
+          width: '100%',
+          background: 'rgba(255,255,255,0.05)',
+          border: 'none',
+          borderRadius: '12px',
+          padding: '12px 16px',
+          color: value ? 'white' : 'rgba(255,255,255,0.5)',
+          fontSize: '14px',
+          outline: 'none',
+          textAlign: 'center',
+          cursor: 'pointer',
+          fontWeight: value ? '500' : '400'
+        }}
+      >
+        {value ? formatDisplayDate(value) : (language === 'en' ? 'Select date' : 'Seleccionar fecha')}
+      </button>
+      
+      {showPicker && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.8)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '20px'
+        }}
+        onClick={() => setShowPicker(false)}
+        >
+          <div
+            style={{
+              background: '#1a1a1a',
+              borderRadius: '20px',
+              padding: '24px',
+              maxWidth: '320px',
+              width: '100%',
+              border: '1px solid rgba(255,255,255,0.1)'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              marginBottom: '20px',
+              fontSize: '18px',
+              fontWeight: '600'
+            }}>
+              <span>{label}</span>
+              <button
+                onClick={() => setShowPicker(false)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'rgba(255,255,255,0.6)',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  padding: '0',
+                  width: '32px',
+                  height: '32px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                ×
+              </button>
+            </div>
+            
+            <div style={{
+              display: 'flex',
+              gap: '8px',
+              marginBottom: '20px',
+              justifyContent: 'center'
+            }}>
+              {/* Month Picker */}
+              <div style={{ flex: 1, position: 'relative' }}>
+                <div style={{
+                  height: '180px',
+                  overflowY: 'auto',
+                  scrollSnapType: 'y mandatory',
+                  background: 'rgba(255,255,255,0.05)',
+                  borderRadius: '12px',
+                  padding: '8px 0'
+                }}>
+                  {months.map((month, idx) => {
+                    const monthNum = idx + 1;
+                    const isSelected = selectedMonth === monthNum;
+                    const isDisabled = selectedYear === maxYear && monthNum > maxMonth;
+                    return (
+                      <div
+                        key={monthNum}
+                        onClick={() => !isDisabled && setSelectedMonth(monthNum)}
+                        style={{
+                          padding: '12px',
+                          textAlign: 'center',
+                          fontSize: '16px',
+                          color: isDisabled ? 'rgba(255,255,255,0.3)' : (isSelected ? 'white' : 'rgba(255,255,255,0.6)'),
+                          fontWeight: isSelected ? '600' : '400',
+                          background: isSelected ? 'rgba(102,126,234,0.3)' : 'transparent',
+                          cursor: isDisabled ? 'not-allowed' : 'pointer',
+                          scrollSnapAlign: 'center',
+                          borderRadius: '8px',
+                          margin: '2px 4px'
+                        }}
+                      >
+                        {month.slice(0, 3)}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              
+              {/* Day Picker */}
+              <div style={{ flex: 1, position: 'relative' }}>
+                <div style={{
+                  height: '180px',
+                  overflowY: 'auto',
+                  scrollSnapType: 'y mandatory',
+                  background: 'rgba(255,255,255,0.05)',
+                  borderRadius: '12px',
+                  padding: '8px 0'
+                }}>
+                  {days.map((day) => {
+                    const isSelected = selectedDay === day;
+                    const isDisabled = selectedYear === maxYear && selectedMonth === maxMonth && day > maxDay;
+                    return (
+                      <div
+                        key={day}
+                        onClick={() => !isDisabled && setSelectedDay(day)}
+                        style={{
+                          padding: '12px',
+                          textAlign: 'center',
+                          fontSize: '16px',
+                          color: isDisabled ? 'rgba(255,255,255,0.3)' : (isSelected ? 'white' : 'rgba(255,255,255,0.6)'),
+                          fontWeight: isSelected ? '600' : '400',
+                          background: isSelected ? 'rgba(102,126,234,0.3)' : 'transparent',
+                          cursor: isDisabled ? 'not-allowed' : 'pointer',
+                          scrollSnapAlign: 'center',
+                          borderRadius: '8px',
+                          margin: '2px 4px'
+                        }}
+                      >
+                        {day}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              
+              {/* Year Picker */}
+              <div style={{ flex: 1, position: 'relative' }}>
+                <div style={{
+                  height: '180px',
+                  overflowY: 'auto',
+                  scrollSnapType: 'y mandatory',
+                  background: 'rgba(255,255,255,0.05)',
+                  borderRadius: '12px',
+                  padding: '8px 0'
+                }}>
+                  {years.map((year) => {
+                    const isSelected = selectedYear === year;
+                    return (
+                      <div
+                        key={year}
+                        onClick={() => setSelectedYear(year)}
+                        style={{
+                          padding: '12px',
+                          textAlign: 'center',
+                          fontSize: '16px',
+                          color: isSelected ? 'white' : 'rgba(255,255,255,0.6)',
+                          fontWeight: isSelected ? '600' : '400',
+                          background: isSelected ? 'rgba(102,126,234,0.3)' : 'transparent',
+                          cursor: 'pointer',
+                          scrollSnapAlign: 'center',
+                          borderRadius: '8px',
+                          margin: '2px 4px'
+                        }}
+                      >
+                        {year}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+            
+            <button
+              onClick={handleConfirm}
+              style={{
+                width: '100%',
+                background: 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
+                border: 'none',
+                borderRadius: '12px',
+                padding: '14px',
+                color: 'white',
+                fontSize: '16px',
+                fontWeight: '600',
+                cursor: 'pointer'
+              }}
+            >
+              {language === 'en' ? 'Confirm' : 'Confirmar'}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const ProfilePage: React.FC = () => {
     const router = useRouter();
     const [name, setName] = useState('');
@@ -608,97 +900,33 @@ const ProfilePage: React.FC = () => {
                         />
                     </div>
 
-                    {/* Dates */}
+                    {/* Dates - Scrollable Pickers */}
                     <div style={{
                         display: 'grid',
                         gridTemplateColumns: '1fr 1fr',
                         gap: '12px',
                         marginBottom: '15px'
                     }}>
-                        <div>
-                            <label style={{
-                                display: 'block',
-                                fontSize: '12px',
-                                color: 'rgba(255,255,255,0.6)',
-                                marginBottom: '8px',
-                                fontWeight: '600'
-                            }}>
-                                {t.sunrise}
-                            </label>
-                            <input
-                                type="date"
-                                value={sunrise}
-                                onChange={(e) => {
-                                    const value = e.target.value;
-                                    setSunrise(value);
-                                    handleFieldBlur({ sunrise: value });
-                                }}
-                                max={todayISO}
-                                style={{
-                                    width: '100%',
-                                    background: 'rgba(255,255,255,0.05)',
-                                    border: 'none',
-                                    borderRadius: '12px',
-                                    padding: '12px 16px',
-                                    color: 'white',
-                                    fontSize: '14px',
-                                    outline: 'none',
-                                    textAlign: 'center'
-                                }}
-                            />
-                            {sunrise && (
-                                <div style={{
-                                    marginTop: '6px',
-                                    fontSize: '11px',
-                                    color: 'rgba(255,255,255,0.65)',
-                                    textAlign: 'center'
-                                }}>
-                                    {formatDateForPreview(sunrise, language)}
-                                </div>
-                            )}
-                        </div>
-                        <div>
-                            <label style={{
-                                display: 'block',
-                                fontSize: '12px',
-                                color: 'rgba(255,255,255,0.6)',
-                                marginBottom: '8px',
-                                fontWeight: '600'
-                            }}>
-                                {t.sunset}
-                            </label>
-                            <input
-                                type="date"
-                                value={sunset}
-                                onChange={(e) => {
-                                    const value = e.target.value;
-                                    setSunset(value);
-                                    handleFieldBlur({ sunset: value });
-                                }}
-                                max={todayISO}
-                                style={{
-                                    width: '100%',
-                                    background: 'rgba(255,255,255,0.05)',
-                                    border: 'none',
-                                    borderRadius: '12px',
-                                    padding: '12px 16px',
-                                    color: 'white',
-                                    fontSize: '14px',
-                                    outline: 'none',
-                                    textAlign: 'center'
-                                }}
-                            />
-                            {sunset && (
-                                <div style={{
-                                    marginTop: '6px',
-                                    fontSize: '11px',
-                                    color: 'rgba(255,255,255,0.65)',
-                                    textAlign: 'center'
-                                }}>
-                                    {formatDateForPreview(sunset, language)}
-                                </div>
-                            )}
-                        </div>
+                        <DateScrollPicker
+                            label={t.sunrise}
+                            value={sunrise}
+                            onChange={(value) => {
+                                setSunrise(value);
+                                handleFieldBlur({ sunrise: value });
+                            }}
+                            maxDate={todayISO}
+                            language={language}
+                        />
+                        <DateScrollPicker
+                            label={t.sunset}
+                            value={sunset}
+                            onChange={(value) => {
+                                setSunset(value);
+                                handleFieldBlur({ sunset: value });
+                            }}
+                            maxDate={todayISO}
+                            language={language}
+                        />
                     </div>
 
                     {/* Next Button */}

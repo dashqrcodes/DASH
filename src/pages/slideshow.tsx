@@ -938,6 +938,8 @@ const SlideshowPage: React.FC = () => {
             display: 'flex',
             flexDirection: 'column',
             margin: '0 auto',
+            alignItems: 'center',
+            textAlign: 'center',
             overflowX: 'hidden',
             overflowY: 'auto',
             overscrollBehavior: 'contain',
@@ -955,7 +957,10 @@ const SlideshowPage: React.FC = () => {
           paddingTop:'calc(env(safe-area-inset-top, 0px) + 12px)',
           paddingBottom:'6px',
           gap:'12px',
-          zIndex:10
+          zIndex:10,
+          width: '100%',
+          maxWidth: '360px',
+          textAlign: 'left'
         }}>
           <button
             onClick={handleBackClick}
@@ -1524,6 +1529,7 @@ const SlideshowPage: React.FC = () => {
             gap: '16px',
             alignItems: 'center',
             width: '100%',
+            maxWidth: '360px'
           }}
         >
           <div
@@ -1688,7 +1694,7 @@ const SlideshowPage: React.FC = () => {
             justifyContent: 'center',
             padding: '0 20px',
             marginTop: 'auto',
-            marginBottom: photos.length > 0 ? '48px' : '56px',
+            marginBottom: photos.length > 0 ? '32px' : '36px',
           }}
         >
           <div
@@ -1732,13 +1738,13 @@ const SlideshowPage: React.FC = () => {
             style={{
               width: '100%',
               padding: '0 20px',
-              margin: '0 auto 48px',
+              margin: '0 auto 16px',
               position: 'sticky',
-              bottom: 32,
+              bottom: 0,
               background:
                 'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.85) 70%, transparent 100%)',
-              paddingTop: '20px',
-              paddingBottom: '24px',
+              paddingTop: '16px',
+              paddingBottom: 'calc(18px + env(safe-area-inset-bottom, 0px))',
               zIndex: 5,
               display: 'flex',
               justifyContent: 'center',
@@ -1748,6 +1754,10 @@ const SlideshowPage: React.FC = () => {
               style={{
                 width: '100%',
                 maxWidth: '360px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '14px'
               }}
             >
             <button 
@@ -1771,29 +1781,25 @@ const SlideshowPage: React.FC = () => {
             >
               {t.completeSlideshow} ({photos.length} {t.memories})
             </button>
-            <div style={{
-              marginTop:'14px'
-            }}>
-              <button
-                onClick={handleJumpToHeaven}
-                style={{
-                  width:'100%',
-                  border:'none',
-                  borderRadius:'14px',
-                  padding:'16px 18px',
-                  background:'linear-gradient(135deg,#12c2e9 0%,#c471ed 50%,#f64f59 100%)',
-                  color:'white',
-                  fontSize:'15px',
-                  fontWeight:700,
-                  cursor:'pointer',
-                  boxShadow:'0 12px 28px rgba(18,194,233,0.35)',
-                  WebkitTapHighlightColor:'transparent',
-                  touchAction:'manipulation'
-                }}
-              >
-                Launch HEAVEN →
-              </button>
-            </div>
+            <button
+              onClick={handleJumpToHeaven}
+              style={{
+                width:'100%',
+                border:'none',
+                borderRadius:'14px',
+                padding:'16px 18px',
+                background:'linear-gradient(135deg,#12c2e9 0%,#c471ed 50%,#f64f59 100%)',
+                color:'white',
+                fontSize:'15px',
+                fontWeight:700,
+                cursor:'pointer',
+                boxShadow:'0 12px 28px rgba(18,194,233,0.35)',
+                WebkitTapHighlightColor:'transparent',
+                touchAction:'manipulation'
+              }}
+            >
+              Launch HEAVEN →
+            </button>
             </div>
           </div>
         )}
