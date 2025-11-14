@@ -277,7 +277,46 @@ export default function PhotoScanner({ onScanComplete, onClose, language = 'en' 
     const blob = await response.blob();
     const file = new File([blob], `scanned-photo-${Date.now()}.jpg`, { type: 'image/jpeg' });
     
+    // Save to slideshow
     onScanComplete(file);
+    
+    // Save to native photo album
+    try {
+      // Try Web Share API first (works on mobile)
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: 'Scanned Photo',
+          text: 'Save this scanned photo to your album'
+        });
+      } else {
+        // Fallback: Create download link for desktop/mobile
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `scanned-photo-${Date.now()}.jpg`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }
+    } catch (error) {
+      console.log('Photo album save:', error);
+      // If share fails, try download as fallback
+      try {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `scanned-photo-${Date.now()}.jpg`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } catch (downloadError) {
+        console.error('Failed to save to photo album:', downloadError);
+      }
+    }
+    
     stopCamera();
   };
 
@@ -310,7 +349,6 @@ export default function PhotoScanner({ onScanComplete, onClose, language = 'en' 
         justifyContent: 'space-between',
         alignItems: 'center',
         padding: 'calc(env(safe-area-inset-top, 0px) + 12px) 20px 16px',
-        borderBottom: '1px solid rgba(255,255,255,0.1)',
         background: 'rgba(0,0,0,0.8)',
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)'
@@ -370,63 +408,6 @@ export default function PhotoScanner({ onScanComplete, onClose, language = 'en' 
                 objectFit: 'contain'
               }}
             />
-            
-            {/* Scanning Guide Overlay - Clean Modern Design */}
-            <div style={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              width: '85%',
-              maxWidth: '400px',
-              aspectRatio: '4/3',
-              border: '2px solid rgba(102,126,234,0.95)',
-              borderRadius: '12px',
-              pointerEvents: 'none',
-              boxShadow: '0 0 0 9999px rgba(0,0,0,0.65), 0 0 0 2px rgba(102,126,234,0.3) inset',
-              background: 'transparent'
-            }}>
-              {/* Corner indicators - clean and minimal */}
-              {[
-                { top: '-1px', left: '-1px', borderRight: 'none', borderBottom: 'none' },
-                { top: '-1px', right: '-1px', borderLeft: 'none', borderBottom: 'none' },
-                { bottom: '-1px', left: '-1px', borderRight: 'none', borderTop: 'none' },
-                { bottom: '-1px', right: '-1px', borderLeft: 'none', borderTop: 'none' }
-              ].map((pos, i) => (
-                <div
-                  key={i}
-                  style={{
-                    position: 'absolute',
-                    ...pos,
-                    width: '24px',
-                    height: '24px',
-                    border: '3px solid rgba(102,126,234,1)',
-                    borderRadius: '0',
-                    background: 'transparent'
-                  }}
-                />
-              ))}
-            </div>
-            
-            {/* Instruction Text */}
-            <div style={{
-              position: 'absolute',
-              top: 'calc(50% + 25%)',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              color: 'white',
-              fontSize: 'clamp(14px, 3.5vw, 16px)',
-              fontWeight: '600',
-              textAlign: 'center',
-              background: 'rgba(0,0,0,0.7)',
-              backdropFilter: 'blur(12px)',
-              WebkitBackdropFilter: 'blur(12px)',
-              padding: '10px 20px',
-              borderRadius: '12px',
-              pointerEvents: 'none'
-            }}>
-              {t.alignPhoto}
-            </div>
           </>
         ) : (
           <div style={{
@@ -485,10 +466,9 @@ export default function PhotoScanner({ onScanComplete, onClose, language = 'en' 
                 <div style={{
                   maxWidth: '100%',
                   maxHeight: '70%',
-                  borderRadius: '16px',
+                  borderRadius: '12px',
                   overflow: 'hidden',
-                  boxShadow: '0 12px 48px rgba(0,0,0,0.6)',
-                  border: '2px solid rgba(255,255,255,0.1)'
+                  boxShadow: '0 12px 48px rgba(0,0,0,0.6)'
                 }}>
                   <img 
                     src={processedImage || capturedImage} 
