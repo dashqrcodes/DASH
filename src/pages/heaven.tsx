@@ -5,11 +5,13 @@ import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import AvatarVideo from '../components/AvatarVideo';
+import StreamingAvatarVideo from '../components/StreamingAvatarVideo';
 import CallHeader from '../components/CallHeader';
 import ChatInput from '../components/ChatInput';
 import { extractAudioFromVideo, getSlideshowVideoUrl, getPrimaryPhotoUrl } from '../utils/heaven-audio';
 import { cloneVoiceFromAudio } from '../utils/heaven-voice';
 import { createAvatar, generateTalkingVideo } from '../utils/heaven-avatar';
+import { createStreamingSession, HeyGenStreamingClient } from '../utils/heygen-streaming';
 
 interface Person {
   name: string;
@@ -38,6 +40,10 @@ const HeavenPage: React.FC = () => {
   const [characterId, setCharacterId] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [agentId, setAgentId] = useState<string | null>(null);
+  
+  // HeyGen Streaming Avatar
+  const [streamingClient, setStreamingClient] = useState<HeyGenStreamingClient | null>(null);
+  const [useStreamingAvatar, setUseStreamingAvatar] = useState(true); // Toggle between streaming and video generation
   
   // Call UI states
   const [currentVideoUrl, setCurrentVideoUrl] = useState<string | null>(null);
@@ -200,7 +206,7 @@ const HeavenPage: React.FC = () => {
       setStatusMessage('Preparing conversational presence…');
       await createHeavenAgent();
 
-      // STEP 4: Create avatar from primary photo
+      // STEP 4: Create streaming avatar from primary photo (HeyGen)
       setInitStep('creating-avatar');
       setStatusMessage('Bringing them on screen…');
 
@@ -208,8 +214,43 @@ const HeavenPage: React.FC = () => {
         throw new Error('No photo found. Please add a photo to the slideshow.');
       }
 
-      const createdAvatarId = await createAvatar(personData.primaryPhotoUrl, personData.name);
-      setAvatarId(createdAvatarId);
+      // Use HeyGen streaming avatar if enabled
+      if (useStreamingAvatar) {
+        try {
+          const streamingConfig = await createStreamingSession(
+            personData.name,
+            undefined, // No existing avatarId
+            personData.primaryPhotoUrl,
+            'high'
+          );
+          
+          setAvatarId(streamingConfig.avatarId || null);
+          setSessionId(streamingConfig.sessionId);
+
+          // Create streaming client
+          const client = new HeyGenStreamingClient(streamingConfig);
+          await client.startSession();
+          setStreamingClient(client);
+
+          // Listen to avatar events
+          await client.on('speaking', () => {
+            setIsGeneratingVideo(true);
+          });
+          await client.on('stopped', () => {
+            setIsGeneratingVideo(false);
+          });
+        } catch (error: any) {
+          console.warn('HeyGen streaming failed, falling back to video generation:', error);
+          setUseStreamingAvatar(false);
+          // Fallback to regular avatar creation
+          const createdAvatarId = await createAvatar(personData.primaryPhotoUrl, personData.name);
+          setAvatarId(createdAvatarId);
+        }
+      } else {
+        // Use regular avatar creation (D-ID or other)
+        const createdAvatarId = await createAvatar(personData.primaryPhotoUrl, personData.name);
+        setAvatarId(createdAvatarId);
+      }
 
       // STEP 4: Prepare Convai character & conversation
       setInitStep('initializing-conversation');
@@ -233,20 +274,70 @@ const HeavenPage: React.FC = () => {
   };
 
   /**
-   * Handle user message - generate talking video response
+   * Handle user message - generate talking video response or streaming avatar
    */
   const handleSendMessage = async (text: string) => {
     if (!avatarId || !person) {
       alert('HEAVEN is not ready yet. Please wait for initialization.');
       return;
     }
+
+    // Add user message to conversation
+    addToConversation('user', text);
+
+    // Use HeyGen streaming avatar if available
+    if (useStreamingAvatar && streamingClient) {
+      try {
+        setIsGeneratingVideo(true);
+
+        // Get AI response (from Convai or OpenAI)
+        let aiResponse = '';
+        if (characterId && sessionId) {
+          // Use Convai for response
+          const convaiResponse = await fetch('/api/convai/send-message', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              characterId,
+              sessionId,
+              message: text,
+            }),
+          });
+          const convaiData = await convaiResponse.json();
+          aiResponse = convaiData.response || convaiData.text || 'I understand.';
+        } else {
+          // Fallback to OpenAI
+          const openaiResponse = await fetch('/api/ai/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: text }),
+          });
+          const openaiData = await openaiResponse.json();
+          aiResponse = openaiData.text || 'I understand.';
+        }
+
+        // Make streaming avatar speak
+        await streamingClient.speak({
+          text: aiResponse,
+          taskType: 'REPEAT' as any,
+          voiceId: voiceId || undefined,
+        });
+
+        addToConversation('heaven', aiResponse);
+        setIsGeneratingVideo(false);
+        return;
+      } catch (error: any) {
+        console.error('Error with streaming avatar:', error);
+        setIsGeneratingVideo(false);
+        // Fallback to video generation
+      }
+    }
+
+    // Fallback to video generation method
     if (!characterId || !sessionId) {
       alert('Still preparing their HEAVEN presence. Please try again in a moment.');
       return;
     }
-
-    // Add user message to conversation
-    addToConversation('user', text);
 
     setIsGeneratingVideo(true);
     setStatusMessage('Listening and responding…');
@@ -321,7 +412,17 @@ const HeavenPage: React.FC = () => {
     }]);
   };
 
-  const handleEndCall = () => {
+  const handleEndCall = async () => {
+    // Disconnect streaming avatar if active
+    if (streamingClient) {
+      try {
+        await streamingClient.disconnect();
+      } catch (error) {
+        console.error('Error disconnecting streaming avatar:', error);
+      }
+      setStreamingClient(null);
+    }
+
     setIsInCall(false);
     setInitStep('idle');
     setStatusMessage('');
@@ -515,11 +616,19 @@ const HeavenPage: React.FC = () => {
             padding: 'clamp(80px, 20vw, 100px) clamp(20px, 5vw, 40px) clamp(180px, 45vw, 220px)',
             minHeight: 0
           }}>
-            <AvatarVideo
-              videoUrl={currentVideoUrl}
-              isLoading={isGeneratingVideo}
-              personName={person?.name || 'Loved One'}
-            />
+            {useStreamingAvatar && streamingClient ? (
+              <StreamingAvatarVideo
+                streamingClient={streamingClient}
+                personName={person?.name || 'Loved One'}
+                isConnected={isInCall && initStep === 'ready'}
+              />
+            ) : (
+              <AvatarVideo
+                videoUrl={currentVideoUrl}
+                isLoading={isGeneratingVideo}
+                personName={person?.name || 'Loved One'}
+              />
+            )}
           </div>
 
           {/* Conversation Transcript */}
