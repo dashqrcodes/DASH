@@ -123,13 +123,22 @@ export default function PhotoScanner({ onScanComplete, onClose, language = 'en' 
       setProcessingProgress(20);
       
       // Call Google Vision API for document edge detection
-      const response = await fetch('/api/vision-document', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageBase64: base64 }),
-      });
+      let visionData = null;
+      try {
+        const response = await fetch('/api/vision-document', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageBase64: base64 }),
+        });
 
-      const visionData = await response.json();
+        if (response.ok) {
+          visionData = await response.json();
+        } else {
+          console.warn('Vision API request failed:', response.status);
+        }
+      } catch (error) {
+        console.warn('Vision API error:', error);
+      }
       
       setProcessingProgress(40);
       setProcessingStep(t.processingSteps.cropping);
@@ -141,40 +150,48 @@ export default function PhotoScanner({ onScanComplete, onClose, language = 'en' 
         return;
       }
 
-      // If Vision API detected document edges, use them for perspective correction
-      if (visionData.document?.vertices && visionData.document.vertices.length >= 4) {
+      // If Vision API detected document edges, use them for cropping
+      if (visionData?.document?.vertices && visionData.document.vertices.length >= 4) {
         const vertices = visionData.document.vertices;
-        const sourceWidth = sourceCanvas.width;
-        const sourceHeight = sourceCanvas.height;
-
-        // Calculate destination corners (normalized to image dimensions)
+        
+        // Vision API returns vertices in pixel coordinates relative to the image
+        // Clamp to canvas bounds
         const srcPoints = vertices.map((v: {x: number, y: number}) => ({
-          x: (v.x / sourceWidth) * sourceCanvas.width,
-          y: (v.y / sourceHeight) * sourceCanvas.height
+          x: Math.max(0, Math.min(v.x, sourceCanvas.width)),
+          y: Math.max(0, Math.min(v.y, sourceCanvas.height))
         }));
 
-        // Calculate bounding box
-        const minX = Math.min(...srcPoints.map((p: {x: number, y: number}) => p.x));
-        const maxX = Math.max(...srcPoints.map((p: {x: number, y: number}) => p.x));
-        const minY = Math.min(...srcPoints.map((p: {x: number, y: number}) => p.y));
-        const maxY = Math.max(...srcPoints.map((p: {x: number, y: number}) => p.y));
+        // Calculate bounding box for cropping
+        const minX = Math.max(0, Math.min(...srcPoints.map((p: {x: number, y: number}) => p.x)));
+        const maxX = Math.min(sourceCanvas.width, Math.max(...srcPoints.map((p: {x: number, y: number}) => p.x)));
+        const minY = Math.max(0, Math.min(...srcPoints.map((p: {x: number, y: number}) => p.y)));
+        const maxY = Math.min(sourceCanvas.height, Math.max(...srcPoints.map((p: {x: number, y: number}) => p.y)));
 
         const width = maxX - minX;
         const height = maxY - minY;
 
-        // Set canvas size to cropped dimensions
-        canvas.width = width;
-        canvas.height = height;
+        // Only crop if we have valid dimensions
+        if (width > 0 && height > 0 && width < sourceCanvas.width && height < sourceCanvas.height) {
+          // Set canvas size to cropped dimensions
+          canvas.width = width;
+          canvas.height = height;
 
-        // Use perspective transformation (simplified - using bounding box for now)
-        // In production, you'd use proper perspective transform with the 4 corners
-        ctx.drawImage(
-          sourceCanvas,
-          minX, minY, width, height,
-          0, 0, width, height
-        );
+          // Crop to the exact document boundaries
+          ctx.drawImage(
+            sourceCanvas,
+            minX, minY, width, height,
+            0, 0, width, height
+          );
+        } else {
+          // Invalid crop dimensions, use full image
+          console.warn('Invalid crop dimensions, using full image');
+          canvas.width = sourceCanvas.width;
+          canvas.height = sourceCanvas.height;
+          ctx.drawImage(sourceCanvas, 0, 0);
+        }
       } else {
-        // Fallback: use full image
+        // Fallback: use full image if Vision API didn't detect edges
+        console.log('No document edges detected by Vision API, using full image');
         canvas.width = sourceCanvas.width;
         canvas.height = sourceCanvas.height;
         ctx.drawImage(sourceCanvas, 0, 0);
