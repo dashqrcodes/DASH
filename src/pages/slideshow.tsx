@@ -714,6 +714,11 @@ const SlideshowPage: React.FC = () => {
   };
 
   const handleFileTransfer = async () => {
+    if (!photos.length) {
+      setTransferFeedback('Please add photos and finish slideshow.');
+      return;
+    }
+
     if (typeof window === 'undefined') return;
     const memorialLink = window.location.href;
 
@@ -744,7 +749,7 @@ const SlideshowPage: React.FC = () => {
     if (typeof window === 'undefined') return;
 
     if (!photos.length) {
-      setTransferFeedback('Add memories before creating a USB keepsake.');
+      setTransferFeedback('Please add photos and finish slideshow.');
       return;
     }
 
@@ -1503,135 +1508,168 @@ const SlideshowPage: React.FC = () => {
           )}
                 </div>
                 
-        {isDesktop && (
+        <div
+          style={{
+            padding: '0 20px',
+            marginTop: '32px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+            alignItems: 'center',
+            width: '100%',
+          }}
+        >
           <div
             style={{
-              padding: '0 20px',
-              marginTop: photos.length ? '36px' : '28px',
               display: 'flex',
-              flexDirection: 'column',
-              gap: '16px',
-              alignItems: 'center',
+              gap: '6px',
+              background: 'rgba(255,255,255,0.06)',
+              borderRadius: '999px',
+              padding: '6px',
+              width: '100%',
+              maxWidth: '360px',
             }}
           >
-            <div
-              style={{
-                display: 'flex',
-                gap: '6px',
-                background: 'rgba(255,255,255,0.06)',
-                borderRadius: '999px',
-                padding: '6px',
-                alignSelf: 'flex-start',
-              }}
-            >
-              {(['file-transfer', 'make-usb'] as Array<'file-transfer' | 'make-usb'>).map((mode) => {
-                const isActive = transferMode === mode;
-                const label = mode === 'file-transfer' ? 'File transfer' : 'Make a USB';
-                return (
-                  <button
-                    key={mode}
-                    onClick={() => setTransferMode(mode)}
-                    style={{
-                      border: 'none',
-                      borderRadius: '999px',
-                      padding: '10px 18px',
-                      fontSize: '14px',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      background: isActive
-                        ? 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)'
-                        : 'transparent',
-                      color: 'white',
-                      boxShadow: isActive ? '0 6px 16px rgba(102,126,234,0.35)' : 'none',
-                      transition: 'all 0.2s ease',
-                      WebkitTapHighlightColor: 'transparent',
-                      width: '50%',
-                    }}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
+            {(['file-transfer', 'make-usb'] as Array<'file-transfer' | 'make-usb'>).map((mode) => {
+              const isActive = transferMode === mode;
+              const label = mode === 'file-transfer' ? 'File transfer' : 'Make a USB';
+              const isUsbOption = mode === 'make-usb';
+              const disabled =
+                (!photos.length && !isDesktop) ||
+                (!supportsFileSystemAccess && isUsbOption && !isDesktop);
 
-            <div
-              style={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                gap: '12px',
-                justifyContent: 'center',
-                width: '100%',
-              }}
-            >
-              {transferMode === 'file-transfer' ? (
+              return (
                 <button
-                  onClick={handleFileTransfer}
+                  key={mode}
+                  onClick={() => {
+                    if (disabled) {
+                      setTransferFeedback('Please add photos and finish slideshow.');
+                      return;
+                    }
+                    setTransferMode(mode);
+                  }}
                   style={{
-                    padding: '14px 20px',
-                    borderRadius: '14px',
-                    border: '1px solid rgba(255,255,255,0.15)',
-                    background: 'rgba(255,255,255,0.12)',
-                    color: 'white',
+                    border: 'none',
+                    borderRadius: '999px',
+                    padding: '10px 18px',
                     fontSize: '14px',
                     fontWeight: 600,
-                    cursor: 'pointer',
-                    minWidth: '200px',
-                    WebkitTapHighlightColor: 'transparent',
-                  }}
-                >
-                  File transfer
-                </button>
-              ) : (
-                <button
-                  onClick={handleMakeUsb}
-                  disabled={isPreparingUsb}
-                  title="Plug in a USB drive to enable"
-                  style={{
-                    padding: '14px 20px',
-                    borderRadius: '14px',
-                    border: '1px solid rgba(255,255,255,0.15)',
-                    background: isPreparingUsb
-                      ? 'rgba(255,255,255,0.08)'
-                      : 'linear-gradient(135deg,#12c2e9 0%,#c471ed 50%,#f64f59 100%)',
+                    cursor: disabled ? 'default' : 'pointer',
+                    background: isActive
+                      ? 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)'
+                      : 'transparent',
                     color: 'white',
-                    fontSize: '14px',
-                    fontWeight: 600,
-                    cursor: isPreparingUsb ? 'wait' : 'pointer',
-                    minWidth: '200px',
-                    opacity: isPreparingUsb ? 0.6 : 1,
+                    boxShadow: isActive ? '0 6px 16px rgba(102,126,234,0.35)' : 'none',
+                    transition: 'all 0.2s ease',
                     WebkitTapHighlightColor: 'transparent',
+                    flex: 1,
+                    opacity: disabled ? 0.4 : 1,
                   }}
                 >
-                  {isPreparingUsb ? 'Saving to USB…' : 'Make a USB'}
+                  {label}
                 </button>
-              )}
-            </div>
+              );
+            })}
+          </div>
 
-            {transferMode === 'make-usb' && !supportsFileSystemAccess && (
-              <div
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '12px',
+              justifyContent: 'center',
+              width: '100%',
+            }}
+          >
+            {transferMode === 'file-transfer' ? (
+              <button
+                onClick={handleFileTransfer}
                 style={{
-                  fontSize: '12px',
-                  color: 'rgba(255,255,255,0.65)',
-                  lineHeight: 1.5,
+                  padding: '14px 20px',
+                  borderRadius: '14px',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  background: 'rgba(255,255,255,0.12)',
+                  color: 'white',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  cursor: photos.length ? 'pointer' : 'default',
+                  minWidth: '200px',
+                  WebkitTapHighlightColor: 'transparent',
+                  opacity: photos.length ? 1 : 0.4,
                 }}
               >
-                Make a USB is available on desktop Chrome or Edge. Choose File transfer or switch browsers.
-              </div>
-            )}
-
-            {transferFeedback && (
-              <div
+                File transfer
+              </button>
+            ) : (
+              <button
+                onClick={handleMakeUsb}
+                disabled={isPreparingUsb}
+                title={
+                  !supportsFileSystemAccess && !isDesktop
+                    ? 'Desktop only'
+                    : 'Plug in a USB drive to enable'
+                }
                 style={{
-                  fontSize: '12px',
-                  color: 'rgba(255,255,255,0.7)',
-                  lineHeight: 1.5,
+                  padding: '14px 20px',
+                  borderRadius: '14px',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  background: isPreparingUsb
+                    ? 'rgba(255,255,255,0.08)'
+                    : 'linear-gradient(135deg,#12c2e9 0%,#c471ed 50%,#f64f59 100%)',
+                  color: 'white',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  cursor:
+                    !supportsFileSystemAccess && !isDesktop
+                      ? 'default'
+                      : !photos.length
+                      ? 'default'
+                      : isPreparingUsb
+                      ? 'wait'
+                      : 'pointer',
+                  minWidth: '200px',
+                  opacity:
+                    !supportsFileSystemAccess && !isDesktop
+                      ? 0.4
+                      : !photos.length
+                      ? 0.4
+                      : isPreparingUsb
+                      ? 0.6
+                      : 1,
+                  WebkitTapHighlightColor: 'transparent',
                 }}
               >
-                {transferFeedback}
-              </div>
+                {isPreparingUsb ? 'Saving to USB…' : 'Make a USB'}
+              </button>
             )}
           </div>
-        )}
+
+          {transferMode === 'make-usb' && !supportsFileSystemAccess && (
+            <div
+              style={{
+                fontSize: '12px',
+                color: 'rgba(255,255,255,0.65)',
+                lineHeight: 1.5,
+                textAlign: 'center',
+              }}
+            >
+              Make a USB is available on desktop Chrome or Edge. Choose File transfer or switch browsers.
+            </div>
+          )}
+
+          {transferFeedback && (
+            <div
+              style={{
+                fontSize: '12px',
+                color: 'rgba(255,255,255,0.7)',
+                lineHeight: 1.5,
+                textAlign: 'center',
+              }}
+            >
+              {transferFeedback}
+            </div>
+          )}
+        </div>
 
         <div
           onClick={handleOpenCollaboration}
