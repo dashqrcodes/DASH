@@ -15,6 +15,7 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import BottomNav from '../components/BottomNav';
 import MuxPlayerWrapper from '../components/MuxPlayerWrapper';
+import HamburgerMenu from '../components/HamburgerMenu';
 
 // Custom BottomNav with Heart icon handler
 const CustomBottomNav: React.FC<{ onHeartClick: () => void }> = ({ onHeartClick }) => {
@@ -494,16 +495,31 @@ const FinalizedProfilePage: React.FC = () => {
             >
               Music
             </h2>
-            <div
-              style={{
-                padding: '20px',
-                background: 'rgba(102,126,234,0.1)',
-                borderRadius: '16px',
-                border: '1px solid rgba(102,126,234,0.3)',
-                textAlign: 'center',
-              }}
-            >
-              <div style={{ fontSize: '48px', marginBottom: '12px' }}>🎵</div>
+              <div
+                style={{
+                  padding: '20px',
+                  background: 'rgba(102,126,234,0.1)',
+                  borderRadius: '16px',
+                  border: '1px solid rgba(102,126,234,0.3)',
+                  textAlign: 'center',
+                }}
+              >
+              <div style={{ 
+                width: '48px', 
+                height: '48px', 
+                margin: '0 auto 12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'rgba(102,126,234,0.2)',
+                borderRadius: '12px',
+              }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                  <path d="M9 18V5l12-2v13"/>
+                  <circle cx="6" cy="18" r="3"/>
+                  <circle cx="18" cy="16" r="3"/>
+                </svg>
+              </div>
               <p style={{ fontSize: '16px', opacity: 0.8 }}>
                 Their favorite music is available
               </p>
@@ -659,7 +675,20 @@ const FinalizedProfilePage: React.FC = () => {
                     gap: '12px',
                   }}
                 >
-                  <span style={{ fontSize: '24px' }}>💝</span>
+                  <div style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '8px',
+                    background: 'rgba(102,126,234,0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                    </svg>
+                  </div>
                   <span>Donate</span>
                 </button>
                 <button
@@ -679,7 +708,24 @@ const FinalizedProfilePage: React.FC = () => {
                     gap: '12px',
                   }}
                 >
-                  <span style={{ fontSize: '24px' }}>📤</span>
+                  <div style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '8px',
+                    background: 'rgba(102,126,234,0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="18" cy="5" r="3"/>
+                      <circle cx="6" cy="12" r="3"/>
+                      <circle cx="18" cy="19" r="3"/>
+                      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+                      <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                    </svg>
+                  </div>
                   <span>Share Memories</span>
                 </button>
                 <button
@@ -699,7 +745,20 @@ const FinalizedProfilePage: React.FC = () => {
                     gap: '12px',
                   }}
                 >
-                  <span style={{ fontSize: '24px' }}>💬</span>
+                  <div style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '8px',
+                    background: 'rgba(102,126,234,0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                  </div>
                   <span>Share a Memory</span>
                 </button>
               </div>
@@ -993,6 +1052,38 @@ const FinalizedProfilePage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Hamburger Menu */}
+      <HamburgerMenu
+        onShare={handleShare}
+        items={[
+          {
+            id: 'profile',
+            label: 'Profile',
+            icon: (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+            ),
+            onClick: () => router.push('/profile'),
+          },
+          {
+            id: 'share',
+            label: 'Share Memorial',
+            icon: (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="18" cy="5" r="3"/>
+                <circle cx="6" cy="12" r="3"/>
+                <circle cx="18" cy="19" r="3"/>
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+              </svg>
+            ),
+            onClick: handleShare,
+          },
+        ]}
+      />
 
       {/* Bottom Navigation */}
       <CustomBottomNav onHeartClick={() => setShowHeartMenu(true)} />
