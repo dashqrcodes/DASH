@@ -923,19 +923,17 @@ const SlideshowPage: React.FC = () => {
           minHeight: '100vh',
           width: '100%',
           background: '#000000',
-          display: 'flex',
-          justifyContent: 'center'
+          display: 'block'
         }}
       >
         <div
           style={{
-            width: '100%',
-            maxWidth: '420px',
+            width: 'min(100%, 420px)',
             minHeight: '100vh',
             background: '#000000',
             fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
             color: 'white',
-            padding: '0 20px',
+            padding: '0 clamp(16px, 5vw, 22px)',
             paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 40px)',
             display: 'flex',
             flexDirection: 'column',
