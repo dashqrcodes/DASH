@@ -1,6 +1,7 @@
 import type { AppProps } from 'next/app';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import Head from 'next/head';
+import { LanguageProvider } from '../context/LanguageContext';
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
@@ -12,6 +13,10 @@ export default function App({ Component, pageProps }: AppProps) {
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="theme-color" content="#000000" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap"
+        />
         
         {/* Mobile-First Global Styles */}
         <style dangerouslySetInnerHTML={{
@@ -27,6 +32,7 @@ export default function App({ Component, pageProps }: AppProps) {
               -moz-text-size-adjust: 100%;
               -ms-text-size-adjust: 100%;
               text-size-adjust: 100%;
+              font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
               /* Prevent horizontal scroll */
               overflow-x: hidden;
             }
@@ -38,11 +44,17 @@ export default function App({ Component, pageProps }: AppProps) {
               overflow-x: hidden;
               background: #000000;
               color: #ffffff;
+              font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+              font-weight: 400;
               /* Support for safe areas (notches, home indicators) */
               padding-bottom: env(safe-area-inset-bottom);
               padding-top: env(safe-area-inset-top);
               padding-left: env(safe-area-inset-left);
               padding-right: env(safe-area-inset-right);
+            }
+
+            body, button, input, select, textarea, a, label {
+              font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             }
             
             /* Ensure all images and media are responsive */
@@ -94,8 +106,10 @@ export default function App({ Component, pageProps }: AppProps) {
           `
         }} />
       </Head>
-      <Component {...pageProps} />
-      <SpeedInsights />
+      <LanguageProvider>
+        <Component {...pageProps} />
+        <SpeedInsights />
+      </LanguageProvider>
     </>
   );
 }

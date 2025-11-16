@@ -3,6 +3,15 @@ import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { Buffer } from 'buffer';
 import nodemailer from 'nodemailer';
 
+const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+interface ImageEnhancementInput {
+    zoom?: number;
+    facePosition?: {
+        x?: number;
+        y?: number;
+    };
+}
+
 const inchesToPoints = (inches: number) => inches * 72;
 
 type MaybeBuffer = Uint8Array | Buffer;
@@ -87,16 +96,35 @@ const wrapText = (text: string, font: any, fontSize: number, maxWidth: number): 
     return lines;
 };
 
+const formatDateForPrint = (value?: string): string => {
+    if (!value) return '';
+    const trimmed = value.trim();
+    try {
+        const base = ISO_DATE_REGEX.test(trimmed) ? `${trimmed}T00:00:00` : trimmed;
+        const date = new Date(base);
+        if (Number.isNaN(date.getTime())) return trimmed;
+        return new Intl.DateTimeFormat('en-US', {
+            month: 'long',
+            day: '2-digit',
+            year: 'numeric'
+        }).format(date);
+    } catch (error) {
+        return trimmed;
+    }
+};
+
 const generateCardFrontPdf = async ({
     name,
     sunrise,
     sunset,
-    photo
+    photo,
+    imageEnhancement
 }: {
     name: string;
     sunrise: string;
     sunset: string;
     photo?: string | null;
+    imageEnhancement?: ImageEnhancementInput;
 }) => {
     const pdfDoc = await PDFDocument.create();
     const page = pdfDoc.addPage([inchesToPoints(4), inchesToPoints(6)]);
@@ -115,20 +143,22 @@ const generateCardFrontPdf = async ({
         if (image) {
             const imgWidth = image.width;
             const imgHeight = image.height;
-            const backgroundRatio = imgWidth / imgHeight;
-            const pageRatio = width / height;
-            let drawWidth = width;
-            let drawHeight = height;
-            if (backgroundRatio > pageRatio) {
-                drawHeight = height;
-                drawWidth = height * backgroundRatio;
-            } else {
-                drawWidth = width;
-                drawHeight = width / backgroundRatio;
-            }
+            const scale = Math.max(width / imgWidth, height / imgHeight);
+            const enhancement = imageEnhancement ?? {};
+            const zoom = Math.min(Math.max(enhancement.zoom ?? 1.38, 1.0), 2.2);
+            const drawWidth = imgWidth * scale * zoom;
+            const drawHeight = imgHeight * scale * zoom;
+
+            const posX = Math.min(Math.max((enhancement.facePosition?.x ?? 50) / 100, 0), 1);
+            const posY = Math.min(Math.max((enhancement.facePosition?.y ?? 42) / 100, 0), 1);
+
+            const drawX = (width - drawWidth) * posX;
+            const cssOffsetY = (height - drawHeight) * posY;
+            const drawY = height - drawHeight - cssOffsetY;
+
             page.drawImage(image, {
-                x: (width - drawWidth) / 2,
-                y: (height - drawHeight) / 2,
+                x: drawX,
+                y: drawY,
                 width: drawWidth,
                 height: drawHeight
             });
@@ -145,9 +175,12 @@ const generateCardFrontPdf = async ({
         opacity: 0.55
     });
 
+    const formattedSunrise = formatDateForPrint(sunrise);
+    const formattedSunset = formatDateForPrint(sunset);
+
     addCenteredText(page, 'In Loving Memory', italicFont, 18, height * 0.30, rgb(1, 1, 1));
     addCenteredText(page, name, boldFont, 24, height * 0.22, rgb(1, 1, 1));
-    addCenteredText(page, `${sunrise} – ${sunset}`, boldFont, 14, height * 0.16, rgb(1, 1, 1));
+    addCenteredText(page, `${formattedSunrise} – ${formattedSunset}`, boldFont, 14, height * 0.16, rgb(1, 1, 1));
 
     const pdfBytes = await pdfDoc.save();
     return pdfBytes;
@@ -157,6 +190,7 @@ const generateCardBackPdf = async ({
     sunrise,
     sunset,
     qrCodeUrl,
+    memorialUrl,
     psalmText,
     fdName,
     fdPhone
@@ -164,6 +198,7 @@ const generateCardBackPdf = async ({
     sunrise: string;
     sunset: string;
     qrCodeUrl?: string | null;
+    memorialUrl?: string | null;
     psalmText?: string;
     fdName?: string;
     fdPhone?: string;
@@ -208,6 +243,9 @@ const generateCardBackPdf = async ({
         currentY -= lineHeight;
     });
 
+    const formattedSunrise = formatDateForPrint(sunrise);
+    const formattedSunset = formatDateForPrint(sunset);
+
     // Dates + QR Row
     const rowY = height * 0.20;
     const leftX = contentMargin;
@@ -220,7 +258,7 @@ const generateCardBackPdf = async ({
         font: regularFont,
         color: rgb(0.83, 0.84, 0.95)
     });
-    page.drawText(sunrise, {
+    page.drawText(formattedSunrise, {
         x: leftX,
         y: rowY + 20,
         size: 12,
@@ -235,7 +273,7 @@ const generateCardBackPdf = async ({
         font: regularFont,
         color: rgb(0.83, 0.84, 0.95)
     });
-    page.drawText(sunset, {
+    page.drawText(formattedSunset, {
         x: rightX,
         y: rowY + 20,
         size: 12,
@@ -248,12 +286,34 @@ const generateCardBackPdf = async ({
         const qrImage = await embedImage(pdfDoc, qrBuffer);
         if (qrImage) {
             const qrSize = 64;
+            const qrX = width / 2 - qrSize / 2;
             page.drawImage(qrImage, {
-                x: width / 2 - qrSize / 2,
+                x: qrX,
                 y: rowY + 6,
                 width: qrSize,
                 height: qrSize
             });
+            
+            // Add URL text below QR code
+            if (memorialUrl) {
+                // Extract domain and path for display
+                try {
+                    const urlObj = new URL(memorialUrl);
+                    const displayUrl = `${urlObj.hostname}${urlObj.pathname}${urlObj.search}`;
+                    const urlFontSize = 7;
+                    const urlTextWidth = regularFont.widthOfTextAtSize(displayUrl, urlFontSize);
+                    const urlX = (width - urlTextWidth) / 2;
+                    page.drawText(displayUrl, {
+                        x: urlX,
+                        y: rowY - 8,
+                        size: urlFontSize,
+                        font: regularFont,
+                        color: rgb(0.83, 0.84, 0.95)
+                    });
+                } catch (e) {
+                    // If URL parsing fails, skip URL text
+                }
+            }
         }
     }
 
@@ -273,13 +333,17 @@ const generatePosterPdf = async ({
     sunrise,
     sunset,
     photo,
-    qrCodeUrl
+    qrCodeUrl,
+    memorialUrl,
+    imageEnhancement
 }: {
     name: string;
     sunrise: string;
     sunset: string;
     photo?: string | null;
     qrCodeUrl?: string | null;
+    memorialUrl?: string | null;
+    imageEnhancement?: ImageEnhancementInput;
 }) => {
     const pdfDoc = await PDFDocument.create();
     const page = pdfDoc.addPage([inchesToPoints(20), inchesToPoints(30)]);
@@ -296,20 +360,22 @@ const generatePosterPdf = async ({
         if (image) {
             const imgWidth = image.width;
             const imgHeight = image.height;
-            const ratio = imgWidth / imgHeight;
-            const pageRatio = width / height;
-            let drawWidth = width;
-            let drawHeight = height;
-            if (ratio > pageRatio) {
-                drawHeight = height;
-                drawWidth = height * ratio;
-            } else {
-                drawWidth = width;
-                drawHeight = width / ratio;
-            }
+            const scale = Math.max(width / imgWidth, height / imgHeight);
+            const enhancement = imageEnhancement ?? {};
+            const zoom = Math.min(Math.max(enhancement.zoom ?? 1.35, 1.0), 2.4);
+            const drawWidth = imgWidth * scale * zoom;
+            const drawHeight = imgHeight * scale * zoom;
+
+            const posX = Math.min(Math.max((enhancement.facePosition?.x ?? 50) / 100, 0), 1);
+            const posY = Math.min(Math.max((enhancement.facePosition?.y ?? 42) / 100, 0), 1);
+
+            const drawX = (width - drawWidth) * posX;
+            const cssOffsetY = (height - drawHeight) * posY;
+            const drawY = height - drawHeight - cssOffsetY;
+
             page.drawImage(image, {
-                x: (width - drawWidth) / 2,
-                y: (height - drawHeight) / 2,
+                x: drawX,
+                y: drawY,
                 width: drawWidth,
                 height: drawHeight
             });
@@ -335,12 +401,15 @@ const generatePosterPdf = async ({
     }
 
     const dateFontSize = 28;
-    const textWidth = boldFont.widthOfTextAtSize(sunrise, dateFontSize);
-    const totalWidth = textWidth * 2 + (qrSize + 36);
+    const formattedSunrise = formatDateForPrint(sunrise);
+    const formattedSunset = formatDateForPrint(sunset);
+    const sunriseWidth = boldFont.widthOfTextAtSize(formattedSunrise, dateFontSize);
+    const sunsetWidth = boldFont.widthOfTextAtSize(formattedSunset, dateFontSize);
+    const totalWidth = sunriseWidth + sunsetWidth + (qrSize + 36);
     const startX = (width - totalWidth) / 2;
     const baseY = height * 0.12;
 
-    page.drawText(sunrise, {
+    page.drawText(formattedSunrise, {
         x: startX,
         y: baseY,
         size: dateFontSize,
@@ -349,16 +418,37 @@ const generatePosterPdf = async ({
     });
 
     if (qrEmbedded) {
+        const qrX = startX + sunriseWidth + 18;
         page.drawImage(qrEmbedded, {
-            x: startX + textWidth + 18,
+            x: qrX,
             y: baseY - 10,
             width: qrSize,
             height: qrSize
         });
+        
+        // Add URL text below QR code
+        if (memorialUrl) {
+            try {
+                const urlObj = new URL(memorialUrl);
+                const displayUrl = `${urlObj.hostname}${urlObj.pathname}${urlObj.search}`;
+                const urlFontSize = 12;
+                const urlTextWidth = regularFont.widthOfTextAtSize(displayUrl, urlFontSize);
+                const urlX = qrX + (qrSize - urlTextWidth) / 2;
+                page.drawText(displayUrl, {
+                    x: urlX,
+                    y: baseY - 25,
+                    size: urlFontSize,
+                    font: regularFont,
+                    color: rgb(1, 1, 1)
+                });
+            } catch (e) {
+                // If URL parsing fails, skip URL text
+            }
+        }
     }
 
-    page.drawText(sunset, {
-        x: startX + textWidth + (qrSize + 36),
+    page.drawText(formattedSunset, {
+        x: startX + sunriseWidth + (qrSize + 36),
         y: baseY,
         size: dateFontSize,
         font: boldFont,
@@ -423,7 +513,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     try {
-        const { name, sunrise, sunset, photo, qrCodeUrl, email, orderDetails } = req.body;
+        const { name, sunrise, sunset, photo, qrCodeUrl, memorialUrl, email, orderDetails, imageEnhancement } = req.body;
 
         if (!name || !email || !orderDetails) {
             return res.status(400).json({ error: 'Name, email, and order details are required' });
@@ -480,16 +570,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
 
         const [cardFrontPdf, cardBackPdf, posterPdf] = await Promise.all([
-            generateCardFrontPdf({ name, sunrise, sunset, photo }),
+            generateCardFrontPdf({ name, sunrise, sunset, photo, imageEnhancement }),
             generateCardBackPdf({
                 sunrise,
                 sunset,
                 qrCodeUrl,
+                memorialUrl,
                 psalmText: orderDetails?.psalmText,
                 fdName: orderDetails?.funeralDirector,
                 fdPhone: orderDetails?.fdPhone
             }),
-            generatePosterPdf({ name, sunrise, sunset, photo, qrCodeUrl })
+            generatePosterPdf({ name, sunrise, sunset, photo, qrCodeUrl, memorialUrl, imageEnhancement })
         ]);
 
         const attachments = [

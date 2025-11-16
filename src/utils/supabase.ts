@@ -222,4 +222,112 @@ export async function getHeavenCharacter(userId: string, memorialId: string) {
   }
 }
 
+/**
+ * Upload slideshow photo/video to Supabase Storage for permanent storage
+ * @param file - Photo or video file
+ * @param userId - User ID or session ID
+ * @param memorialId - Memorial/order ID (optional, can use session ID)
+ * @param index - Photo index in slideshow
+ */
+export async function uploadSlideshowMedia(
+  file: File | Blob,
+  userId: string,
+  memorialId?: string,
+  index?: number
+): Promise<string | null> {
+  try {
+    const isVideo = file.type?.startsWith('video/');
+    const extension = isVideo ? 'mp4' : 'jpg';
+    const folder = isVideo ? 'slideshow-videos' : 'slideshow-photos';
+    const fileName = `${folder}/${userId}/${memorialId || 'session'}-${index || Date.now()}.${extension}`;
+    
+    const { data, error } = await supabase.storage
+      .from('memorials')
+      .upload(fileName, file, {
+        contentType: file.type || (isVideo ? 'video/mp4' : 'image/jpeg'),
+        upsert: false
+      });
+
+    if (error) {
+      console.error('Error uploading slideshow media:', error);
+      return null;
+    }
+
+    // Get public URL (permanent, accessible forever)
+    const { data: { publicUrl } } = supabase.storage
+      .from('memorials')
+      .getPublicUrl(fileName);
+
+    return publicUrl;
+  } catch (error) {
+    console.error('Error uploading slideshow media:', error);
+    return null;
+  }
+}
+
+/**
+ * Store slideshow media metadata in database
+ */
+export async function storeSlideshowMedia(
+  userId: string,
+  memorialId: string,
+  mediaItems: Array<{
+    url: string;
+    preview?: string;
+    type: 'photo' | 'video';
+    date?: string;
+    muxPlaybackId?: string;
+  }>
+) {
+  try {
+    const { data, error } = await supabase
+      .from('slideshow_media')
+      .insert({
+        user_id: userId,
+        memorial_id: memorialId,
+        media_items: mediaItems,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error storing slideshow media:', error);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error storing slideshow media:', error);
+    return null;
+  }
+}
+
+/**
+ * Get slideshow media from database
+ */
+export async function getSlideshowMedia(userId: string, memorialId: string) {
+  try {
+    const { data, error } = await supabase
+      .from('slideshow_media')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('memorial_id', memorialId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (error) {
+      console.error('Error getting slideshow media:', error);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error getting slideshow media:', error);
+    return null;
+  }
+}
+
 

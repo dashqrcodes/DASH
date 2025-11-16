@@ -12,6 +12,27 @@ const FaceIDPage: React.FC = () => {
         // Timer removed - user must tap to start Face ID
     }, [router]);
 
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const { order } = router.query;
+        if (order && typeof order === 'string') {
+            localStorage.setItem('currentOrder', order);
+        }
+    }, [router.query]);
+
+    const buildTargetRoute = (fallback: string = '/profile') => {
+        const { returnTo, order } = router.query;
+        const targetPath = typeof returnTo === 'string' && returnTo.length > 0 ? returnTo : fallback;
+        const query: Record<string, string> = {};
+        if (typeof order === 'string') {
+            query.order = order;
+        }
+        return {
+            pathname: targetPath,
+            query
+        };
+    };
+
     return (
         <>
             <Head>
@@ -67,16 +88,18 @@ const FaceIDPage: React.FC = () => {
                                 color: 'white',
                                 textAlign: 'center'
                             }}>
-                                Fast Sign In
+                                Face ID
                             </h1>
-                            <p style={{
-                                fontSize: 'clamp(14px, 3.5vw, 16px)',
-                                color: 'rgba(255,255,255,0.7)',
-                                lineHeight: '1.5',
-                                textAlign: 'center',
-                                marginBottom: '10px'
-                            }}>
-                                Use Face ID for quick authentication
+                            <p
+                                style={{
+                                    fontSize: 'clamp(14px, 3.5vw, 16px)',
+                                    color: 'rgba(255,255,255,0.78)',
+                                    lineHeight: '1.6',
+                                    textAlign: 'center',
+                                    marginBottom: '10px'
+                                }}
+                            >
+                                For a better experience, enable Face ID for signin.
                             </p>
                             
                             {/* Pill Button */}
@@ -86,7 +109,7 @@ const FaceIDPage: React.FC = () => {
                                     setTimeout(() => {
                                         localStorage.setItem('faceIdAuthenticated', 'true');
                                         localStorage.setItem('userAuthenticated', 'true');
-                                        router.push('/account-created');
+                                        router.push(buildTargetRoute());
                                     }, 2000);
                                 }}
                                 style={{
@@ -101,22 +124,25 @@ const FaceIDPage: React.FC = () => {
                                     transition: 'all 0.2s ease',
                                     textTransform: 'uppercase',
                                     letterSpacing: '1px',
-                                    background: 'linear-gradient(135deg, #ff6b6b 0%, #4ecdc4 100%)',
+                                    background: 'linear-gradient(45deg, #9d4edd, #c77dff, #ff6b6b, #4ecdc4, #1a2a6c, #c77dff, #45b7d1)',
+                                    backgroundSize: '300% 300%',
+                                    animation: 'buttonGradient 4s ease-in-out infinite',
                                     color: 'white',
-                                    boxShadow: '0 4px 15px rgba(255, 107, 107, 0.3)',
+                                    boxShadow: '0 4px 15px rgba(157, 78, 221, 0.3)',
                                     minHeight: '56px',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    gap: '10px'
+                                    gap: '10px',
+                                    position: 'relative'
                                 }}
                                 onMouseEnter={(e) => {
                                     e.currentTarget.style.transform = 'translateY(-2px)';
-                                    e.currentTarget.style.boxShadow = '0 6px 20px rgba(255, 107, 107, 0.4)';
+                                    e.currentTarget.style.boxShadow = '0 6px 20px rgba(157, 78, 221, 0.4)';
                                 }}
                                 onMouseLeave={(e) => {
                                     e.currentTarget.style.transform = 'translateY(0)';
-                                    e.currentTarget.style.boxShadow = '0 4px 15px rgba(255, 107, 107, 0.3)';
+                                    e.currentTarget.style.boxShadow = '0 4px 15px rgba(157, 78, 221, 0.3)';
                                 }}
                             >
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -203,6 +229,30 @@ const FaceIDPage: React.FC = () => {
                     )}
                 </div>
 
+                <div style={{
+                    marginTop: '40px',
+                    textAlign: 'center',
+                    fontSize: '12px',
+                    color: 'rgba(255,255,255,0.5)',
+                    maxWidth: '320px',
+                    lineHeight: '1.6'
+                }}>
+                    <button
+                        onClick={() => router.push(buildTargetRoute())}
+                        style={{
+                            background: 'none',
+                            border: 'none',
+                            color: 'rgba(255,255,255,0.55)',
+                            fontSize: '12px',
+                            textDecoration: 'underline',
+                            cursor: 'pointer',
+                            padding: 0
+                        }}
+                    >
+                        I&apos;d rather enter my user information and passcode every time I sign in. Skip one-time Face ID setup.
+                    </button>
+                </div>
+
                 <style jsx>{`
                     @keyframes pulse {
                         0%, 100% { transform: scale(1); opacity: 1; }
@@ -217,6 +267,11 @@ const FaceIDPage: React.FC = () => {
                         10% { opacity: 1; }
                         90% { opacity: 1; }
                         100% { top: 100%; opacity: 0; }
+                    }
+                    @keyframes buttonGradient {
+                        0% { background-position: 0% 50%; }
+                        50% { background-position: 100% 50%; }
+                        100% { background-position: 0% 50%; }
                     }
                 `}</style>
             </div>

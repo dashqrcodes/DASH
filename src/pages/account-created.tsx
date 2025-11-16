@@ -7,6 +7,61 @@ const AccountCreatedPage: React.FC = () => {
     const [showSpotifyConnection, setShowSpotifyConnection] = useState(false);
     const [spotifyError, setSpotifyError] = useState(false);
 
+    const floatingFaces: Array<{
+        top?: string;
+        bottom?: string;
+        left?: string;
+        right?: string;
+        transform?: string;
+        size: number;
+        gradient: string;
+        opacity: number;
+    }> = [
+        {
+            top: '15%',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            size: 76,
+            gradient: 'linear-gradient(135deg, #c77dff 0%, #9d4edd 100%)',
+            opacity: 0.85,
+        },
+        {
+            top: '10%',
+            right: '12%',
+            size: 64,
+            gradient: 'linear-gradient(135deg, #4ecdc4 0%, #45b7d1 100%)',
+            opacity: 0.75,
+        },
+        {
+            top: '42%',
+            left: '10%',
+            size: 60,
+            gradient: 'linear-gradient(135deg, #ff6b9d 0%, #ff85ae 100%)',
+            opacity: 0.7,
+        },
+        {
+            top: '8%',
+            left: '18%',
+            size: 52,
+            gradient: 'linear-gradient(135deg, #7a5cff 0%, #4e3fff 100%)',
+            opacity: 0.65,
+        },
+        {
+            bottom: '28%',
+            left: '18%',
+            size: 62,
+            gradient: 'linear-gradient(135deg, #1a2a6c 0%, #2a5298 100%)',
+            opacity: 0.7,
+        },
+        {
+            bottom: '20%',
+            right: '10%',
+            size: 56,
+            gradient: 'linear-gradient(135deg, #2dd4bf 0%, #4ecdc4 100%)',
+            opacity: 0.7,
+        },
+    ];
+
     useEffect(() => {
         // Auto-redirect to 4"x6" card builder after 2 seconds to start creating card order
         const redirectTimer = setTimeout(() => {
@@ -80,60 +135,54 @@ const AccountCreatedPage: React.FC = () => {
                 </div>
 
                 {/* Floating Emoji Faces */}
-                <div style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    overflow: 'hidden',
-                    pointerEvents: 'none'
-                }}>
-                    {/* Purple face above DASH */}
-                    <div style={{
+                <div
+                    style={{
                         position: 'absolute',
-                        top: '15%',
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        fontSize: '32px',
-                        opacity: 0.8
-                    }}>😊</div>
-                    
-                    {/* Blue face top right */}
-                    <div style={{
-                        position: 'absolute',
-                        top: '10%',
-                        right: '15%',
-                        fontSize: '28px',
-                        opacity: 0.7
-                    }}>😊</div>
-                    
-                    {/* Blue face mid-left */}
-                    <div style={{
-                        position: 'absolute',
-                        top: '40%',
-                        left: '10%',
-                        fontSize: '28px',
-                        opacity: 0.7
-                    }}>😊</div>
-                    
-                    {/* Red face top left */}
-                    <div style={{
-                        position: 'absolute',
-                        top: '8%',
-                        left: '12%',
-                        fontSize: '24px',
-                        opacity: 0.6
-                    }}>😊</div>
-                    
-                    {/* Yellow face bottom right */}
-                    <div style={{
-                        position: 'absolute',
-                        bottom: '20%',
-                        right: '10%',
-                        fontSize: '24px',
-                        opacity: 0.6
-                    }}>😊</div>
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        overflow: 'hidden',
+                        pointerEvents: 'none'
+                    }}
+                >
+                    {floatingFaces.map((face, index) => (
+                        <div
+                            key={index}
+                            style={{
+                                position: 'absolute',
+                                top: face.top,
+                                bottom: face.bottom,
+                                left: face.left,
+                                right: face.right,
+                                transform: face.transform,
+                                opacity: face.opacity,
+                                filter: 'drop-shadow(0 18px 38px rgba(0,0,0,0.35))'
+                            }}
+                        >
+                            <div
+                                style={{
+                                    width: `${face.size}px`,
+                                    height: `${face.size}px`,
+                                    borderRadius: '50%',
+                                    background: face.gradient,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: 'rgba(255,255,255,0.92)',
+                                    fontSize: `${Math.floor(face.size * 0.5)}px`,
+                                    fontWeight: 700,
+                                    backdropFilter: 'blur(6px)',
+                                    animation: 'floatFace 8s ease-in-out infinite',
+                                    animationDelay: `${index * 0.6}s`
+                                }}
+                            >
+                                <span role="img" aria-label="smiling face" style={{ transform: 'translateY(2px)' }}>
+                                    😊
+                                </span>
+                            </div>
+                        </div>
+                    ))}
                 </div>
 
                 {/* Main Content */}
@@ -326,6 +375,10 @@ const AccountCreatedPage: React.FC = () => {
                     @keyframes spin {
                         0% { transform: rotate(0deg); }
                         100% { transform: rotate(360deg); }
+                    }
+                    @keyframes floatFace {
+                        0%, 100% { transform: translateY(0); }
+                        50% { transform: translateY(-6px); }
                     }
                 `}</style>
             </div>
