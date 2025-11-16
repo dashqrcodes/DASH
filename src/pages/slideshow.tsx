@@ -479,6 +479,17 @@ const SlideshowPage: React.FC = () => {
     };
   }, []);
 
+  // Listen for Heart icon clicks from BottomNav to open collaboration drawer
+  useEffect(() => {
+    const openCollab = () => {
+      handleOpenCollaboration();
+    };
+    window.addEventListener('heartIconClick', openCollab as EventListener);
+    return () => {
+      window.removeEventListener('heartIconClick', openCollab as EventListener);
+    };
+  }, []);
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const desktopMatch = window.matchMedia('(pointer: fine)');
@@ -2423,53 +2434,7 @@ const SlideshowPage: React.FC = () => {
           </div>
         )}
 
-        <div
-          onClick={handleOpenCollaboration}
-          onTouchStart={handlePeekTouchStart}
-          onTouchEnd={handlePeekTouchEnd}
-          style={{
-            width: '100%',
-            display: 'flex',
-            justifyContent: 'center',
-            padding: '0 20px',
-            marginTop: photos.length > 0 ? '16px' : 'auto',
-            marginBottom: photos.length > 0 ? '180px' : '36px',
-          }}
-        >
-          <div
-            style={{
-              width: '100%',
-              maxWidth: '360px',
-              display: 'flex',
-              justifyContent: 'center',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                padding: '14px 32px',
-                borderRadius: '999px',
-                background: 'rgba(255,255,255,0.08)',
-                border: '1px solid rgba(255,255,255,0.12)',
-                color: 'rgba(255,255,255,0.9)',
-                fontSize: '14px',
-                fontWeight: 600,
-                letterSpacing: '0.32px',
-                boxShadow: '0 6px 18px rgba(0,0,0,0.25)',
-                WebkitTapHighlightColor: 'transparent',
-                touchAction: 'manipulation',
-                width: '100%',
-                maxWidth: '320px',
-                justifyContent: 'center',
-              }}
-            >
-              <span style={{ fontSize: '18px', transform: 'translateY(-1px)' }}>▲</span>
-              <span>Share a memory</span>
-            </div>
-          </div>
-        </div>
+        {/* (Share a memory) button removed — access collaboration via Heart icon */}
 
         {/* Complete Button */}
         {photos.length > 0 && (

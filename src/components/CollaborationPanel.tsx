@@ -127,25 +127,43 @@ const CollaborationPanel: React.FC<CollaborationPanelProps> = ({
             fontSize: '15px'
           }}
         />
+        {/* Donate (simple heart icon) */}
         <button
           type="button"
           onClick={handleDonation}
+          aria-label="Donate"
+          title="Donate"
           style={{
+            width: '38px',
+            height: '38px',
+            borderRadius: '50%',
             border: 'none',
             background: 'linear-gradient(135deg, rgba(255,99,132,0.9) 0%, rgba(255,64,129,0.9) 100%)',
             color: 'white',
-            fontWeight: 700,
-            fontSize: '15px',
-            padding: '10px 16px',
-            borderRadius: '999px',
+            fontSize: '18px',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: '4px'
+            justifyContent: 'center'
           }}
         >
-          <span style={{ fontSize: '16px' }}>❤️</span>
-          <span>$</span>
+          ❤️
+        </button>
+        {/* Submit (Enter) */}
+        <button
+          type="submit"
+          style={{
+            border: '1px solid rgba(255,255,255,0.25)',
+            background: 'rgba(255,255,255,0.06)',
+            color: 'white',
+            fontWeight: 600,
+            fontSize: '12px',
+            padding: '8px 12px',
+            borderRadius: '10px',
+            cursor: 'pointer'
+          }}
+        >
+          Enter
         </button>
         <input
           ref={fileInputRef}
