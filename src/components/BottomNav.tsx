@@ -113,28 +113,25 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab }) => {
             <button
                 onClick={handleHeavenCall}
                 style={{
-                    background: 'linear-gradient(135deg, rgba(0,255,255,0.2) 0%, rgba(255,0,255,0.2) 100%)',
-                    border: '2px solid rgba(0,255,255,0.4)',
+                    background: 'transparent',
+                    border: 'none',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     gap: '4px',
                     cursor: 'pointer',
-                    minWidth: '56px',
-                    minHeight: '56px',
-                    padding: '10px',
-                    borderRadius: '50%',
+                    minWidth: '44px',
+                    minHeight: '44px',
+                    padding: '8px',
+                    borderRadius: '8px',
                     WebkitTapHighlightColor: 'transparent',
-                    boxShadow: '0 4px 20px rgba(0,255,255,0.3)',
-                    transition: 'all 0.3s ease'
+                    transition: 'all 0.2s ease'
                 }}
                 onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'scale(1.1)';
-                    e.currentTarget.style.boxShadow = '0 6px 25px rgba(0,255,255,0.5)';
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
                 }}
                 onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'scale(1)';
-                    e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,255,255,0.3)';
+                    e.currentTarget.style.background = 'transparent';
                 }}
             >
                 <svg width="clamp(24px, 6vw, 28px)" height="clamp(24px, 6vw, 28px)" viewBox="0 0 24 24" fill="none" stroke={activeTab === 'heaven' ? 'white' : 'rgba(255,255,255,0.9)'} strokeWidth="2">
@@ -150,7 +147,11 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab }) => {
 
             {/* Music */}
             <button
-                onClick={() => router.push('/spotify-callback')}
+                onClick={() => {
+                    // Dispatch event to open music selector modal
+                    const event = new CustomEvent('openMusicSelector');
+                    window.dispatchEvent(event);
+                }}
                 style={{
                     background: activeTab === 'music' ? 'rgba(102,126,234,0.2)' : 'transparent',
                     border: 'none',

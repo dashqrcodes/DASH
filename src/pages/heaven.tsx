@@ -52,6 +52,13 @@ const HeavenPage: React.FC = () => {
   
   // Get loved one name from localStorage or URL
   const [lovedOneName, setLovedOneName] = useState('');
+  
+  // Demo mode - for showcasing HEAVEN with a demo video
+  const [isDemoMode, setIsDemoMode] = useState(false);
+  const [demoVideoUrl, setDemoVideoUrl] = useState<string>('');
+  
+  // Demo video URL - Replace with your video URL
+  const DEFAULT_DEMO_VIDEO = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'; // Replace with your video URL
 
   useEffect(() => {
     // Load name from localStorage or card design
@@ -73,12 +80,29 @@ const HeavenPage: React.FC = () => {
       }
     }
 
-    // Check if call should be triggered from bottom nav
-    const shouldStartCall = router.query.call === 'true';
-    if (shouldStartCall && !isInCall) {
-      handleStartCall();
+    // Check for demo mode via URL
+    const demoMode = router.query.demo === 'true' || router.query.demo === '1';
+    const demoVideo = router.query.video as string;
+    
+    if (demoMode) {
+      setIsDemoMode(true);
+      setDemoVideoUrl(demoVideo || DEFAULT_DEMO_VIDEO);
+      setIsInCall(true);
+      setPerson({
+        name: lovedOneName || 'Demo',
+        slideshowVideoUrl: demoVideo || DEFAULT_DEMO_VIDEO,
+        primaryPhotoUrl: null
+      });
+      setInitStep('ready');
+      setStatusMessage('Demo Mode - HEAVEN Experience');
+    } else {
+      // Check if call should be triggered from bottom nav
+      const shouldStartCall = router.query.call === 'true';
+      if (shouldStartCall && !isInCall) {
+        handleStartCall();
+      }
     }
-  }, [router.query]);
+  }, [router.query, lovedOneName]);
 
   /**
    * STEP 1: Load person data from slideshow assets
@@ -532,6 +556,54 @@ const HeavenPage: React.FC = () => {
             Call Heaven
           </button>
 
+          {/* Demo Mode Button */}
+          <button
+            onClick={() => {
+              setIsDemoMode(true);
+              setDemoVideoUrl(DEFAULT_DEMO_VIDEO);
+              setIsInCall(true);
+              setPerson({
+                name: lovedOneName || 'Demo',
+                slideshowVideoUrl: DEFAULT_DEMO_VIDEO,
+                primaryPhotoUrl: null
+              });
+              setInitStep('ready');
+              setStatusMessage('Demo Mode - HEAVEN Experience');
+            }}
+            style={{
+              background: 'linear-gradient(135deg,#12c2e9 0%,#c471ed 50%,#f64f59 100%)',
+              border: 'none',
+              borderRadius: '999px',
+              padding: 'clamp(14px, 3.5vw, 18px) clamp(40px, 10vw, 56px)',
+              color: 'white',
+              fontSize: 'clamp(16px, 4vw, 18px)',
+              fontWeight: '700',
+              cursor: 'pointer',
+              boxShadow: '0 8px 32px rgba(18,194,233,0.4)',
+              transition: 'all 0.3s',
+              minHeight: '56px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              marginTop: 'clamp(20px, 5vw, 24px)',
+              WebkitTapHighlightColor: 'transparent'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 12px 40px rgba(18,194,233,0.6)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 8px 32px rgba(18,194,233,0.4)';
+            }}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polygon points="23 7 16 12 23 17 23 7"/>
+              <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+            </svg>
+            View Demo
+          </button>
+
           {/* Instructions */}
           <div style={{
             marginTop: 'clamp(40px, 10vw, 60px)',
@@ -551,6 +623,15 @@ const HeavenPage: React.FC = () => {
               Make sure you've added photos and videos to your slideshow first. 
               HEAVEN will use their voice from the video and their photo to create 
               an interactive conversation experience.
+            </p>
+            <p style={{
+              fontSize: 'clamp(11px, 2.5vw, 12px)',
+              color: 'rgba(255,255,255,0.4)',
+              lineHeight: '1.6',
+              margin: '16px 0 0 0',
+              fontStyle: 'italic'
+            }}>
+              Or click "View Demo" to see HEAVEN in action with a demo video.
             </p>
           </div>
         </div>
@@ -574,6 +655,59 @@ const HeavenPage: React.FC = () => {
             status={initStep === 'ready' ? 'connected' : 'connecting'}
             onEndCall={handleEndCall}
           />
+          
+          {/* Demo Mode Video Player */}
+          {isDemoMode && demoVideoUrl && (
+            <div style={{
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '20px',
+              position: 'relative'
+            }}>
+              <video
+                src={demoVideoUrl}
+                autoPlay
+                loop
+                controls
+                style={{
+                  width: '100%',
+                  maxWidth: '800px',
+                  height: 'auto',
+                  borderRadius: '16px',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.5)'
+                }}
+                onError={(e) => {
+                  console.error('Error loading demo video:', e);
+                  setStatusMessage('Error loading demo video. Please check the URL.');
+                }}
+              />
+              {isDemoMode && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  background: 'rgba(102,126,234,0.9)',
+                  backdropFilter: 'blur(20px)',
+                  padding: '8px 16px',
+                  borderRadius: '999px',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  zIndex: 150
+                }}>
+                  <p style={{
+                    color: 'white',
+                    fontSize: '12px',
+                    margin: 0,
+                    fontWeight: '600'
+                  }}>
+                    🎬 DEMO MODE
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Status Message */}
           {initStep !== 'ready' && (
