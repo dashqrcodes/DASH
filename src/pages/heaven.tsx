@@ -5,11 +5,13 @@ import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import AvatarVideo from '../components/AvatarVideo';
+import StreamingAvatarVideo from '../components/StreamingAvatarVideo';
 import CallHeader from '../components/CallHeader';
 import ChatInput from '../components/ChatInput';
 import { extractAudioFromVideo, getSlideshowVideoUrl, getPrimaryPhotoUrl } from '../utils/heaven-audio';
 import { cloneVoiceFromAudio } from '../utils/heaven-voice';
 import { createAvatar, generateTalkingVideo } from '../utils/heaven-avatar';
+import { createStreamingSession, HeyGenStreamingClient } from '../utils/heygen-streaming';
 
 interface Person {
   name: string;
@@ -29,7 +31,7 @@ const HeavenPage: React.FC = () => {
   const [person, setPerson] = useState<Person | null>(null);
   
   // Initialization states
-  const [initStep, setInitStep] = useState<'idle' | 'loading-media' | 'extracting-audio' | 'cloning-voice' | 'creating-avatar' | 'initializing-conversation' | 'ready'>('idle');
+  const [initStep, setInitStep] = useState<'idle' | 'loading-media' | 'extracting-audio' | 'cloning-voice' | 'creating-agent' | 'creating-avatar' | 'initializing-conversation' | 'ready'>('idle');
   const [statusMessage, setStatusMessage] = useState('');
   
   // Avatar and voice IDs
@@ -37,6 +39,11 @@ const HeavenPage: React.FC = () => {
   const [avatarId, setAvatarId] = useState<string | null>(null);
   const [characterId, setCharacterId] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [agentId, setAgentId] = useState<string | null>(null);
+  
+  // HeyGen Streaming Avatar
+  const [streamingClient, setStreamingClient] = useState<HeyGenStreamingClient | null>(null);
+  const [useStreamingAvatar, setUseStreamingAvatar] = useState(true); // Toggle between streaming and video generation
   
   // Call UI states
   const [currentVideoUrl, setCurrentVideoUrl] = useState<string | null>(null);
@@ -45,6 +52,13 @@ const HeavenPage: React.FC = () => {
   
   // Get loved one name from localStorage or URL
   const [lovedOneName, setLovedOneName] = useState('');
+  
+  // Demo mode - for showcasing HEAVEN with a demo video
+  const [isDemoMode, setIsDemoMode] = useState(false);
+  const [demoVideoUrl, setDemoVideoUrl] = useState<string>('');
+  
+  // Demo video URL - Replace with your video URL
+  const DEFAULT_DEMO_VIDEO = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'; // Replace with your video URL
 
   useEffect(() => {
     // Load name from localStorage or card design
@@ -66,12 +80,29 @@ const HeavenPage: React.FC = () => {
       }
     }
 
-    // Check if call should be triggered from bottom nav
-    const shouldStartCall = router.query.call === 'true';
-    if (shouldStartCall && !isInCall) {
-      handleStartCall();
+    // Check for demo mode via URL
+    const demoMode = router.query.demo === 'true' || router.query.demo === '1';
+    const demoVideo = router.query.video as string;
+    
+    if (demoMode) {
+      setIsDemoMode(true);
+      setDemoVideoUrl(demoVideo || DEFAULT_DEMO_VIDEO);
+      setIsInCall(true);
+      setPerson({
+        name: lovedOneName || 'Demo',
+        slideshowVideoUrl: demoVideo || DEFAULT_DEMO_VIDEO,
+        primaryPhotoUrl: null
+      });
+      setInitStep('ready');
+      setStatusMessage('Demo Mode - HEAVEN Experience');
+    } else {
+      // Check if call should be triggered from bottom nav
+      const shouldStartCall = router.query.call === 'true';
+      if (shouldStartCall && !isInCall) {
+        handleStartCall();
+      }
     }
-  }, [router.query]);
+  }, [router.query, lovedOneName]);
 
   /**
    * STEP 1: Load person data from slideshow assets
@@ -144,6 +175,19 @@ const HeavenPage: React.FC = () => {
   /**
    * Initialize HEAVEN call - 3-step process
    */
+  const createHeavenAgent = async () => {
+    const response = await fetch('/api/heaven/create-agent', { method: 'POST' });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => null);
+      throw new Error(error?.error || 'Failed to create HEAVEN agent');
+    }
+
+    const agent = await response.json();
+    setAgentId((agent?.id as string) ?? (agent?.agentId as string) ?? null);
+    return agent;
+  };
+
   const handleStartCall = async () => {
     // Step 0: Load person data
     setInitStep('loading-media');
@@ -181,7 +225,12 @@ const HeavenPage: React.FC = () => {
       const clonedVoiceId = await cloneVoiceFromAudio(audioUrl, `${personData.name}'s Voice`);
       setVoiceId(clonedVoiceId);
 
-      // STEP 3: Create avatar from primary photo
+      // STEP 3: Create conversational agent shell
+      setInitStep('creating-agent');
+      setStatusMessage('Preparing conversational presence…');
+      await createHeavenAgent();
+
+      // STEP 4: Create streaming avatar from primary photo (HeyGen)
       setInitStep('creating-avatar');
       setStatusMessage('Bringing them on screen…');
 
@@ -189,8 +238,43 @@ const HeavenPage: React.FC = () => {
         throw new Error('No photo found. Please add a photo to the slideshow.');
       }
 
-      const createdAvatarId = await createAvatar(personData.primaryPhotoUrl, personData.name);
-      setAvatarId(createdAvatarId);
+      // Use HeyGen streaming avatar if enabled
+      if (useStreamingAvatar) {
+        try {
+          const streamingConfig = await createStreamingSession(
+            personData.name,
+            undefined, // No existing avatarId
+            personData.primaryPhotoUrl,
+            'high'
+          );
+          
+          setAvatarId(streamingConfig.avatarId || null);
+          setSessionId(streamingConfig.sessionId);
+
+          // Create streaming client
+          const client = new HeyGenStreamingClient(streamingConfig);
+          await client.startSession();
+          setStreamingClient(client);
+
+          // Listen to avatar events
+          await client.on('speaking', () => {
+            setIsGeneratingVideo(true);
+          });
+          await client.on('stopped', () => {
+            setIsGeneratingVideo(false);
+          });
+        } catch (error: any) {
+          console.warn('HeyGen streaming failed, falling back to video generation:', error);
+          setUseStreamingAvatar(false);
+          // Fallback to regular avatar creation
+          const createdAvatarId = await createAvatar(personData.primaryPhotoUrl, personData.name);
+          setAvatarId(createdAvatarId);
+        }
+      } else {
+        // Use regular avatar creation (D-ID or other)
+        const createdAvatarId = await createAvatar(personData.primaryPhotoUrl, personData.name);
+        setAvatarId(createdAvatarId);
+      }
 
       // STEP 4: Prepare Convai character & conversation
       setInitStep('initializing-conversation');
@@ -214,20 +298,70 @@ const HeavenPage: React.FC = () => {
   };
 
   /**
-   * Handle user message - generate talking video response
+   * Handle user message - generate talking video response or streaming avatar
    */
   const handleSendMessage = async (text: string) => {
     if (!avatarId || !person) {
       alert('HEAVEN is not ready yet. Please wait for initialization.');
       return;
     }
+
+    // Add user message to conversation
+    addToConversation('user', text);
+
+    // Use HeyGen streaming avatar if available
+    if (useStreamingAvatar && streamingClient) {
+      try {
+        setIsGeneratingVideo(true);
+
+        // Get AI response (from Convai or OpenAI)
+        let aiResponse = '';
+        if (characterId && sessionId) {
+          // Use Convai for response
+          const convaiResponse = await fetch('/api/convai/send-message', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              characterId,
+              sessionId,
+              message: text,
+            }),
+          });
+          const convaiData = await convaiResponse.json();
+          aiResponse = convaiData.response || convaiData.text || 'I understand.';
+        } else {
+          // Fallback to OpenAI
+          const openaiResponse = await fetch('/api/ai/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: text }),
+          });
+          const openaiData = await openaiResponse.json();
+          aiResponse = openaiData.text || 'I understand.';
+        }
+
+        // Make streaming avatar speak
+        await streamingClient.speak({
+          text: aiResponse,
+          taskType: 'REPEAT' as any,
+          voiceId: voiceId || undefined,
+        });
+
+        addToConversation('heaven', aiResponse);
+        setIsGeneratingVideo(false);
+        return;
+      } catch (error: any) {
+        console.error('Error with streaming avatar:', error);
+        setIsGeneratingVideo(false);
+        // Fallback to video generation
+      }
+    }
+
+    // Fallback to video generation method
     if (!characterId || !sessionId) {
       alert('Still preparing their HEAVEN presence. Please try again in a moment.');
       return;
     }
-
-    // Add user message to conversation
-    addToConversation('user', text);
 
     setIsGeneratingVideo(true);
     setStatusMessage('Listening and responding…');
@@ -302,7 +436,17 @@ const HeavenPage: React.FC = () => {
     }]);
   };
 
-  const handleEndCall = () => {
+  const handleEndCall = async () => {
+    // Disconnect streaming avatar if active
+    if (streamingClient) {
+      try {
+        await streamingClient.disconnect();
+      } catch (error) {
+        console.error('Error disconnecting streaming avatar:', error);
+      }
+      setStreamingClient(null);
+    }
+
     setIsInCall(false);
     setInitStep('idle');
     setStatusMessage('');
@@ -310,6 +454,7 @@ const HeavenPage: React.FC = () => {
     setAvatarId(null);
     setCharacterId(null);
     setSessionId(null);
+    setAgentId(null);
     setCurrentVideoUrl(null);
     setConversationHistory([]);
     setPerson(null);
@@ -411,6 +556,54 @@ const HeavenPage: React.FC = () => {
             Call Heaven
           </button>
 
+          {/* Demo Mode Button */}
+          <button
+            onClick={() => {
+              setIsDemoMode(true);
+              setDemoVideoUrl(DEFAULT_DEMO_VIDEO);
+              setIsInCall(true);
+              setPerson({
+                name: lovedOneName || 'Demo',
+                slideshowVideoUrl: DEFAULT_DEMO_VIDEO,
+                primaryPhotoUrl: null
+              });
+              setInitStep('ready');
+              setStatusMessage('Demo Mode - HEAVEN Experience');
+            }}
+            style={{
+              background: 'linear-gradient(135deg,#12c2e9 0%,#c471ed 50%,#f64f59 100%)',
+              border: 'none',
+              borderRadius: '999px',
+              padding: 'clamp(14px, 3.5vw, 18px) clamp(40px, 10vw, 56px)',
+              color: 'white',
+              fontSize: 'clamp(16px, 4vw, 18px)',
+              fontWeight: '700',
+              cursor: 'pointer',
+              boxShadow: '0 8px 32px rgba(18,194,233,0.4)',
+              transition: 'all 0.3s',
+              minHeight: '56px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              marginTop: 'clamp(20px, 5vw, 24px)',
+              WebkitTapHighlightColor: 'transparent'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 12px 40px rgba(18,194,233,0.6)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 8px 32px rgba(18,194,233,0.4)';
+            }}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polygon points="23 7 16 12 23 17 23 7"/>
+              <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+            </svg>
+            View Demo
+          </button>
+
           {/* Instructions */}
           <div style={{
             marginTop: 'clamp(40px, 10vw, 60px)',
@@ -430,6 +623,15 @@ const HeavenPage: React.FC = () => {
               Make sure you've added photos and videos to your slideshow first. 
               HEAVEN will use their voice from the video and their photo to create 
               an interactive conversation experience.
+            </p>
+            <p style={{
+              fontSize: 'clamp(11px, 2.5vw, 12px)',
+              color: 'rgba(255,255,255,0.4)',
+              lineHeight: '1.6',
+              margin: '16px 0 0 0',
+              fontStyle: 'italic'
+            }}>
+              Or click "View Demo" to see HEAVEN in action with a demo video.
             </p>
           </div>
         </div>
@@ -453,6 +655,59 @@ const HeavenPage: React.FC = () => {
             status={initStep === 'ready' ? 'connected' : 'connecting'}
             onEndCall={handleEndCall}
           />
+          
+          {/* Demo Mode Video Player */}
+          {isDemoMode && demoVideoUrl && (
+            <div style={{
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '20px',
+              position: 'relative'
+            }}>
+              <video
+                src={demoVideoUrl}
+                autoPlay
+                loop
+                controls
+                style={{
+                  width: '100%',
+                  maxWidth: '800px',
+                  height: 'auto',
+                  borderRadius: '16px',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.5)'
+                }}
+                onError={(e) => {
+                  console.error('Error loading demo video:', e);
+                  setStatusMessage('Error loading demo video. Please check the URL.');
+                }}
+              />
+              {isDemoMode && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  background: 'rgba(102,126,234,0.9)',
+                  backdropFilter: 'blur(20px)',
+                  padding: '8px 16px',
+                  borderRadius: '999px',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  zIndex: 150
+                }}>
+                  <p style={{
+                    color: 'white',
+                    fontSize: '12px',
+                    margin: 0,
+                    fontWeight: '600'
+                  }}>
+                    🎬 DEMO MODE
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Status Message */}
           {initStep !== 'ready' && (
@@ -495,11 +750,19 @@ const HeavenPage: React.FC = () => {
             padding: 'clamp(80px, 20vw, 100px) clamp(20px, 5vw, 40px) clamp(180px, 45vw, 220px)',
             minHeight: 0
           }}>
-            <AvatarVideo
-              videoUrl={currentVideoUrl}
-              isLoading={isGeneratingVideo}
-              personName={person?.name || 'Loved One'}
-            />
+            {useStreamingAvatar && streamingClient ? (
+              <StreamingAvatarVideo
+                streamingClient={streamingClient}
+                personName={person?.name || 'Loved One'}
+                isConnected={isInCall && initStep === 'ready'}
+              />
+            ) : (
+              <AvatarVideo
+                videoUrl={currentVideoUrl}
+                isLoading={isGeneratingVideo}
+                personName={person?.name || 'Loved One'}
+              />
+            )}
           </div>
 
           {/* Conversation Transcript */}

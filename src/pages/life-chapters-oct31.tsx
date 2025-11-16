@@ -749,7 +749,7 @@ const LifeChaptersPage: React.FC = () => {
         )}
 
         {/* Bottom Navigation */}
-        <BottomNav activeTab="slideshow" />
+        <BottomNav activeTab="home" />
       </div>
     </>
   );

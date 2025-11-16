@@ -3,6 +3,76 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { getPopularContent, searchBibleVerse } from '../utils/bible-api';
 
+const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+const SPANISH_MONTH_MAP: Record<string, string> = {
+  enero: 'january',
+  febrero: 'february',
+  marzo: 'march',
+  abril: 'april',
+  mayo: 'may',
+  junio: 'june',
+  julio: 'july',
+  agosto: 'august',
+  septiembre: 'september',
+  setiembre: 'september',
+  octubre: 'october',
+  noviembre: 'november',
+  diciembre: 'december'
+};
+
+const toISODateSafe = (value: string): string => {
+  if (!value) return '';
+  const trimmed = value.trim();
+  if (ISO_DATE_REGEX.test(trimmed)) return trimmed;
+
+  let parsed = new Date(trimmed);
+  if (!Number.isNaN(parsed.getTime())) {
+    const year = parsed.getFullYear();
+    const month = String(parsed.getMonth() + 1).padStart(2, '0');
+    const day = String(parsed.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  let normalized = trimmed;
+  Object.entries(SPANISH_MONTH_MAP).forEach(([es, en]) => {
+    const regex = new RegExp(es, 'gi');
+    normalized = normalized.replace(regex, en);
+  });
+  parsed = new Date(normalized);
+  if (!Number.isNaN(parsed.getTime())) {
+    const year = parsed.getFullYear();
+    const month = String(parsed.getMonth() + 1).padStart(2, '0');
+    const day = String(parsed.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  return '';
+};
+
+const formatDateForLocale = (
+  value: string,
+  locale: 'en' | 'es',
+  options: Intl.DateTimeFormatOptions
+): string => {
+  if (!value) return '';
+  const localeCode = locale === 'es' ? 'es-ES' : 'en-US';
+  try {
+    const base = ISO_DATE_REGEX.test(value) ? `${value}T00:00:00` : value;
+    const date = new Date(base);
+    if (Number.isNaN(date.getTime())) return value;
+    return new Intl.DateTimeFormat(localeCode, options).format(date);
+  } catch (error) {
+    return value;
+  }
+};
+
+interface VisionFaceBox {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
 const MemorialCardBuilder4x6Page: React.FC = () => {
   const router = useRouter();
   const [photo, setPhoto] = useState<string | null>(null);
@@ -15,19 +85,21 @@ const MemorialCardBuilder4x6Page: React.FC = () => {
   const [language, setLanguage] = useState<'en' | 'es'>('en');
   const isDataLoaded = useRef(false);
   const [qrPattern, setQrPattern] = useState<boolean[]>([]);
-  const [imageEnhancement, setImageEnhancement] = useState({
-    zoom: 1.35,
+  const defaultEnhancement = {
+    zoom: 1.38,
     brightness: 1.05,
     contrast: 1.1,
     sharpness: 1.2,
     saturation: 1.05,
-    facePosition: { x: 50, y: 40 } // Default to upper-center for portraits
-  });
+    facePosition: { x: 50, y: 42 }
+  };
+  const [imageEnhancement, setImageEnhancement] = useState(defaultEnhancement);
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
   const [qrBackgroundStyle, setQrBackgroundStyle] = useState<React.CSSProperties>({});
   const [isFlipping, setIsFlipping] = useState(false);
   const [showBack, setShowBack] = useState(false);
   const [showPhotoPicker, setShowPhotoPicker] = useState(false);
+  const faceDetections = useRef<Record<string, VisionFaceBox | null>>({});
   
   // Back card states
   const [skyPhoto, setSkyPhoto] = useState<string | null>(null);
@@ -55,8 +127,14 @@ const MemorialCardBuilder4x6Page: React.FC = () => {
         try {
           const profile = JSON.parse(savedProfile);
           if (profile.name) setName(profile.name);
-          if (profile.sunrise) setSunrise(profile.sunrise);
-          if (profile.sunset) setSunset(profile.sunset);
+          if (profile.sunrise) setSunrise(toISODateSafe(profile.sunrise));
+          if (profile.sunset) setSunset(toISODateSafe(profile.sunset));
+          if (profile.imageEnhancement) {
+            setImageEnhancement({
+              ...defaultEnhancement,
+              ...profile.imageEnhancement,
+            });
+          }
           if (profile.photo) {
             // Single photo from profile page
             setSelectedPhotos([profile.photo]);
@@ -108,11 +186,12 @@ const MemorialCardBuilder4x6Page: React.FC = () => {
         sunrise,
         sunset,
         photo: selectedPhotos.length > 0 ? selectedPhotos[0] : null,
+        imageEnhancement,
         updatedAt: new Date().toISOString()
       };
       localStorage.setItem('profileData', JSON.stringify(profileData));
     }
-  }, [name, sunrise, sunset, selectedPhotos]);
+  }, [name, sunrise, sunset, selectedPhotos, imageEnhancement]);
   
   // Update displayed photo when currentPhotoIndex changes
   useEffect(() => {
@@ -122,6 +201,12 @@ const MemorialCardBuilder4x6Page: React.FC = () => {
       enhanceImage(selectedPhotos[currentPhotoIndex]);
     }
   }, [currentPhotoIndex, selectedPhotos]);
+
+  useEffect(() => {
+    if (!photo) {
+      setImageEnhancement(defaultEnhancement);
+    }
+  }, [photo]);
   
   // Translations
   const translations = {
@@ -152,34 +237,69 @@ const MemorialCardBuilder4x6Page: React.FC = () => {
   // Format date for display on card (abbreviate months except June/July)
   const formatDateForCard = (dateStr: string) => {
     if (!dateStr) return '';
-    
-    // Month abbreviations (3 letters except June/July)
-    const monthMap: { [key: string]: string } = {
-      'january': 'Jan',
-      'february': 'Feb',
-      'march': 'Mar',
-      'april': 'Apr',
-      'may': 'May',
-      'june': 'June',
-      'july': 'July',
-      'august': 'Aug',
-      'september': 'Sep',
-      'october': 'Oct',
-      'november': 'Nov',
-      'december': 'Dec'
-    };
-    
-    // Parse the date string and abbreviate the month
-    let result = dateStr;
-    Object.keys(monthMap).forEach(fullMonth => {
-      const regex = new RegExp(`\\b${fullMonth}\\b`, 'gi');
-      result = result.replace(regex, monthMap[fullMonth]);
-    });
-    
-    return result;
+    const base = ISO_DATE_REGEX.test(dateStr) ? `${dateStr}T00:00:00` : dateStr;
+    const parsed = new Date(base);
+    if (Number.isNaN(parsed.getTime())) return dateStr;
+
+    const year = parsed.getFullYear();
+    const day = String(parsed.getDate()).padStart(2, '0');
+
+    if (language === 'es') {
+      return formatDateForLocale(dateStr, language, {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric'
+      });
+    }
+
+    const monthFull = new Intl.DateTimeFormat('en-US', { month: 'long' }).format(parsed);
+    const monthDisplay = monthFull === 'June' || monthFull === 'July'
+      ? monthFull
+      : monthFull.slice(0, 3);
+
+    return `${monthDisplay} ${day}, ${year}`;
   };
   
   // Automatic image enhancement with face detection
+  const callVisionFaceDetection = async (imageUrl: string, canvas: HTMLCanvasElement): Promise<VisionFaceBox | null> => {
+    if (faceDetections.current[imageUrl] !== undefined) {
+      return faceDetections.current[imageUrl];
+    }
+
+    try {
+      const base64 = canvas.toDataURL('image/jpeg', 0.92).split(',')[1];
+      const response = await fetch('/api/vision-face', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64: base64 }),
+      });
+
+      if (!response.ok) {
+        faceDetections.current[imageUrl] = null;
+        return null;
+      }
+
+      const data = await response.json();
+      if (data?.face?.width && data?.face?.height) {
+        const box: VisionFaceBox = {
+          left: data.face.left,
+          top: data.face.top,
+          width: data.face.width,
+          height: data.face.height,
+        };
+        faceDetections.current[imageUrl] = box;
+        return box;
+      }
+
+      faceDetections.current[imageUrl] = null;
+      return null;
+    } catch (error) {
+      console.error('Vision face detection failed', error);
+      faceDetections.current[imageUrl] = null;
+      return null;
+    }
+  };
+
   const enhanceImage = async (imageUrl: string) => {
     try {
       const img = new Image();
@@ -188,10 +308,12 @@ const MemorialCardBuilder4x6Page: React.FC = () => {
       
       await new Promise((resolve, reject) => {
         img.onload = resolve;
-        img.onerror = reject;
+        img.onerror = () => {
+          setImageEnhancement(defaultEnhancement);
+          reject(new Error('Failed to load image'));
+        };
       });
       
-      // Create canvas for analysis
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
@@ -200,56 +322,93 @@ const MemorialCardBuilder4x6Page: React.FC = () => {
       canvas.height = img.height;
       ctx.drawImage(img, 0, 0);
       
-      // Simple face detection using brightness analysis
-      // Faces are typically in the upper-center third of portraits
+      const visionFace = await callVisionFaceDetection(imageUrl, canvas);
+
+      if (visionFace) {
+        const faceCenterXPercent = ((visionFace.left + visionFace.width / 2) / img.width) * 100;
+        const faceCenterYPercent = ((visionFace.top + visionFace.height / 2) / img.height) * 100;
+        const faceHeightRatio = visionFace.height / img.height;
+
+        const adjustedX = Math.max(45, Math.min(55, faceCenterXPercent));
+        const adjustedY = Math.max(28, Math.min(46, faceCenterYPercent - faceHeightRatio * 22));
+
+        const targetHeadRatio = 0.42;
+        const zoom = Math.max(0.85, Math.min(1.45, targetHeadRatio / Math.max(faceHeightRatio, 0.05)));
+
+        setImageEnhancement({
+          zoom,
+          brightness: 1.05,
+          contrast: 1.1,
+          sharpness: 1.2,
+          saturation: 1.05,
+          facePosition: { x: adjustedX, y: adjustedY },
+        });
+
+        return;
+      }
+
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const data = imageData.data;
       
-      // Find the brightest/most contrasted region (likely the face)
-      let maxBrightness = 0;
-      let faceX = 50;
-      let faceY = 40;
+      let globalBrightness = 0;
+      let sampleCount = 0;
+      for (let i = 0; i < data.length; i += 400) {
+        const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
+        globalBrightness += brightness;
+        sampleCount++;
+      }
+      const avgBrightnessGlobal = globalBrightness / sampleCount || 1;
       
-      // Scan upper 60% of image in a grid
-      const gridSize = 20;
-      for (let y = 0; y < canvas.height * 0.6; y += gridSize) {
-        for (let x = 0; x < canvas.width; x += gridSize) {
+      let bestScore = -Infinity;
+      let faceX = 50;
+      let faceY = 42;
+      const gridSize = Math.max(18, Math.floor(Math.min(canvas.width, canvas.height) / 18));
+      const maxY = canvas.height * 0.72;
+      for (let y = canvas.height * 0.08; y < maxY; y += gridSize) {
+        for (let x = canvas.width * 0.1; x < canvas.width * 0.9; x += gridSize) {
           let totalBrightness = 0;
-          let pixelCount = 0;
-          
-          // Sample a small region
+          let variance = 0;
+          let count = 0;
           for (let dy = 0; dy < gridSize && y + dy < canvas.height; dy++) {
             for (let dx = 0; dx < gridSize && x + dx < canvas.width; dx++) {
-              const idx = ((y + dy) * canvas.width + (x + dx)) * 4;
+              const idx = ((Math.floor(y) + dy) * canvas.width + Math.floor(x) + dx) * 4;
               const brightness = (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
               totalBrightness += brightness;
-              pixelCount++;
+              variance += Math.abs(brightness - avgBrightnessGlobal);
+              count++;
             }
           }
-          
-          const avgBrightness = totalBrightness / pixelCount;
-          if (avgBrightness > maxBrightness && avgBrightness < 240) { // Not pure white
-            maxBrightness = avgBrightness;
+          if (!count) continue;
+          const avgBrightness = totalBrightness / count;
+          const contrastScore = variance / count;
+          const score = avgBrightness * 0.7 + contrastScore * 0.3;
+          if (score > bestScore) {
+            bestScore = score;
             faceX = ((x + gridSize / 2) / canvas.width) * 100;
             faceY = ((y + gridSize / 2) / canvas.height) * 100;
           }
         }
       }
       
-      // Apply smart enhancements
+      const adjustedX = Math.max(38, Math.min(62, faceX));
+      const adjustedY = Math.max(32, Math.min(50, faceY - 6));
+
+      const verticalOffset = Math.abs(faceY - 40);
+      const zoom = Math.max(1.2, Math.min(1.5, 1.3 + verticalOffset / 240));
+      
       setImageEnhancement({
-        zoom: 1.4, // More zoom for better framing and focus
-        brightness: 1.08, // Brighten slightly
-        contrast: 1.12, // Increase contrast
-        sharpness: 1.3, // Sharpen for clarity
-        saturation: 1.08, // Boost colors slightly
-        facePosition: { x: faceX, y: faceY }
+        zoom,
+        brightness: 1.08,
+        contrast: 1.12,
+        sharpness: 1.28,
+        saturation: 1.08,
+        facePosition: { x: adjustedX, y: adjustedY }
       });
       
-      console.log('✨ Image enhanced - Face detected at:', faceX, faceY);
+      console.log('✨ Image enhanced - Face detected at:', faceX, faceY, 'adjusted to', adjustedX, adjustedY);
     } catch (error) {
       console.error('Image enhancement error:', error);
-      // Use default enhancements
+      setImageEnhancement(defaultEnhancement);
     }
   };
   
@@ -563,8 +722,8 @@ const MemorialCardBuilder4x6Page: React.FC = () => {
     const urlSunrise = router.query.sunrise as string;
     const urlSunset = router.query.sunset as string;
     if (urlName) setName(urlName);
-    if (urlSunrise) setSunrise(urlSunrise);
-    if (urlSunset) setSunset(urlSunset);
+    if (urlSunrise) setSunrise(toISODateSafe(urlSunrise));
+    if (urlSunset) setSunset(toISODateSafe(urlSunset));
   }, [router.query]);
   
   useEffect(() => {
@@ -581,10 +740,20 @@ const MemorialCardBuilder4x6Page: React.FC = () => {
   // Generate QR code with color matching
   const generateQRCode = async (customUrl?: string) => {
     try {
-      // Use custom URL (from profile) or generate from name
+      // Generate URL to finalized-profile page (what QR code scanners will see)
+      // Use the name to create a slug for the URL
+      const nameSlug = name 
+        ? name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+        : 'loved-one';
+      
       const memorialUrl = customUrl || (typeof window !== 'undefined' 
-        ? `${window.location.origin}/memorial/${encodeURIComponent(name || 'loved-one')}`
-        : `http://localhost:3000/memorial/${encodeURIComponent(name || 'loved-one')}`);
+        ? `${window.location.origin}/finalized-profile?name=${encodeURIComponent(nameSlug)}`
+        : `http://localhost:3000/finalized-profile?name=${encodeURIComponent(nameSlug)}`);
+      
+      // Store the URL for PDF generation
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('memorialUrl', memorialUrl);
+      }
       
       const response = await fetch('/api/generate-qr', {
         method: 'POST',
@@ -975,7 +1144,7 @@ const MemorialCardBuilder4x6Page: React.FC = () => {
                         fontFamily:'-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
                         fontWeight:'600'
                       }}>
-                        {sunrise || 'Date'}
+                        {formatDateForCard(sunrise) || 'Date'}
                       </div>
                       <span style={{
                         color:textColor || '#512DA8',
@@ -1035,7 +1204,7 @@ const MemorialCardBuilder4x6Page: React.FC = () => {
                         fontFamily:'-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
                         fontWeight:'600'
                       }}>
-                        {sunset || 'Date'}
+                        {formatDateForCard(sunset) || 'Date'}
                       </div>
                       <span style={{
                         color:textColor || '#512DA8',

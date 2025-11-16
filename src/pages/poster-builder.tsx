@@ -2,6 +2,68 @@ import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 
+const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+const SPANISH_MONTH_MAP: Record<string, string> = {
+  enero: 'january',
+  febrero: 'february',
+  marzo: 'march',
+  abril: 'april',
+  mayo: 'may',
+  junio: 'june',
+  julio: 'july',
+  agosto: 'august',
+  septiembre: 'september',
+  setiembre: 'september',
+  octubre: 'october',
+  noviembre: 'november',
+  diciembre: 'december'
+};
+
+const toISODateSafe = (value: string): string => {
+  if (!value) return '';
+  const trimmed = value.trim();
+  if (ISO_DATE_REGEX.test(trimmed)) return trimmed;
+
+  let parsed = new Date(trimmed);
+  if (!Number.isNaN(parsed.getTime())) {
+    const year = parsed.getFullYear();
+    const month = String(parsed.getMonth() + 1).padStart(2, '0');
+    const day = String(parsed.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  let normalized = trimmed;
+  Object.entries(SPANISH_MONTH_MAP).forEach(([es, en]) => {
+    const regex = new RegExp(es, 'gi');
+    normalized = normalized.replace(regex, en);
+  });
+
+  parsed = new Date(normalized);
+  if (!Number.isNaN(parsed.getTime())) {
+    const year = parsed.getFullYear();
+    const month = String(parsed.getMonth() + 1).padStart(2, '0');
+    const day = String(parsed.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  return '';
+};
+
+const formatDateForLocale = (
+  value: string,
+  options: Intl.DateTimeFormatOptions
+): string => {
+  if (!value) return '';
+  try {
+    const base = ISO_DATE_REGEX.test(value) ? `${value}T00:00:00` : value;
+    const date = new Date(base);
+    if (Number.isNaN(date.getTime())) return value;
+    return new Intl.DateTimeFormat('en-US', options).format(date);
+  } catch (error) {
+    return value;
+  }
+};
+
 const PosterBuilderPage: React.FC = () => {
   const router = useRouter();
   const [photo, setPhoto] = useState<string | null>(null);
@@ -9,6 +71,10 @@ const PosterBuilderPage: React.FC = () => {
   const [sunrise, setSunrise] = useState('');
   const [sunset, setSunset] = useState('');
   const [textColor, setTextColor] = useState('#FFFFFF');
+  const [imageEnhancement, setImageEnhancement] = useState({
+    zoom: 1.35,
+    facePosition: { x: 50, y: 42 }
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 
@@ -19,11 +85,17 @@ const PosterBuilderPage: React.FC = () => {
       try {
         const data = JSON.parse(profileData);
         if (data.name) setName(data.name);
-        if (data.sunrise) setSunrise(data.sunrise);
-        if (data.sunset) setSunset(data.sunset);
+        if (data.sunrise) setSunrise(toISODateSafe(data.sunrise));
+        if (data.sunset) setSunset(toISODateSafe(data.sunset));
         if (data.photo) {
           setPhoto(data.photo);
           analyzeImageBrightness(data.photo);
+        }
+        if (data.imageEnhancement) {
+          setImageEnhancement((prev) => ({
+            ...prev,
+            ...data.imageEnhancement,
+          }));
         }
       } catch (e) {
         console.error('Error loading profile data:', e);
@@ -31,14 +103,31 @@ const PosterBuilderPage: React.FC = () => {
     }
   }, []);
 
+  useEffect(() => {
+    if (!photo) {
+      setImageEnhancement({ zoom: 1.35, facePosition: { x: 50, y: 42 } });
+      setTextColor('#FFFFFF');
+      return;
+    }
+    analyzeImageBrightness(photo);
+  }, [photo]);
+
   // Generate QR code
   const generateQRCode = async () => {
     try {
-      // Use SHORT URL format to reduce QR complexity for better printing
-      const nameSlug = name ? name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') : 'profile';
-      const shortUrl = typeof window !== 'undefined' 
-        ? `${window.location.origin}/m/${nameSlug}` 
-        : `http://localhost:3000/m/${nameSlug}`;
+      // Generate URL to finalized-profile page (what QR code scanners will see)
+      const nameSlug = name 
+        ? name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+        : 'loved-one';
+      
+      const memorialUrl = typeof window !== 'undefined' 
+        ? `${window.location.origin}/finalized-profile?name=${encodeURIComponent(nameSlug)}`
+        : `http://localhost:3000/finalized-profile?name=${encodeURIComponent(nameSlug)}`;
+      
+      // Store the URL for PDF generation
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('memorialUrl', memorialUrl);
+      }
       
       const response = await fetch('/api/generate-qr', {
         method: 'POST',
@@ -46,7 +135,7 @@ const PosterBuilderPage: React.FC = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          url: shortUrl,
+          url: memorialUrl,
           lovedOneName: name,
           color: '#667eea' // Blue QR code for poster
         }),
@@ -68,9 +157,11 @@ const PosterBuilderPage: React.FC = () => {
 
   // Format date to show full month name
   const formatDateFullMonth = (dateStr: string) => {
-    if (!dateStr) return '';
-    // Already formatted from profile, just return as-is
-    return dateStr;
+    return formatDateForLocale(dateStr, {
+      month: 'long',
+      day: '2-digit',
+      year: 'numeric'
+    });
   };
 
   // Detect image brightness and adjust text color
@@ -81,27 +172,68 @@ const PosterBuilderPage: React.FC = () => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
-      
+
       canvas.width = img.width;
       canvas.height = img.height;
       ctx.drawImage(img, 0, 0);
-      
+
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const data = imageData.data;
+
       let brightnessSum = 0;
       let sampleCount = 0;
-      
       for (let i = 0; i < data.length; i += 400) {
-        const r = data[i];
-        const g = data[i + 1];
-        const b = data[i + 2];
-        const brightness = (r * 0.299 + g * 0.587 + b * 0.114) / 255;
+        const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
         brightnessSum += brightness;
         sampleCount++;
       }
-      
-      const avgBrightness = brightnessSum / sampleCount;
-      setTextColor(avgBrightness > 0.5 ? '#0A2463' : '#FFFFFF');
+      const avgBrightnessGlobal = brightnessSum / sampleCount || 1;
+      setTextColor(avgBrightnessGlobal / 255 > 0.5 ? '#0A2463' : '#FFFFFF');
+
+      let bestScore = -Infinity;
+      let faceX = 50;
+      let faceY = 42;
+      const gridSize = Math.max(18, Math.floor(Math.min(canvas.width, canvas.height) / 18));
+      const maxY = canvas.height * 0.75;
+      for (let y = canvas.height * 0.06; y < maxY; y += gridSize) {
+        for (let x = canvas.width * 0.1; x < canvas.width * 0.9; x += gridSize) {
+          let totalBrightness = 0;
+          let variance = 0;
+          let count = 0;
+          for (let dy = 0; dy < gridSize && y + dy < canvas.height; dy++) {
+            for (let dx = 0; dx < gridSize && x + dx < canvas.width; dx++) {
+              const idx = ((Math.floor(y) + dy) * canvas.width + Math.floor(x) + dx) * 4;
+              const brightness = (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
+              totalBrightness += brightness;
+              variance += Math.abs(brightness - avgBrightnessGlobal);
+              count++;
+            }
+          }
+          if (!count) continue;
+          const avgBrightness = totalBrightness / count;
+          const contrastScore = variance / count;
+          const score = avgBrightness * 0.7 + contrastScore * 0.3;
+          if (score > bestScore) {
+            bestScore = score;
+            faceX = ((x + gridSize / 2) / canvas.width) * 100;
+            faceY = ((y + gridSize / 2) / canvas.height) * 100;
+          }
+        }
+      }
+
+      const desiredY = 43;
+      const adjustedX = Math.max(36, Math.min(64, faceX));
+      const adjustedY = Math.max(30, Math.min(56, desiredY + (faceY - desiredY) * 0.4));
+      const zoomBoost = Math.abs(faceY - desiredY) / 120 + Math.abs(adjustedX - 50) / 170;
+      const zoom = Math.max(1.32, Math.min(1.8, 1.36 + zoomBoost));
+
+      setImageEnhancement({
+        zoom,
+        facePosition: { x: adjustedX, y: adjustedY }
+      });
+    };
+    img.onerror = () => {
+      setImageEnhancement({ zoom: 1.35, facePosition: { x: 50, y: 42 } });
     };
     img.src = imgSrc;
   };
@@ -145,6 +277,14 @@ const PosterBuilderPage: React.FC = () => {
         psalmText: typeof window !== 'undefined' ? localStorage.getItem('psalm23Text') || undefined : undefined
       };
 
+      // Get memorial URL from localStorage or generate it
+      const nameSlug = name 
+        ? name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+        : 'loved-one';
+      const memorialUrl = typeof window !== 'undefined' 
+        ? (localStorage.getItem('memorialUrl') || `${window.location.origin}/finalized-profile?name=${encodeURIComponent(nameSlug)}`)
+        : `http://localhost:3000/finalized-profile?name=${encodeURIComponent(nameSlug)}`;
+
       // Generate PDFs for both card and poster
       const response = await fetch('/api/generate-print-pdfs', {
         method: 'POST',
@@ -157,6 +297,8 @@ const PosterBuilderPage: React.FC = () => {
           sunset,
           photo,
           qrCodeUrl,
+          memorialUrl,
+          imageEnhancement,
           email: 'david@dashqrcodes.com',
           orderDetails
         }),
@@ -287,6 +429,9 @@ const PosterBuilderPage: React.FC = () => {
                 width: '100%',
                 height: '100%',
                 objectFit: 'cover',
+                objectPosition: `${imageEnhancement.facePosition.x}% ${imageEnhancement.facePosition.y}%`,
+                transform: `scale(${imageEnhancement.zoom})`,
+                transition: 'transform 0.4s ease',
                 position: 'absolute',
                 top: 0,
                 left: 0,

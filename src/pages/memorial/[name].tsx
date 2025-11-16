@@ -36,6 +36,7 @@ const MemorialProfilePage: React.FC = () => {
   const [newMessage, setNewMessage] = useState('');
   const [showChat, setShowChat] = useState(false);
   const [donorName, setDonorName] = useState('');
+  const [isMobile, setIsMobile] = useState(false);
   
   // Donate
   const [showDonateModal, setShowDonateModal] = useState(false);
@@ -117,6 +118,15 @@ const MemorialProfilePage: React.FC = () => {
       chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mediaQuery = window.matchMedia('(max-width: 640px)');
+    const updateMatch = () => setIsMobile(mediaQuery.matches);
+    updateMatch();
+    mediaQuery.addEventListener('change', updateMatch);
+    return () => mediaQuery.removeEventListener('change', updateMatch);
+  }, []);
 
   // Slideshow playback
   useEffect(() => {
@@ -487,8 +497,10 @@ const MemorialProfilePage: React.FC = () => {
           {showChat && (
             <div style={{
               display: 'flex',
-              gap: '8px',
-              marginBottom: '12px'
+              flexDirection: isMobile ? 'column' : 'row',
+              gap: isMobile ? '10px' : '8px',
+              marginBottom: '12px',
+              alignItems: isMobile ? 'stretch' : 'center'
             }}>
               <input
                 type="text"
@@ -496,14 +508,15 @@ const MemorialProfilePage: React.FC = () => {
                 value={donorName}
                 onChange={(e) => setDonorName(e.target.value)}
                 style={{
-                  flex: '0 0 100px',
+                  flex: isMobile ? '0 0 auto' : '0 0 120px',
                   background: 'rgba(255,255,255,0.1)',
                   border: '1px solid rgba(255,255,255,0.2)',
                   borderRadius: '8px',
                   padding: '10px 12px',
                   color: 'white',
                   fontSize: '14px',
-                  outline: 'none'
+                  outline: 'none',
+                  width: isMobile ? '100%' : undefined
                 }}
               />
               <input
@@ -511,8 +524,9 @@ const MemorialProfilePage: React.FC = () => {
                 placeholder="Share a memory..."
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
                     handleSendMessage();
                   }
                 }}
@@ -521,10 +535,11 @@ const MemorialProfilePage: React.FC = () => {
                   background: 'rgba(255,255,255,0.1)',
                   border: '1px solid rgba(255,255,255,0.2)',
                   borderRadius: '8px',
-                  padding: '10px 12px',
+                  padding: '12px 14px',
                   color: 'white',
                   fontSize: '14px',
-                  outline: 'none'
+                  outline: 'none',
+                  minHeight: isMobile ? '64px' : '48px'
                 }}
               />
               <button
@@ -533,15 +548,18 @@ const MemorialProfilePage: React.FC = () => {
                   background: 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
                   border: 'none',
                   borderRadius: '8px',
-                  padding: '10px 20px',
+                  padding: isMobile ? '14px 18px' : '10px 20px',
                   color: 'white',
                   fontSize: '14px',
                   fontWeight: '600',
                   cursor: 'pointer',
-                  minWidth: '60px'
+                  minWidth: isMobile ? '100%' : '68px',
+                  width: isMobile ? '100%' : 'auto',
+                  boxShadow: '0 10px 24px rgba(102,126,234,0.28)',
+                  WebkitTapHighlightColor: 'transparent'
                 }}
               >
-                Send
+                {isMobile ? 'Post memory' : 'Send'}
               </button>
             </div>
           )}
