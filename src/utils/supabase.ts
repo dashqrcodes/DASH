@@ -1,16 +1,28 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ftgrrlkjavcumjkyyyva.supabase.co';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+/**
+ * Create the Supabase client ONLY when URL and ANON KEY are present.
+ * This prevents build-time SSR errors when env vars are missing on Preview/Prod.
+ */
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-if (!supabaseAnonKey) {
-  console.warn('⚠️ NEXT_PUBLIC_SUPABASE_ANON_KEY not set. Supabase features will not work.');
+let supabase: SupabaseClient | null = null;
+if (supabaseUrl && supabaseAnonKey) {
+  supabase = createClient(supabaseUrl, supabaseAnonKey);
+} else {
+  // Do not throw during build; log once and export a null client.
+  // Callers must guard for null (we also guard inside helpers below).
+  if (process.env.NODE_ENV !== 'production') {
+    console.warn('⚠️ Supabase not initialized: missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY');
+  }
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export { supabase };
 
 // Helper functions for DASH
 export async function createMemorial(data: any) {
+  if (!supabase) return { memorial: null, error: new Error('Supabase not configured') };
   const { data: memorial, error } = await supabase
     .from('memorials')
     .insert(data)
@@ -21,6 +33,7 @@ export async function createMemorial(data: any) {
 }
 
 export async function getMemorial(id: string) {
+  if (!supabase) return { memorial: null, error: new Error('Supabase not configured') };
   const { data: memorial, error } = await supabase
     .from('memorials')
     .select('*')
@@ -31,6 +44,7 @@ export async function getMemorial(id: string) {
 }
 
 export async function updateMemorial(id: string, updates: any) {
+  if (!supabase) return { memorial: null, error: new Error('Supabase not configured') };
   const { data: memorial, error } = await supabase
     .from('memorials')
     .update(updates)
@@ -55,6 +69,7 @@ export async function uploadSlideshowVideo(
   userId: string,
   memorialId: string
 ): Promise<string | null> {
+  if (!supabase) return null;
   try {
     const fileName = `slideshow-videos/${userId}/${memorialId}-${Date.now()}.mp4`;
     
@@ -93,6 +108,7 @@ export async function uploadPrimaryPhoto(
   userId: string,
   memorialId: string
 ): Promise<string | null> {
+  if (!supabase) return null;
   try {
     const fileName = `primary-photos/${userId}/${memorialId}-${Date.now()}.jpg`;
     
@@ -131,6 +147,7 @@ export async function uploadExtractedAudio(
   userId: string,
   memorialId: string
 ): Promise<string | null> {
+  if (!supabase) return null;
   try {
     const fileName = `extracted-audio/${userId}/${memorialId}-${Date.now()}.mp3`;
     
@@ -169,6 +186,7 @@ export async function storeHeavenCharacter(data: {
   slideshowVideoUrl?: string;
   primaryPhotoUrl?: string;
 }) {
+  if (!supabase) return null;
   try {
     const { data: character, error } = await supabase
       .from('heaven_characters')
@@ -200,6 +218,7 @@ export async function storeHeavenCharacter(data: {
  * Get HEAVEN character data from Supabase
  */
 export async function getHeavenCharacter(userId: string, memorialId: string) {
+  if (!supabase) return null;
   try {
     const { data: character, error } = await supabase
       .from('heaven_characters')
@@ -235,6 +254,7 @@ export async function uploadSlideshowMedia(
   memorialId?: string,
   index?: number
 ): Promise<string | null> {
+  if (!supabase) return null;
   try {
     const isVideo = file.type?.startsWith('video/');
     const extension = isVideo ? 'mp4' : 'jpg';
@@ -279,6 +299,7 @@ export async function storeSlideshowMedia(
     muxPlaybackId?: string;
   }>
 ) {
+  if (!supabase) return null;
   try {
     const { data, error } = await supabase
       .from('slideshow_media')
@@ -308,6 +329,7 @@ export async function storeSlideshowMedia(
  * Get slideshow media from database
  */
 export async function getSlideshowMedia(userId: string, memorialId: string) {
+  if (!supabase) return null;
   try {
     const { data, error } = await supabase
       .from('slideshow_media')
