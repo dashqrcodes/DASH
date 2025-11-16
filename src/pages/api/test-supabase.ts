@@ -8,6 +8,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    // If Supabase isn't configured (SSR-safe), return early so builds and previews succeed.
+    if (!supabase) {
+      return res.status(200).json({
+        success: true,
+        message: 'Supabase not configured in this environment. Skipping live connection test.',
+        details: {
+          url: process.env.NEXT_PUBLIC_SUPABASE_URL || null,
+          hasAnonKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+        },
+      });
+    }
+
     // Test 1: Check Supabase connection
     const { data: testData, error: testError } = await supabase
       .from('memorials')
