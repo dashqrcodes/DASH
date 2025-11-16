@@ -254,15 +254,19 @@ const SlideshowPage: React.FC = () => {
           // Also store music selection in database for viewers without Spotify
           if (selectedSpotifyPlaylist || selectedSpotifyTracks.length > 0) {
             try {
-              await supabase
-                .from('slideshow_media')
-                .update({
-                  spotify_playlist: selectedSpotifyPlaylist ? JSON.stringify(selectedSpotifyPlaylist) : null,
-                  spotify_tracks: selectedSpotifyTracks.length > 0 ? JSON.stringify(selectedSpotifyTracks) : null,
-                  updated_at: new Date().toISOString(),
-                })
-                .eq('user_id', userId)
-                .eq('memorial_id', memorialId);
+              if (supabase) {
+                await supabase
+                  .from('slideshow_media')
+                  .update({
+                    spotify_playlist: selectedSpotifyPlaylist ? JSON.stringify(selectedSpotifyPlaylist) : null,
+                    spotify_tracks: selectedSpotifyTracks.length > 0 ? JSON.stringify(selectedSpotifyTracks) : null,
+                    updated_at: new Date().toISOString(),
+                  })
+                  .eq('user_id', userId)
+                  .eq('memorial_id', memorialId);
+              } else {
+                console.warn('Supabase not configured; skipping DB music selection update.');
+              }
             } catch (error) {
               console.warn('Could not store music selection in database:', error);
             }
@@ -301,15 +305,19 @@ const SlideshowPage: React.FC = () => {
           // Also store music selection
           if (selectedSpotifyPlaylist || selectedSpotifyTracks.length > 0) {
             try {
-              await supabase
-                .from('slideshow_media')
-                .update({
-                  spotify_playlist: selectedSpotifyPlaylist ? JSON.stringify(selectedSpotifyPlaylist) : null,
-                  spotify_tracks: selectedSpotifyTracks.length > 0 ? JSON.stringify(selectedSpotifyTracks) : null,
-                  updated_at: new Date().toISOString(),
-                })
-                .eq('user_id', userId)
-                .eq('memorial_id', memorialId);
+              if (supabase) {
+                await supabase
+                  .from('slideshow_media')
+                  .update({
+                    spotify_playlist: selectedSpotifyPlaylist ? JSON.stringify(selectedSpotifyPlaylist) : null,
+                    spotify_tracks: selectedSpotifyTracks.length > 0 ? JSON.stringify(selectedSpotifyTracks) : null,
+                    updated_at: new Date().toISOString(),
+                  })
+                  .eq('user_id', userId)
+                  .eq('memorial_id', memorialId);
+              } else {
+                console.warn('Supabase not configured; skipping DB music selection update.');
+              }
             } catch (error) {
               console.warn('Could not store music selection in database:', error);
             }
