@@ -245,7 +245,7 @@ const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
               style={{
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '8px',
+                gap: '4px',
               }}
             >
               {menuItems.map((item) => (
@@ -255,38 +255,37 @@ const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                   disabled={item.disabled}
                   style={{
                     width: '100%',
-                    padding: '16px',
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: '12px',
+                    padding: '12px 16px',
+                    background: 'transparent',
+                    border: 'none',
+                    borderRadius: '0',
                     color: 'white',
                     fontSize: '16px',
                     fontWeight: '500',
                     cursor: item.disabled ? 'not-allowed' : 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '16px',
+                    gap: '12px',
                     transition: 'all 0.2s ease',
                     opacity: item.disabled ? 0.5 : 1,
                     textAlign: 'left',
                     WebkitTapHighlightColor: 'transparent',
+                    outline: 'none',
                   }}
                   onMouseEnter={(e) => {
                     if (!item.disabled) {
-                      e.currentTarget.style.background = 'rgba(102,126,234,0.2)';
-                      e.currentTarget.style.borderColor = 'rgba(102,126,234,0.4)';
+                      e.currentTarget.style.background = 'rgba(102,126,234,0.1)';
                     }
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
-                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)';
+                    e.currentTarget.style.background = 'transparent';
                   }}
                 >
                   <div
                     style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '10px',
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '8px',
                       background: 'rgba(102,126,234,0.2)',
                       display: 'flex',
                       alignItems: 'center',
