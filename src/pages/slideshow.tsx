@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import PhotoScanner from '../components/PhotoScanner';
 import MuxPlayerWrapper from '../components/MuxPlayerWrapper';
 import CollaborationPanel from '../components/CollaborationPanel';
 import HamburgerMenu from '../components/HamburgerMenu';
@@ -45,7 +44,6 @@ interface SpotifyPlaylist {
 const SlideshowPage: React.FC = () => {
   const router = useRouter();
   const [photos, setPhotos] = useState<Array<MediaItem>>([]);
-  const [showScanner, setShowScanner] = useState(false);
   const [language, setLanguage] = useState<'en' | 'es'>('en');
     const [lovedOneName, setLovedOneName] = useState('');
   const [sunrise, setSunrise] = useState('');
@@ -71,6 +69,7 @@ const SlideshowPage: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const peekTouchStartY = useRef<number | null>(null);
   const drawerTouchStartY = useRef<number | null>(null);
+  const handlePlaySlideshowRef = useRef<(() => void) | null>(null);
   
   // Generate or retrieve memorial/session ID for permanent storage
   const getMemorialId = (): string => {
@@ -526,7 +525,7 @@ const SlideshowPage: React.FC = () => {
     };
   }, []);
 
-  // Auto-open photo picker when coming from order completion
+  // Auto-open photo picker or auto-play slideshow when coming from order completion or autoOpen param
   useEffect(() => {
     const autoOpen = router.query.autoOpen === 'true';
     const orderComplete = localStorage.getItem('orderComplete') === 'true';
@@ -535,8 +534,15 @@ const SlideshowPage: React.FC = () => {
       // Clear the flag
       localStorage.removeItem('orderComplete');
       
-      // Small delay to ensure page is fully loaded
+      // Small delay to ensure page is fully loaded and photos are loaded
       setTimeout(() => {
+        // If photos exist, auto-play the slideshow
+        if (photos.length > 0 && handlePlaySlideshowRef.current) {
+          handlePlaySlideshowRef.current();
+          return;
+        }
+        
+        // If no photos exist, open file picker
         // Create a new file input with capture attribute to bypass menu
         const input = document.createElement('input');
         input.type = 'file';
@@ -858,7 +864,6 @@ const SlideshowPage: React.FC = () => {
     });
 
     setPhotosAndPersist(() => allMedia);
-    setShowScanner(false);
   };
 
   const extractDateFromFile = async (file: File): Promise<string | undefined> => {
@@ -1550,6 +1555,11 @@ const SlideshowPage: React.FC = () => {
       });
     }, 4000);
   };
+  
+  // Store handlePlaySlideshow in ref for use in useEffect (update on each render)
+  useEffect(() => {
+    handlePlaySlideshowRef.current = handlePlaySlideshow;
+  });
 
   const handleStopSlideshow = () => {
     setIsPlayingSlideshow(false);
@@ -2113,48 +2123,6 @@ const SlideshowPage: React.FC = () => {
           )}
         </div>
 
-        {/* Hero Preview */}
-        <button 
-          onClick={() => setShowScanner(true)}
-          style={{
-            margin:'0 20px 16px',
-            padding:'18px 22px',
-            background:'rgba(102,126,234,0.16)',
-            border:'2px solid rgba(102,126,234,0.42)',
-            borderRadius:'18px',
-            cursor:'pointer',
-            display:'flex',
-            alignItems:'center',
-            gap:'14px',
-            minHeight:'72px',
-            WebkitTapHighlightColor:'transparent'
-          }}
-        >
-          <div style={{
-            width:'56px',
-            height:'56px',
-            borderRadius:'14px',
-            background:'rgba(102,126,234,0.32)',
-            display:'flex',
-            alignItems:'center',
-            justifyContent:'center',
-            flexShrink:0
-          }}>
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8">
-              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h6l2 3h3a2 2 0 0 1 2 2z"></path>
-              <circle cx="12" cy="13" r="4"></circle>
-            </svg>
-          </div>
-          <div style={{display:'flex',flexDirection:'column',alignItems:'flex-start',color:'white'}}>
-            <div style={{fontSize:'16px',fontWeight:700}}>
-              {t.scanPhysicalPhoto}
-            </div>
-            <div style={{fontSize:'13px',opacity:0.8,lineHeight:1.35}}>
-              {t.scanSubtitle}
-            </div>
-          </div>
-        </button>
-
         <input
           ref={fileInputRef}
           type="file"
@@ -2164,42 +2132,7 @@ const SlideshowPage: React.FC = () => {
           style={{ display: 'none' }}
         />
 
-
-        {/* Add Photos Buttons */}
-        {/* Photo Scanner Modal */}
-        {showScanner && (
-          <PhotoScanner 
-            onScanComplete={handleScannedPhoto}
-            onClose={() => setShowScanner(false)}
-            language={language}
-          />
-        )}
-
-        {/* Collaboration & Music CTAs */}
-        <div style={{
-          padding: '0 20px',
-          marginBottom: '20px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '18px'
-        }}>
-          <button
-            onClick={handleSpotify}
-            style={{
-              border: 'none',
-              borderRadius: '9999px',
-              padding: '20px 22px',
-              background: 'linear-gradient(135deg, rgba(30,214,96,0.85) 0%, rgba(12,174,57,0.85) 100%)',
-              color: 'white',
-              textAlign: 'center',
-              fontSize: '16px',
-              fontWeight: 700,
-              cursor: 'pointer'
-            }}
-          >
-            {t.connectSpotify}
-          </button>
-        </div>
+        {/* Collaboration & Music CTAs (Spotify button removed to reduce redundancy) */}
 
  
         {/* Photo Grid - Chronological */}
