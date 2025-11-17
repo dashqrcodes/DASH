@@ -2513,25 +2513,13 @@ const SlideshowPage: React.FC = () => {
               disabled: !photos.length || (!supportsFileSystemAccess && !isDesktop),
             },
             {
-              id: 'download',
-              label: 'Download Photos',
+              id: 'download-slideshow',
+              label: 'Download Slideshow',
               icon: (
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                   <polyline points="7 10 12 15 17 10"/>
                   <line x1="12" y1="15" x2="12" y2="3"/>
-                </svg>
-              ),
-              onClick: handleDownloadSlideshow,
-              disabled: !photos.length,
-            },
-            {
-              id: 'download-video',
-              label: 'Download Video with Music',
-              icon: (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polygon points="23 7 16 12 23 17 23 7"/>
-                  <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
                 </svg>
               ),
               onClick: handleDownloadVideoWithMusic,
@@ -2667,79 +2655,113 @@ const SlideshowPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Spotify Option */}
+            {/* Your Music Options */}
             <div style={{ marginBottom: '16px' }}>
               <h4
                 style={{
                   fontSize: '16px',
                   fontWeight: '600',
-                  marginBottom: '16px',
+                  marginBottom: '12px',
                   color: 'rgba(255,255,255,0.9)',
                 }}
               >
                 Your Music (Optional)
               </h4>
-              <button
-                onClick={() => {
-                  setShowMusicSelector(false);
-                  handleSpotify();
-                }}
-                style={{
-                  width: '100%',
-                  padding: '16px',
-                  background: selectedSpotifyPlaylist || selectedSpotifyTracks.length > 0
-                    ? 'rgba(30,215,96,0.2)'
-                    : 'rgba(255,255,255,0.05)',
-                  border: selectedSpotifyPlaylist || selectedSpotifyTracks.length > 0
-                    ? '2px solid rgba(30,215,96,0.6)'
-                    : '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: '12px',
-                  color: 'white',
-                  fontSize: '16px',
-                  fontWeight: '500',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '16px',
-                  transition: 'all 0.2s ease',
-                }}
-              >
-                <div
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {/* Spotify - Green Pill Button */}
+                <button
+                  onClick={() => {
+                    setShowMusicSelector(false);
+                    handleSpotify();
+                  }}
                   style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '10px',
-                    background: 'rgba(30,215,96,0.2)',
+                    width: '100%',
+                    padding: '12px 20px',
+                    background: selectedSpotifyPlaylist || selectedSpotifyTracks.length > 0
+                      ? '#1db954'
+                      : 'rgba(29,185,84,0.15)',
+                    border: 'none',
+                    borderRadius: '9999px',
+                    color: 'white',
+                    fontSize: '15px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: 'white',
-                    flexShrink: 0,
+                    gap: '10px',
+                    transition: 'all 0.2s ease',
+                    boxShadow: selectedSpotifyPlaylist || selectedSpotifyTracks.length > 0
+                      ? '0 4px 12px rgba(29,185,84,0.3)'
+                      : 'none',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!selectedSpotifyPlaylist && selectedSpotifyTracks.length === 0) {
+                      e.currentTarget.style.background = 'rgba(29,185,84,0.25)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!selectedSpotifyPlaylist && selectedSpotifyTracks.length === 0) {
+                      e.currentTarget.style.background = 'rgba(29,185,84,0.15)';
+                    }
                   }}
                 >
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.42 1.56-.299.421-1.02.599-1.559.3z"/>
                   </svg>
-                </div>
-                <div style={{ flex: 1, textAlign: 'left' }}>
-                  <div style={{ fontWeight: '600' }}>
+                  <span>
                     {selectedSpotifyPlaylist
-                      ? `Spotify: ${selectedSpotifyPlaylist.name}`
+                      ? `Spotify: ${selectedSpotifyPlaylist.name.substring(0, 25)}${selectedSpotifyPlaylist.name.length > 25 ? '...' : ''}`
                       : selectedSpotifyTracks.length > 0
                       ? `Spotify: ${selectedSpotifyTracks.length} tracks`
                       : 'Connect Spotify'}
-                  </div>
-                  <div style={{ fontSize: '12px', opacity: 0.7, marginTop: '4px' }}>
-                    Use your own playlist or tracks
-                  </div>
-                </div>
-                {(selectedSpotifyPlaylist || selectedSpotifyTracks.length > 0) && (
-                  <div style={{ fontSize: '12px', color: '#1db954' }}>✓</div>
-                )}
-              </button>
+                  </span>
+                  {(selectedSpotifyPlaylist || selectedSpotifyTracks.length > 0) && (
+                    <span style={{ fontSize: '16px' }}>✓</span>
+                  )}
+                </button>
+
+                {/* Apple Music Option */}
+                <button
+                  onClick={() => {
+                    setTransferFeedback('Apple Music integration coming soon. For now, please use Spotify or upload your own music file.');
+                    setShowMusicSelector(false);
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '12px 20px',
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: '9999px',
+                    color: 'white',
+                    fontSize: '15px',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '10px',
+                    transition: 'all 0.2s ease',
+                    opacity: 0.7,
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                    e.currentTarget.style.opacity = '1';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                    e.currentTarget.style.opacity = '0.7';
+                  }}
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm0 2c5.52 0 10 4.48 10 10s-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"/>
+                  </svg>
+                  <span>Apple Music (Coming Soon)</span>
+                </button>
+              </div>
             </div>
 
-            {/* Custom Upload Option */}
+            {/* Upload My Music Option */}
             <div>
               <input
                 type="file"
@@ -2759,54 +2781,43 @@ const SlideshowPage: React.FC = () => {
                 }}
                 style={{
                   width: '100%',
-                  padding: '16px',
+                  padding: '12px 20px',
                   background: customAudioUrl
                     ? 'rgba(102,126,234,0.2)'
                     : 'rgba(255,255,255,0.05)',
                   border: customAudioUrl
                     ? '2px solid rgba(102,126,234,0.6)'
                     : '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: '12px',
+                  borderRadius: '9999px',
                   color: 'white',
-                  fontSize: '16px',
+                  fontSize: '15px',
                   fontWeight: '500',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '16px',
+                  justifyContent: 'center',
+                  gap: '10px',
                   transition: 'all 0.2s ease',
                 }}
+                onMouseEnter={(e) => {
+                  if (!customAudioUrl) {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!customAudioUrl) {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                  }
+                }}
               >
-                <div
-                  style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '10px',
-                    background: 'rgba(102,126,234,0.2)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'white',
-                    flexShrink: 0,
-                  }}
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                    <polyline points="17 8 12 3 7 8"/>
-                    <line x1="12" y1="3" x2="12" y2="15"/>
-                  </svg>
-                </div>
-                <div style={{ flex: 1, textAlign: 'left' }}>
-                  <div style={{ fontWeight: '600' }}>
-                    {customAudioUrl ? 'Custom Audio Uploaded' : 'Upload Your Own Music'}
-                  </div>
-                  <div style={{ fontSize: '12px', opacity: 0.7, marginTop: '4px' }}>
-                    Upload MP3, WAV, or other audio files
-                  </div>
-                </div>
-                {customAudioUrl && (
-                  <div style={{ fontSize: '12px', color: '#667eea' }}>✓</div>
-                )}
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                <span>
+                  {customAudioUrl ? 'My Music Uploaded ✓' : 'Upload My Music'}
+                </span>
               </button>
             </div>
           </div>
