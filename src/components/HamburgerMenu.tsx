@@ -210,7 +210,7 @@ const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
               borderTopRightRadius: '24px',
               padding: '24px',
               paddingBottom: 'calc(24px + env(safe-area-inset-bottom, 0px))',
-              maxHeight: '80vh',
+              maxHeight: '95vh',
               overflowY: 'auto',
               boxShadow: '0 -8px 32px rgba(0,0,0,0.5)',
             }}
