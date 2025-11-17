@@ -37,7 +37,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab }) => {
         }}>
             {/* Home */}
             <button
-                onClick={() => router.push('/dashboard')}
+                onClick={() => router.push('/slideshow')}
                 style={{
                     background: activeTab === 'home' ? 'rgba(102,126,234,0.2)' : 'transparent',
                     border: 'none',
