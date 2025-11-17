@@ -188,7 +188,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab }) => {
                 }}>Music</span>
             </button>
 
-            {/* Heart - Donate, Share, Comment */}
+            {/* Share - Donate, Share, Comment */}
             <button
                 onClick={() => {
                     // This will be handled by the page component to show heart menu
@@ -226,7 +226,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab }) => {
                     fontSize: 'clamp(9px, 2.5vw, 10px)',
                     fontWeight: '500',
                     color: activeTab === 'heart' ? '#ff4d4d' : 'rgba(255,255,255,0.7)'
-                }}>Heart</span>
+                }}>Share</span>
             </button>
         </div>
     );
