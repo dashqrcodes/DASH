@@ -2302,14 +2302,6 @@ const SlideshowPage: React.FC = () => {
                       gap:'10px',
                       minWidth:0
                     }}>
-                      <div style={{
-                        fontSize:'clamp(14px, 3.5vw, 16px)',
-                        fontWeight:'700',
-                        marginBottom:'2px'
-                      }}>
-                        {t.memory} {globalIndex + 1}
-                        </div>
-                        
                       {/* Date Input */}
                       <input 
                         type="date" 
