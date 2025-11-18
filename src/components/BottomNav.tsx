@@ -73,9 +73,9 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab }) => {
                 }}>Home</span>
             </button>
 
-            {/* Profile */}
+            {/* HEAVEN (Video Call) */}
             <button
-                onClick={() => router.push('/profile?resume=true')}
+                onClick={handleHeavenCall}
                 style={{
                     background: 'transparent',
                     border: 'none',
@@ -87,29 +87,29 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab }) => {
                     minWidth: '44px',
                     minHeight: '44px',
                     padding: '8px',
-                    WebkitTapHighlightColor: 'transparent'
+                    borderRadius: '8px',
+                    WebkitTapHighlightColor: 'transparent',
+                    transition: 'all 0.2s ease'
                 }}
                 onMouseEnter={(e) => {
                     e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
-                    e.currentTarget.style.opacity = '1';
                 }}
                 onMouseLeave={(e) => {
                     e.currentTarget.style.background = 'transparent';
-                    e.currentTarget.style.opacity = '1';
                 }}
             >
-                <svg width="clamp(20px, 5vw, 24px)" height="clamp(20px, 5vw, 24px)" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="2">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                    <circle cx="12" cy="7" r="4"/>
+                <svg width="clamp(20px, 5vw, 24px)" height="clamp(20px, 5vw, 24px)" viewBox="0 0 24 24" fill="none" stroke={activeTab === 'heaven' ? 'white' : 'rgba(255,255,255,0.9)'} strokeWidth="2">
+                    <path d="M23 7l-7 5 7 5V7z"/>
+                    <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
                 </svg>
                 <span style={{
-                    fontSize: 'clamp(9px, 2.5vw, 10px)',
-                    fontWeight: '500',
-                    color: 'rgba(255,255,255,0.7)'
-                }}>Profile</span>
+                    fontSize: 'clamp(8px, 2vw, 9px)',
+                    fontWeight: '600',
+                    color: 'white'
+                }}>HEAVEN</span>
             </button>
 
-            {/* Plus Sign - Center (Opens File Picker) */}
+            {/* Plus Sign (Opens File Picker) */}
             <button
                 onClick={() => {
                     // Dispatch event to open file picker
@@ -120,14 +120,14 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab }) => {
                     background: 'rgba(102,126,234,0.3)',
                     border: '2px solid rgba(102,126,234,0.5)',
                     borderRadius: '50%',
-                    width: 'clamp(48px, 12vw, 56px)',
-                    height: 'clamp(48px, 12vw, 56px)',
+                    width: 'clamp(44px, 11vw, 52px)',
+                    height: 'clamp(44px, 11vw, 52px)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     cursor: 'pointer',
-                    minWidth: '48px',
-                    minHeight: '48px',
+                    minWidth: '44px',
+                    minHeight: '44px',
                     padding: '0',
                     WebkitTapHighlightColor: 'transparent',
                     transition: 'all 0.2s ease',
@@ -144,7 +144,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab }) => {
                     e.currentTarget.style.transform = 'scale(1)';
                 }}
             >
-                <svg width="clamp(24px, 6vw, 28px)" height="clamp(24px, 6vw, 28px)" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round">
+                <svg width="clamp(20px, 5vw, 24px)" height="clamp(20px, 5vw, 24px)" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round">
                     <line x1="12" y1="5" x2="12" y2="19"/>
                     <line x1="5" y1="12" x2="19" y2="12"/>
                 </svg>
