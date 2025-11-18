@@ -109,40 +109,45 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab }) => {
                 }}>Profile</span>
             </button>
 
-            {/* HEAVEN (Video Call) - Center */}
+            {/* Plus Sign - Center (Opens File Picker) */}
             <button
-                onClick={handleHeavenCall}
+                onClick={() => {
+                    // Dispatch event to open file picker
+                    const event = new CustomEvent('openFilePicker');
+                    window.dispatchEvent(event);
+                }}
                 style={{
-                    background: 'transparent',
-                    border: 'none',
+                    background: 'rgba(102,126,234,0.3)',
+                    border: '2px solid rgba(102,126,234,0.5)',
+                    borderRadius: '50%',
+                    width: 'clamp(48px, 12vw, 56px)',
+                    height: 'clamp(48px, 12vw, 56px)',
                     display: 'flex',
-                    flexDirection: 'column',
                     alignItems: 'center',
-                    gap: '4px',
+                    justifyContent: 'center',
                     cursor: 'pointer',
-                    minWidth: '44px',
-                    minHeight: '44px',
-                    padding: '8px',
-                    borderRadius: '8px',
+                    minWidth: '48px',
+                    minHeight: '48px',
+                    padding: '0',
                     WebkitTapHighlightColor: 'transparent',
-                    transition: 'all 0.2s ease'
+                    transition: 'all 0.2s ease',
+                    boxShadow: '0 4px 12px rgba(102,126,234,0.3)'
                 }}
                 onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                    e.currentTarget.style.background = 'rgba(102,126,234,0.5)';
+                    e.currentTarget.style.borderColor = 'rgba(102,126,234,0.7)';
+                    e.currentTarget.style.transform = 'scale(1.1)';
                 }}
                 onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.background = 'rgba(102,126,234,0.3)';
+                    e.currentTarget.style.borderColor = 'rgba(102,126,234,0.5)';
+                    e.currentTarget.style.transform = 'scale(1)';
                 }}
             >
-                <svg width="clamp(24px, 6vw, 28px)" height="clamp(24px, 6vw, 28px)" viewBox="0 0 24 24" fill="none" stroke={activeTab === 'heaven' ? 'white' : 'rgba(255,255,255,0.9)'} strokeWidth="2">
-                    <path d="M23 7l-7 5 7 5V7z"/>
-                    <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                <svg width="clamp(24px, 6vw, 28px)" height="clamp(24px, 6vw, 28px)" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
                 </svg>
-                <span style={{
-                    fontSize: 'clamp(8px, 2vw, 9px)',
-                    fontWeight: '600',
-                    color: 'white'
-                }}>HEAVEN</span>
             </button>
 
             {/* Music */}
