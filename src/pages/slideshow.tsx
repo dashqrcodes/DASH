@@ -44,6 +44,7 @@ interface SpotifyPlaylist {
 const SlideshowPage: React.FC = () => {
   const router = useRouter();
   const [photos, setPhotos] = useState<Array<MediaItem>>([]);
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(null);
   const [language, setLanguage] = useState<'en' | 'es'>('en');
     const [lovedOneName, setLovedOneName] = useState('');
   const [sunrise, setSunrise] = useState('');
@@ -387,6 +388,22 @@ const SlideshowPage: React.FC = () => {
           setCustomAudioUrl(savedCustomAudio);
         }
         
+        // Load profile photo from cardDesign
+        const cardData = localStorage.getItem('cardDesign');
+        if (cardData) {
+          try {
+            const data = JSON.parse(cardData);
+            if (data.front) {
+              const photoUrl = data.front.photo || data.front.photoUrl || data.front.image;
+              if (photoUrl) {
+                setProfilePhotoUrl(photoUrl);
+              }
+            }
+          } catch (e) {
+            console.error('Error parsing card data for photo:', e);
+          }
+        }
+        
         // Load saved slideshow media - try Supabase first, then localStorage
         const loadMediaFromCloud = async () => {
           const userId = getUserId();
@@ -471,6 +488,29 @@ const SlideshowPage: React.FC = () => {
               } catch (e) {
                 console.error('Error loading saved media:', e);
               }
+            } else {
+              // If no saved media, check if we should use profile photo as placeholder
+              const cardData = localStorage.getItem('cardDesign');
+              if (cardData) {
+                try {
+                  const data = JSON.parse(cardData);
+                  if (data.front) {
+                    const photoUrl = data.front.photo || data.front.photoUrl || data.front.image;
+                    if (photoUrl) {
+                      const profilePhotoItem: MediaItem = {
+                        id: 'profile-photo-placeholder',
+                        url: photoUrl,
+                        file: null,
+                        preview: photoUrl,
+                        type: 'photo',
+                      };
+                      setPhotos([profilePhotoItem]);
+                    }
+                  }
+                } catch (e) {
+                  console.error('Error parsing card data for placeholder:', e);
+                }
+              }
             }
           }
         });
@@ -494,6 +534,19 @@ const SlideshowPage: React.FC = () => {
     window.addEventListener('heartIconClick', openCollab as EventListener);
     return () => {
       window.removeEventListener('heartIconClick', openCollab as EventListener);
+    };
+  }, []);
+
+  // Listen for Plus icon clicks from BottomNav to open file picker
+  useEffect(() => {
+    const openFilePicker = () => {
+      if (fileInputRef.current) {
+        fileInputRef.current.click();
+      }
+    };
+    window.addEventListener('openFilePicker', openFilePicker as EventListener);
+    return () => {
+      window.removeEventListener('openFilePicker', openFilePicker as EventListener);
     };
   }, []);
 
@@ -682,6 +735,11 @@ const SlideshowPage: React.FC = () => {
           if (!lovedOneName && data.front.name) setLovedOneName(data.front.name);
           if (!sunrise && data.front.sunrise) setSunrise(data.front.sunrise);
           if (!sunset && data.front.sunset) setSunset(data.front.sunset);
+          // Load profile photo if available (already handled in initial load useEffect)
+          if (data.front.photo || data.front.photoUrl || data.front.image) {
+            const photoUrl = data.front.photo || data.front.photoUrl || data.front.image;
+            setProfilePhotoUrl(photoUrl);
+          }
         }
       } catch (e) {
         console.error('Error parsing card data:', e);
@@ -1949,7 +2007,33 @@ const SlideshowPage: React.FC = () => {
           }}>
             {lovedOneName || t.createSlideshow}
           </div>
-          <div style={{width:'40px', height:'40px'}} />
+          <button
+            onClick={() => router.push('/profile?resume=true')}
+            style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              background: 'rgba(255,255,255,0.1)',
+              border: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              WebkitTapHighlightColor: 'transparent',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+            }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+          </button>
         </div>
 
         <div
@@ -2070,56 +2154,26 @@ const SlideshowPage: React.FC = () => {
               </button>
             </>
           ) : (
-            <div
-              onClick={() => {
-                if (fileInputRef.current) fileInputRef.current.click();
-              }}
-              style={{
-                textAlign: 'center',
-                color: 'rgba(255,255,255,0.88)',
-                display:'flex',
-                flexDirection:'column',
-                alignItems:'center',
-                gap:'10px',
-                minHeight:'100%',
-                justifyContent:'center',
-                cursor: 'pointer',
-                width: '100%',
-                height: '100%'
-              }}
-            >
+            profilePhotoUrl ? (
+              <img
+                src={profilePhotoUrl}
+                alt="Profile photo"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover'
+                }}
+              />
+            ) : (
               <div style={{
-                width:'58px',
-                height:'58px',
-                borderRadius:'50%',
-                border:'1px solid rgba(255,255,255,0.35)',
-                display:'flex',
-                alignItems:'center',
-                justifyContent:'center',
-                position:'relative',
-                overflow:'hidden'
-              }}>
-                <video
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  style={{width:'220%',height:'220%',objectFit:'cover',opacity:0.65,transform:'translateY(2px)'}}
-                >
-                  <source src="https://storage.googleapis.com/dash-public-assets/slideshow-upload-loop.mp4" type="video/mp4" />
-                </video>
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.6" style={{position:'absolute'}}>
-                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h6l2 3h3a2 2 0 0 1 2 2z"></path>
-                  <circle cx="12" cy="13" r="4"></circle>
-                </svg>
-              </div>
-              <div style={{ fontSize:'16px', fontWeight:600 }}>
-                {t.addPhotosVideos}
-              </div>
-              <div style={{ fontSize:'13px', opacity:0.7 }}>
-                {t.startFromEarliest}
-              </div>
-            </div>
+                width: '100%',
+                height: '100%',
+                background: 'rgba(255,255,255,0.05)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }} />
+            )
           )}
         </div>
 
