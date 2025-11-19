@@ -174,42 +174,6 @@ const CollaborationPanel: React.FC<CollaborationPanelProps> = ({
         />
       </form>
 
-      <div style={{
-        background: 'rgba(255,255,255,0.06)',
-        border: '1px solid rgba(255,255,255,0.08)',
-        borderRadius: '18px',
-        padding: '18px 20px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '12px',
-        fontSize: '13px',
-        lineHeight: 1.6
-      }}>
-        <strong style={{ fontSize: '14px' }}>Live Progress</strong>
-        <ul style={{ margin: 0, paddingLeft: '18px' }}>
-          <li>Slideshow 68% complete – 92 photos placed, 3 songs queued</li>
-          <li>8 collaborators invited · 5 actively uploading</li>
-          <li>Memorial donations: <strong>$820</strong> (goal $1,000)</li>
-        </ul>
-      </div>
-
-      <button
-        onClick={() => alert('Invite link copied to clipboard!')}
-        style={{
-          alignSelf: 'flex-start',
-          border: '1px solid rgba(255,255,255,0.2)',
-          background: 'rgba(255,255,255,0.05)',
-          color: 'white',
-          padding: '10px 18px',
-          borderRadius: '999px',
-          fontSize: '13px',
-          fontWeight: 600,
-          cursor: 'pointer'
-        }}
-      >
-        Share invite link
-      </button>
-
       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
         {sampleMessages.map((message) => (
           <div
