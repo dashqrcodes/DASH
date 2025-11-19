@@ -1999,7 +1999,7 @@ const SlideshowPage: React.FC = () => {
             {lovedOneName || t.createSlideshow}
           </div>
           <button
-            onClick={() => router.push('/profile?resume=true')}
+            onClick={() => router.push('/account')}
             style={{
               width: '40px',
               height: '40px',
