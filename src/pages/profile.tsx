@@ -619,12 +619,19 @@ const ProfilePage: React.FC = () => {
             // Fallback for non-ISO dates
             const date = new Date(value);
             if (Number.isNaN(date.getTime())) return value;
-            const locale = lang === 'es' ? 'es-ES' : 'en-US';
-            return new Intl.DateTimeFormat(locale, {
-                month: 'long',
-                day: '2-digit',
-                year: 'numeric'
-            }).format(date);
+            if (lang === 'es') {
+                return new Intl.DateTimeFormat('es-ES', {
+                    day: '2-digit',
+                    month: 'long',
+                    year: 'numeric'
+                }).format(date);
+            }
+            // Format: Month Day, Year (e.g., "April 19, 2024") for American English
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            const monthIndex = date.getMonth();
+            const day = date.getDate();
+            const year = date.getFullYear();
+            return `${monthNames[monthIndex]} ${day}, ${year}`;
         } catch (error) {
             return value;
         }
