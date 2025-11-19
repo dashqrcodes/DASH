@@ -39,10 +39,11 @@ const DateScrollPicker: React.FC<DateScrollPickerProps> = ({ label, value, onCha
   
   useEffect(() => {
     if (value && ISO_DATE_REGEX.test(value)) {
-      const date = new Date(value);
-      setSelectedMonth(date.getMonth() + 1);
-      setSelectedDay(date.getDate());
-      setSelectedYear(date.getFullYear());
+      // Parse date string directly to avoid timezone conversion issues
+      const [year, month, day] = value.split('-').map(Number);
+      setSelectedYear(year);
+      setSelectedMonth(month);
+      setSelectedDay(day);
     }
   }, [value]);
   
@@ -61,12 +62,16 @@ const DateScrollPicker: React.FC<DateScrollPickerProps> = ({ label, value, onCha
   
   const formatDisplayDate = (dateStr: string) => {
     if (!dateStr || !ISO_DATE_REGEX.test(dateStr)) return '';
-    const date = new Date(dateStr);
+    // Parse date string directly to avoid timezone conversion issues
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const monthIndex = month - 1; // JavaScript months are 0-indexed
     if (language === 'es') {
+      // Create a date in local timezone to format properly
+      const date = new Date(year, monthIndex, day);
       return new Intl.DateTimeFormat('es-ES', { day: '2-digit', month: 'long', year: 'numeric' }).format(date);
     }
-    const monthName = months[date.getMonth()];
-    return `${monthName} ${date.getDate()}, ${date.getFullYear()}`;
+    const monthName = months[monthIndex];
+    return `${monthName} ${day}, ${year}`;
   };
   
   return (
@@ -599,8 +604,19 @@ const ProfilePage: React.FC = () => {
         if (!value) return '';
         const locale = lang === 'es' ? 'es-ES' : 'en-US';
         try {
-            const baseValue = ISO_DATE_REGEX.test(value) ? `${value}T00:00:00` : value;
-            const date = new Date(baseValue);
+            // Parse date string directly to avoid timezone conversion issues
+            if (ISO_DATE_REGEX.test(value)) {
+                const [year, month, day] = value.split('-').map(Number);
+                const date = new Date(year, month - 1, day); // Create date in local timezone
+                if (Number.isNaN(date.getTime())) return value;
+                return new Intl.DateTimeFormat(locale, {
+                    month: 'long',
+                    day: '2-digit',
+                    year: 'numeric'
+                }).format(date);
+            }
+            // Fallback for non-ISO dates
+            const date = new Date(value);
             if (Number.isNaN(date.getTime())) return value;
             return new Intl.DateTimeFormat(locale, {
                 month: 'long',
