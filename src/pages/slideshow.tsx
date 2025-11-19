@@ -1743,9 +1743,6 @@ const SlideshowPage: React.FC = () => {
     drawerTouchStartY.current = null;
   };
 
-  const handleJumpToHeaven = () => {
-    router.push('/heaven?call=true');
-  };
 
   const handleSpotify = async () => {
     // Check if user has Spotify connected
@@ -2465,25 +2462,6 @@ const SlideshowPage: React.FC = () => {
               }}
             >
               Next →
-            </button>
-            <button
-              onClick={handleJumpToHeaven}
-              style={{
-                width:'100%',
-                border:'none',
-                borderRadius:'14px',
-                padding:'16px 18px',
-                background:'linear-gradient(135deg,#12c2e9 0%,#c471ed 50%,#f64f59 100%)',
-                color:'white',
-                fontSize:'15px',
-                fontWeight:700,
-                cursor:'pointer',
-                boxShadow:'0 12px 28px rgba(18,194,233,0.35)',
-                WebkitTapHighlightColor:'transparent',
-                touchAction:'manipulation'
-              }}
-            >
-              Launch HEAVEN →
             </button>
             </div>
           </div>
