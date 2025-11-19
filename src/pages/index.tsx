@@ -6,7 +6,16 @@ const Home = () => {
     const router = useRouter();
 
     useEffect(() => {
-        // Check if user is authenticated
+        // Check if we're on dashqrcodes.com - redirect to Netcapital
+        if (typeof window !== 'undefined') {
+            const hostname = window.location.hostname;
+            if (hostname.includes('dashqrcodes.com')) {
+                window.location.href = 'https://netcapital.com/companies/dash';
+                return;
+            }
+        }
+
+        // For dashmemories.com and other domains - normal app flow
         const isAuthenticated = localStorage.getItem('userAuthenticated');
         const hasSignedUp = localStorage.getItem('userSignedUp');
         
