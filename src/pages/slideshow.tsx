@@ -1196,12 +1196,6 @@ const SlideshowPage: React.FC = () => {
     }
   };
 
-  const handleComplete = () => {
-    // Save final slideshow data
-    persistMediaToStorage(photos);
-    // Stay on slideshow page instead of redirecting
-    alert(`✅ Slideshow complete with ${photos.length} ${t.memories}!`);
-  };
 
   const handleNext = () => {
     // Save all data and navigate to finalized profile
@@ -2451,27 +2445,6 @@ const SlideshowPage: React.FC = () => {
                 gap: '14px'
               }}
             >
-            <button 
-              onClick={handleComplete}
-              style={{
-                width:'100%',
-                padding:'18px',
-                background:'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
-                border:'none',
-                borderRadius:'16px',
-                color:'white',
-                fontSize:'clamp(16px, 4vw, 18px)',
-                fontWeight:'700',
-                cursor:'pointer',
-                boxShadow:'0 4px 20px rgba(102,126,234,0.5)',
-                minHeight:'56px',
-                WebkitTapHighlightColor:'transparent',
-                touchAction:'manipulation',
-                letterSpacing:'0.5px'
-              }}
-            >
-              {t.completeSlideshow} ({photos.length} {t.memories})
-            </button>
             <button
               onClick={handleNext}
               style={{
