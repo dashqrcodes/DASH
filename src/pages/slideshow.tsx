@@ -2052,8 +2052,10 @@ const SlideshowPage: React.FC = () => {
             border: photos.length
               ? '1px solid rgba(255,255,255,0.15)'
               : '1px solid rgba(114,210,255,0.45)',
-            aspectRatio: '16 / 9',
-            minHeight: '220px',
+            aspectRatio: '9 / 16',
+            width: '100%',
+            maxWidth: '100%',
+            minHeight: '400px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
