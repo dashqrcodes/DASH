@@ -1,4 +1,4 @@
-# 🌐 Setting Up dashqrcodes.com on Vercel (GoDaddy)
+# 🌐 Setting Up dashmemories.com on Vercel (GoDaddy)
 
 ## Step-by-Step Guide
 
@@ -12,7 +12,7 @@
 2. **Add Custom Domain**
    - Go to **Settings** → **Domains**
    - Click **"Add Domain"**
-   - Enter: `dashqrcodes.com`
+   - Enter: `dashmemories.com`
    - Click **"Add"**
 
 3. **Vercel will show you DNS records to add**
@@ -33,19 +33,19 @@
    - Go to [godaddy.com](https://godaddy.com)
    - Log in to your account
    - Go to **My Products** → **Domains**
-   - Find `dashqrcodes.com`
+   - Find `dashmemories.com`
    - Click **"DNS"** or **"Manage DNS"**
 
 2. **Add/Update DNS Records**
 
-   **For Root Domain (dashqrcodes.com):**
+   **For Root Domain (dashmemories.com):**
    - Find or add an **A Record**:
      - **Type**: A
      - **Name**: @ (or leave blank)
      - **Value**: `76.76.21.21` (Vercel will provide the exact IP)
      - **TTL**: 600 (or default)
    
-   **For www subdomain (www.dashqrcodes.com):**
+   **For www subdomain (www.dashmemories.com):**
    - Find or add a **CNAME Record**:
      - **Type**: CNAME
      - **Name**: www
@@ -99,7 +99,7 @@
    - Click **"Edit Settings"**
 
 2. **Update Redirect URIs**
-   - Add: `https://dashqrcodes.com/api/spotify/callback`
+   - Add: `https://dashmemories.com/api/spotify/callback`
    - Keep: `http://localhost:3000/api/spotify/callback` (for development)
    - Remove any old deployment-specific URLs
    - Click **"Add"** and **"Save"**
@@ -108,8 +108,8 @@
 
 After setup, verify:
 
-- [ ] `https://dashqrcodes.com` loads your app
-- [ ] `https://www.dashqrcodes.com` redirects to `https://dashqrcodes.com`
+- [ ] `https://dashmemories.com` loads your app
+- [ ] `https://www.dashmemories.com` redirects to `https://dashmemories.com`
 - [ ] SSL certificate is active (green lock in browser)
 - [ ] Spotify OAuth works with new domain
 - [ ] All internal links work correctly
@@ -119,7 +119,7 @@ After setup, verify:
 ### "Invalid Configuration" in Vercel
 - **Check DNS records match exactly** (case-sensitive)
 - **Wait 15-30 minutes** for DNS propagation
-- **Clear DNS cache**: `nslookup dashqrcodes.com` (command line)
+- **Clear DNS cache**: `nslookup dashmemories.com` (command line)
 
 ### Site Not Loading
 - **Check DNS propagation**: Use [whatsmydns.net](https://www.whatsmydns.net)
@@ -143,16 +143,16 @@ www → cname.vercel-dns.com
 ```
 
 **GoDaddy DNS Settings:**
-- Location: My Products → Domains → dashqrcodes.com → DNS
+- Location: My Products → Domains → dashmemories.com → DNS
 - Update A and CNAME records as shown above
 
 **Vercel Settings:**
 - Location: Project → Settings → Domains
-- Add: `dashqrcodes.com`
+- Add: `dashmemories.com`
 - Wait for verification
 
 **Environment Variables:**
-- `NEXT_PUBLIC_BASE_URL` = `https://dashqrcodes.com`
+- `NEXT_PUBLIC_BASE_URL` = `https://dashmemories.com`
 
 ---
 
