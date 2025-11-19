@@ -82,13 +82,14 @@ const HeavenDemoPage: React.FC = () => {
   };
 
   const handleVideoUrlSubmit = () => {
-    if (!videoUrl.trim()) return;
+    if (!videoUrl.trim() || !name || typeof name !== 'string') return;
     
-    const demoConfig = DEMO_CONFIGS[name as string]?.toLowerCase();
+    const nameKey = name.toLowerCase();
+    const demoConfig = DEMO_CONFIGS[nameKey];
     if (!demoConfig) return;
 
     // Save video URL to localStorage
-    localStorage.setItem(`heaven_video_${name}`, videoUrl.trim());
+    localStorage.setItem(`heaven_video_${nameKey}`, videoUrl.trim());
     
     // Update person with new video URL
     setPerson(prev => prev ? {
@@ -98,13 +99,13 @@ const HeavenDemoPage: React.FC = () => {
     
     setShowUpload(false);
     setIsInCall(true);
-    setStatusMessage(`Connected to HEAVEN – ${DEMO_CONFIGS[name as string]?.name || name}`);
+    setStatusMessage(`Connected to HEAVEN – ${demoConfig.name}`);
     setVideoUrl('');
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !name || typeof name !== 'string') return;
 
     setIsUploading(true);
     
@@ -113,11 +114,15 @@ const HeavenDemoPage: React.FC = () => {
       const reader = new FileReader();
       reader.onloadend = () => {
         const dataUrl = reader.result as string;
-        const demoConfig = DEMO_CONFIGS[name as string]?.toLowerCase();
-        if (!demoConfig) return;
+        const nameKey = name.toLowerCase();
+        const demoConfig = DEMO_CONFIGS[nameKey];
+        if (!demoConfig) {
+          setIsUploading(false);
+          return;
+        }
 
         // Save video URL (data URL for now)
-        localStorage.setItem(`heaven_video_${name}`, dataUrl);
+        localStorage.setItem(`heaven_video_${nameKey}`, dataUrl);
         
         setPerson(prev => prev ? {
           ...prev,
@@ -126,7 +131,7 @@ const HeavenDemoPage: React.FC = () => {
         
         setShowUpload(false);
         setIsInCall(true);
-        setStatusMessage(`Connected to HEAVEN – ${DEMO_CONFIGS[name as string]?.name || name}`);
+        setStatusMessage(`Connected to HEAVEN – ${demoConfig.name}`);
         setIsUploading(false);
       };
       reader.readAsDataURL(file);
