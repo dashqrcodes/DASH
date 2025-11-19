@@ -1888,7 +1888,7 @@ const SlideshowPage: React.FC = () => {
         return (
           <MuxPlayerWrapper
             playbackId={hero.muxPlaybackId}
-            title={`Memory preview`}
+            title=""
             muted
             controls={false}
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
@@ -2230,7 +2230,7 @@ const SlideshowPage: React.FC = () => {
                         photo.muxPlaybackId ? (
                           <MuxPlayerWrapper
                             playbackId={photo.muxPlaybackId}
-                            title={`Memory ${index + 1}`}
+                            title=""
                             muted
                             controls={false}
                             style={{
@@ -2867,7 +2867,7 @@ const SlideshowPage: React.FC = () => {
                   photos[currentSlideIndex].muxPlaybackId ? (
                     <MuxPlayerWrapper
                       playbackId={photos[currentSlideIndex].muxPlaybackId!}
-                      title={`Memory ${currentSlideIndex + 1}`}
+                      title=""
                       muted={false}
                       controls={true}
                       style={{
@@ -2891,7 +2891,7 @@ const SlideshowPage: React.FC = () => {
                 ) : (
                   <img
                     src={photos[currentSlideIndex].preview || photos[currentSlideIndex].url}
-                    alt={`Memory ${currentSlideIndex + 1}`}
+                    alt=""
                     style={{
                       width: '100%',
                       height: '100%',
