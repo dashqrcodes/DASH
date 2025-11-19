@@ -589,8 +589,14 @@ const ProfilePage: React.FC = () => {
         const candidates = normalized ? [normalized, trimmed] : [trimmed];
 
         for (const candidate of candidates) {
+            // Try to parse as ISO date first
+            if (ISO_DATE_REGEX.test(candidate)) {
+                return candidate;
+            }
+            // Parse date and extract components directly to avoid timezone issues
             const parsed = new Date(candidate);
             if (!Number.isNaN(parsed.getTime())) {
+                // Use local timezone methods to avoid day shift
                 const year = parsed.getFullYear();
                 const month = String(parsed.getMonth() + 1).padStart(2, '0');
                 const day = String(parsed.getDate()).padStart(2, '0');
