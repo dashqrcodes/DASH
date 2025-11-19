@@ -127,7 +127,34 @@ const CollaborationPanel: React.FC<CollaborationPanelProps> = ({
             fontSize: '15px'
           }}
         />
-        {/* Donate (simple heart icon) */}
+        {/* Submit (Enter) - Small round circle with up arrow, only shows when typing */}
+        {commentText.trim() && (
+          <button
+            type="submit"
+            style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '50%',
+              border: 'none',
+              background: 'rgba(255,255,255,0.15)',
+              color: 'white',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 0,
+              marginRight: '4px'
+            }}
+            aria-label="Send"
+            title="Send"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="19" x2="12" y2="5"></line>
+              <polyline points="5 12 12 5 19 12"></polyline>
+            </svg>
+          </button>
+        )}
+        {/* Donate (simple heart icon) - Furthest right */}
         <button
           type="button"
           onClick={handleDonation}
@@ -148,22 +175,6 @@ const CollaborationPanel: React.FC<CollaborationPanelProps> = ({
           }}
         >
           ❤️
-        </button>
-        {/* Submit (Enter) */}
-        <button
-          type="submit"
-          style={{
-            border: '1px solid rgba(255,255,255,0.25)',
-            background: 'rgba(255,255,255,0.06)',
-            color: 'white',
-            fontWeight: 600,
-            fontSize: '12px',
-            padding: '8px 12px',
-            borderRadius: '10px',
-            cursor: 'pointer'
-          }}
-        >
-          Enter
         </button>
         <input
           ref={fileInputRef}
