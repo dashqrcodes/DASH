@@ -20,8 +20,13 @@ const DEMO_CONFIGS: Record<string, {
 }> = {
   'kobe-bryant': {
     name: 'Kobe Bryant',
-    videoUrl: process.env.NEXT_PUBLIC_KOBE_DEMO_VIDEO || 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', // Replace with Kobe's video URL
-    photoUrl: process.env.NEXT_PUBLIC_KOBE_DEMO_PHOTO || undefined // Optional photo URL
+    videoUrl: process.env.NEXT_PUBLIC_KOBE_DEMO_VIDEO || 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+    photoUrl: process.env.NEXT_PUBLIC_KOBE_DEMO_PHOTO || undefined
+  },
+  'kelly-wong': {
+    name: 'Kelly Wong',
+    videoUrl: process.env.NEXT_PUBLIC_KELLY_DEMO_VIDEO || 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+    photoUrl: process.env.NEXT_PUBLIC_KELLY_DEMO_PHOTO || undefined
   },
   // Add more demo configs here
 };
