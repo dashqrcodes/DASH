@@ -369,23 +369,32 @@ const HeavenDemoPage: React.FC = () => {
             padding: '20px',
             position: 'relative'
           }}>
-            <video
-              src={person.slideshowVideoUrl}
-              autoPlay
-              loop
-              controls
-              style={{
-                width: '100%',
-                maxWidth: '1200px',
-                height: 'auto',
-                borderRadius: '16px',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.5)'
-              }}
-              onError={(e) => {
-                console.error('Error loading demo video:', e);
-                setStatusMessage('Error loading demo video. Please check the URL.');
-              }}
-            />
+            <div style={{
+              width: '100%',
+              maxWidth: 'min(90vw, 400px)',
+              aspectRatio: '9 / 16',
+              position: 'relative',
+              borderRadius: '16px',
+              overflow: 'hidden',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.5)'
+            }}>
+              <video
+                src={person.slideshowVideoUrl}
+                autoPlay
+                loop
+                controls
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  borderRadius: '16px'
+                }}
+                onError={(e) => {
+                  console.error('Error loading demo video:', e);
+                  setStatusMessage('Error loading demo video. Please check the URL.');
+                }}
+              />
+            </div>
             <div style={{
               position: 'absolute',
               top: '100px',
