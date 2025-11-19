@@ -6,16 +6,20 @@ const Home = () => {
     const router = useRouter();
 
     useEffect(() => {
-        // Check if we're on dashqrcodes.com - redirect to Netcapital
+        // Check if we're on dashqrcodes.com homepage ONLY - redirect to Netcapital
+        // But allow all other routes to work normally (user memorials, etc.)
         if (typeof window !== 'undefined') {
             const hostname = window.location.hostname;
-            if (hostname.includes('dashqrcodes.com')) {
+            const pathname = window.location.pathname;
+            
+            // Only redirect if on dashqrcodes.com AND on the root path (/)
+            if (hostname.includes('dashqrcodes.com') && pathname === '/') {
                 window.location.href = 'https://netcapital.com/companies/dash';
                 return;
             }
         }
 
-        // For dashmemories.com and other domains - normal app flow
+        // For dashmemories.com and other domains, or dashqrcodes.com with paths - normal app flow
         const isAuthenticated = localStorage.getItem('userAuthenticated');
         const hasSignedUp = localStorage.getItem('userSignedUp');
         
