@@ -155,7 +155,25 @@ const HeavenDemoPage: React.FC = () => {
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !name || typeof name !== 'string') return;
+    if (!file || !name || typeof name !== 'string') {
+      if (!file) {
+        alert('No file selected. Please select a video file.');
+      }
+      return;
+    }
+
+    // Validate file type
+    if (!file.type.startsWith('video/')) {
+      alert(`Invalid file type: ${file.type}\n\nPlease select a video file (MP4, MOV, etc.)`);
+      return;
+    }
+
+    // Check file size (500MB limit)
+    const maxSize = 500 * 1024 * 1024; // 500MB
+    if (file.size > maxSize) {
+      alert(`File too large: ${(file.size / 1024 / 1024).toFixed(2)}MB\n\nMaximum size: 500MB\n\nTry:\n1. Compress the video\n2. Use URL paste method with Google Drive/Dropbox`);
+      return;
+    }
 
     setIsUploading(true);
     setStatusMessage('Uploading to permanent storage...');
@@ -181,8 +199,14 @@ const HeavenDemoPage: React.FC = () => {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Upload failed. Please try again or use URL method.');
+        let errorMessage = 'Upload failed. ';
+        try {
+          const error = await response.json();
+          errorMessage += error.message || error.error || 'Please try again or use URL method.';
+        } catch (e) {
+          errorMessage += `Server returned ${response.status}. Please try again or use URL method.`;
+        }
+        throw new Error(errorMessage);
       }
 
       const result = await response.json();
@@ -232,8 +256,12 @@ const HeavenDemoPage: React.FC = () => {
       
     } catch (error: any) {
       console.error('Error uploading video:', error);
-      setStatusMessage(`❌ Upload failed: ${error.message || 'Please try again or use URL paste method for faster setup.'}`);
+      const errorMsg = error.message || 'Upload failed. Please try again or use URL paste method.';
+      setStatusMessage(`❌ ${errorMsg}`);
       setIsUploading(false);
+      
+      // Show alert with more details
+      alert(`Upload Error:\n\n${errorMsg}\n\nTry:\n1. Use URL paste method (faster)\n2. Check file size (max 500MB)\n3. Check file format (MP4 recommended)\n4. Check browser console (F12) for details`);
     }
   };
 
