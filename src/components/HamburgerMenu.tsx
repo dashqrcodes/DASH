@@ -123,28 +123,29 @@ const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
 
   return (
     <>
-      {/* Hamburger Button */}
+      {/* Hamburger Button - Positioned above navigation bar */}
       <button
         onClick={() => setIsOpen(true)}
         style={{
           position: 'fixed',
-          top: 'clamp(12px, 3vw, 16px)',
+          top: 'calc(env(safe-area-inset-top, 0px) + clamp(8px, 2vw, 12px))',
           right: 'clamp(12px, 3vw, 16px)',
           width: '44px',
           height: '44px',
           borderRadius: '12px',
-          background: 'rgba(0,0,0,0.6)',
+          background: 'rgba(0,0,0,0.8)',
           backdropFilter: 'blur(20px)',
-          border: '1px solid rgba(255,255,255,0.1)',
+          border: '1px solid rgba(255,255,255,0.15)',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
           gap: '5px',
           cursor: 'pointer',
-          zIndex: 999,
+          zIndex: 1001,
           transition: 'all 0.3s ease',
           WebkitTapHighlightColor: 'transparent',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.background = 'rgba(102,126,234,0.3)';
