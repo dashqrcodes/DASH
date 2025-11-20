@@ -88,13 +88,27 @@ const HeavenDemoPage: React.FC = () => {
     const demoConfig = DEMO_CONFIGS[nameKey];
     if (!demoConfig) return;
 
+    // Convert Google Drive share link to direct download link
+    let finalUrl = videoUrl.trim();
+    
+    // Google Drive: convert share link to direct download
+    const driveMatch = finalUrl.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+    if (driveMatch) {
+      finalUrl = `https://drive.google.com/uc?export=download&id=${driveMatch[1]}`;
+    }
+    
+    // Dropbox: convert ?dl=0 to ?dl=1
+    if (finalUrl.includes('dropbox.com') && finalUrl.includes('?dl=0')) {
+      finalUrl = finalUrl.replace('?dl=0', '?dl=1');
+    }
+
     // Save video URL to localStorage
-    localStorage.setItem(`heaven_video_${nameKey}`, videoUrl.trim());
+    localStorage.setItem(`heaven_video_${nameKey}`, finalUrl);
     
     // Update person with new video URL
     setPerson(prev => prev ? {
       ...prev,
-      slideshowVideoUrl: videoUrl.trim()
+      slideshowVideoUrl: finalUrl
     } : null);
     
     setShowUpload(false);
@@ -108,36 +122,63 @@ const HeavenDemoPage: React.FC = () => {
     if (!file || !name || typeof name !== 'string') return;
 
     setIsUploading(true);
+    setStatusMessage('Processing video...');
     
     try {
-      // Convert file to data URL for now (can be upgraded to upload to Supabase/Cloudinary later)
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const dataUrl = reader.result as string;
-        const nameKey = name.toLowerCase();
-        const demoConfig = DEMO_CONFIGS[nameKey];
-        if (!demoConfig) {
-          setIsUploading(false);
-          return;
-        }
-
-        // Save video URL (data URL for now)
-        localStorage.setItem(`heaven_video_${nameKey}`, dataUrl);
-        
-        setPerson(prev => prev ? {
-          ...prev,
-          slideshowVideoUrl: dataUrl
-        } : null);
-        
-        setShowUpload(false);
-        setIsInCall(true);
-        setStatusMessage(`Connected to HEAVEN – ${demoConfig.name}`);
+      const nameKey = name.toLowerCase();
+      const demoConfig = DEMO_CONFIGS[nameKey];
+      if (!demoConfig) {
         setIsUploading(false);
-      };
-      reader.readAsDataURL(file);
-    } catch (error) {
-      console.error('Error uploading video:', error);
-      setStatusMessage('Error uploading video. Please try again.');
+        return;
+      }
+
+      // Create blob URL immediately (works instantly, no upload needed)
+      const blobUrl = URL.createObjectURL(file);
+      
+      // Save blob URL to localStorage
+      localStorage.setItem(`heaven_video_${nameKey}`, blobUrl);
+      
+      // Update person with video URL
+      setPerson(prev => prev ? {
+        ...prev,
+        slideshowVideoUrl: blobUrl
+      } : null);
+      
+      setShowUpload(false);
+      setIsInCall(true);
+      setStatusMessage(`Connected to HEAVEN – ${demoConfig.name}`);
+      setIsUploading(false);
+      
+      // Optional: Try to upload to Mux/Cloudinary in background (non-blocking)
+      // This way the video works immediately, but can be upgraded later
+      fetch('/api/heaven/upload-to-mux', {
+        method: 'POST',
+        body: (() => {
+          const formData = new FormData();
+          formData.append('video', file);
+          formData.append('name', nameKey);
+          return formData;
+        })(),
+      }).then(async (response) => {
+        if (response.ok) {
+          const result = await response.json();
+          if (result.videoUrl) {
+            // Upgrade to permanent URL
+            localStorage.setItem(`heaven_video_${nameKey}`, result.videoUrl);
+            setPerson(prev => prev ? {
+              ...prev,
+              slideshowVideoUrl: result.videoUrl
+            } : null);
+          }
+        }
+      }).catch(err => {
+        // Silent fail - blob URL already works
+        console.log('Background upload failed, using blob URL:', err);
+      });
+      
+    } catch (error: any) {
+      console.error('Error processing video:', error);
+      setStatusMessage(`Error: ${error.message || 'Failed to process video.'}`);
       setIsUploading(false);
     }
   };
@@ -190,54 +231,21 @@ const HeavenDemoPage: React.FC = () => {
             flexDirection: 'column',
             gap: '20px'
           }}>
-            {/* File Upload */}
+            {/* URL Input - RECOMMENDED (Instant!) */}
             <div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="video/*"
-                onChange={handleFileUpload}
-                style={{ display: 'none' }}
-              />
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isUploading}
-                style={{
-                  width: '100%',
-                  background: 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
-                  border: 'none',
-                  borderRadius: '12px',
-                  padding: '16px 24px',
-                  color: 'white',
-                  fontSize: '16px',
-                  fontWeight: '600',
-                  cursor: isUploading ? 'not-allowed' : 'pointer',
-                  opacity: isUploading ? 0.6 : 1
-                }}
-              >
-                {isUploading ? 'Uploading...' : '📹 Upload Video File'}
-              </button>
-            </div>
-
-            {/* Or Divider */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              color: 'rgba(255,255,255,0.4)'
-            }}>
-              <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.2)' }} />
-              <span>OR</span>
-              <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.2)' }} />
-            </div>
-
-            {/* URL Input */}
-            <div>
+              <p style={{
+                fontSize: '14px',
+                color: 'rgba(255,255,255,0.7)',
+                marginBottom: '12px',
+                textAlign: 'center'
+              }}>
+                ⚡ FASTEST: Paste a video URL (Google Drive, Dropbox, etc.)
+              </p>
               <input
                 type="text"
                 value={videoUrl}
                 onChange={(e) => setVideoUrl(e.target.value)}
-                placeholder="Paste video URL (Google Drive, YouTube, etc.)"
+                placeholder="Paste video URL here (works instantly!)"
                 style={{
                   width: '100%',
                   padding: '16px',
@@ -266,7 +274,57 @@ const HeavenDemoPage: React.FC = () => {
                   opacity: videoUrl.trim() ? 1 : 0.5
                 }}
               >
-                Use Video URL
+                Use Video URL (Instant!)
+              </button>
+            </div>
+
+            {/* Or Divider */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              color: 'rgba(255,255,255,0.4)',
+              margin: '20px 0'
+            }}>
+              <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.2)' }} />
+              <span>OR</span>
+              <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.2)' }} />
+            </div>
+
+            {/* File Upload - Alternative */}
+            <div>
+              <p style={{
+                fontSize: '14px',
+                color: 'rgba(255,255,255,0.7)',
+                marginBottom: '12px',
+                textAlign: 'center'
+              }}>
+                Upload from your device (works immediately)
+              </p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="video/*"
+                onChange={handleFileUpload}
+                style={{ display: 'none' }}
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                style={{
+                  width: '100%',
+                  background: isUploading ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.15)',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  borderRadius: '12px',
+                  padding: '16px 24px',
+                  color: 'white',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  cursor: isUploading ? 'not-allowed' : 'pointer',
+                  opacity: isUploading ? 0.6 : 1
+                }}
+              >
+                {isUploading ? 'Processing...' : '📹 Upload Video File'}
               </button>
             </div>
           </div>
