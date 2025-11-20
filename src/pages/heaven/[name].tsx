@@ -193,26 +193,75 @@ const HeavenDemoPage: React.FC = () => {
       formData.append('video', file);
       formData.append('name', nameKey);
       
-      const response = await fetch('/api/heaven/upload-to-mux', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        let errorMessage = 'Upload failed. ';
-        try {
-          const error = await response.json();
-          errorMessage += error.message || error.error || 'Please try again or use URL method.';
-        } catch (e) {
-          errorMessage += `Server returned ${response.status}. Please try again or use URL method.`;
-        }
-        throw new Error(errorMessage);
-      }
-
-      const result = await response.json();
+      let response;
+      let result;
       
-      if (!result.videoUrl) {
-        throw new Error('No video URL returned. Upload may have failed.');
+      try {
+        response = await fetch('/api/heaven/upload-to-mux', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          let errorMessage = 'Upload failed. ';
+          try {
+            const error = await response.json();
+            errorMessage += error.message || error.error || 'Please try again or use URL method.';
+          } catch (e) {
+            errorMessage += `Server returned ${response.status}. Please try again or use URL method.`;
+          }
+          throw new Error(errorMessage);
+        }
+
+        result = await response.json();
+        
+        if (!result || !result.videoUrl) {
+          throw new Error('No video URL returned. Upload may have failed. Try URL paste method instead.');
+        }
+      } catch (fetchError: any) {
+        console.error('Upload error:', fetchError);
+        
+        // Show error to user
+        const errorMsg = fetchError.message || 'Upload failed. Mux/Cloudinary may not be configured.';
+        setStatusMessage(`❌ ${errorMsg}`);
+        
+        // Ask user if they want to use data URL fallback
+        const useFallback = confirm(
+          `Upload to permanent storage failed.\n\n` +
+          `Error: ${errorMsg}\n\n` +
+          `Would you like to save locally (works in this browser only)?\n\n` +
+          `Or click Cancel and use the URL paste method for permanent storage.`
+        );
+        
+        if (useFallback) {
+          setStatusMessage('Saving video locally...');
+          
+          // Convert to data URL as fallback
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const dataUrl = reader.result as string;
+            localStorage.setItem(`heaven_video_${nameKey}`, dataUrl);
+            setPerson(prev => prev ? {
+              ...prev,
+              slideshowVideoUrl: dataUrl
+            } : null);
+            setShowUpload(false);
+            setIsInCall(true);
+            setStatusMessage(`✅ Video saved locally (this browser only). For permanent storage, use URL paste method.`);
+            setIsUploading(false);
+          };
+          reader.onerror = () => {
+            setStatusMessage('❌ Failed to process video. Please use URL paste method.');
+            setIsUploading(false);
+          };
+          reader.readAsDataURL(file);
+          return; // Exit early, data URL handler will complete
+        } else {
+          // User cancelled - show upload screen again
+          setIsUploading(false);
+          setStatusMessage('Upload cancelled. Try URL paste method for permanent storage.');
+          return;
+        }
       }
 
       // Save permanent URL to localStorage (as backup)
@@ -251,8 +300,21 @@ const HeavenDemoPage: React.FC = () => {
       setIsUploading(false);
       
       // Show success message with URL for manual environment variable setup
+      const envVarName = `NEXT_PUBLIC_${nameKey.toUpperCase().replace('-', '_')}_DEMO_VIDEO`;
       console.log(`✅ PERMANENT VIDEO URL for ${demoConfig.name}:`, result.videoUrl);
-      console.log(`Add to Vercel environment variable: NEXT_PUBLIC_${nameKey.toUpperCase().replace('-', '_')}_DEMO_VIDEO = ${result.videoUrl}`);
+      console.log(`📋 Add to Vercel environment variable:\n${envVarName} = ${result.videoUrl}`);
+      
+      // Show alert with the URL
+      alert(
+        `✅ Video Uploaded Successfully!\n\n` +
+        `Permanent URL:\n${result.videoUrl}\n\n` +
+        `To make it work for everyone:\n` +
+        `1. Go to Vercel → Settings → Environment Variables\n` +
+        `2. Add: ${envVarName}\n` +
+        `3. Value: ${result.videoUrl}\n` +
+        `4. Redeploy\n\n` +
+        `Or use URL paste method for instant setup.`
+      );
       
     } catch (error: any) {
       console.error('Error uploading video:', error);
@@ -260,8 +322,20 @@ const HeavenDemoPage: React.FC = () => {
       setStatusMessage(`❌ ${errorMsg}`);
       setIsUploading(false);
       
-      // Show alert with more details
-      alert(`Upload Error:\n\n${errorMsg}\n\nTry:\n1. Use URL paste method (faster)\n2. Check file size (max 500MB)\n3. Check file format (MP4 recommended)\n4. Check browser console (F12) for details`);
+      // Show alert with more details and suggest URL method
+      alert(
+        `❌ Upload Error\n\n` +
+        `${errorMsg}\n\n` +
+        `Quick Fix - Use URL Method:\n` +
+        `1. Upload video to Google Drive\n` +
+        `2. Get share link\n` +
+        `3. Convert to: https://drive.google.com/uc?export=download&id=FILE_ID\n` +
+        `4. Paste URL in the demo page\n\n` +
+        `Or check:\n` +
+        `- File size (max 500MB)\n` +
+        `- File format (MP4 recommended)\n` +
+        `- Browser console (F12) for details`
+      );
     }
   };
 
