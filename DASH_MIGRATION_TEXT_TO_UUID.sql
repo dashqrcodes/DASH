@@ -221,3 +221,4 @@ CREATE POLICY "Users can delete own heaven_characters" ON heaven_characters
 -- 2. Test RLS policies with authenticated user
 -- 3. Update application code to use UUID instead of TEXT for user_id/memorial_id
 
+

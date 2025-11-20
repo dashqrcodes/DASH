@@ -100,3 +100,4 @@ After running the updated SQL:
 
 **The SQL file is now complete and will fix all RLS warnings!** 🎉
 
+

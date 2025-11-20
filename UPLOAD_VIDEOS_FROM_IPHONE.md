@@ -190,3 +190,4 @@ If you get stuck:
 2. Or use Method 1 (Google Drive) - it's the most reliable
 3. Make sure videos are in portrait mode (9:16)
 
+

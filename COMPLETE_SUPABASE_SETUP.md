@@ -302,3 +302,4 @@ All tables have RLS enabled with policies that:
 
 **You're all set!** 🎉
 
+

@@ -184,3 +184,4 @@ heaven-assets/
 
 **That's it!** Your videos are now securely hosted on Supabase Storage. 🎉
 
+

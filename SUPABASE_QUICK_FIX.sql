@@ -28,3 +28,4 @@ WHERE t.table_schema = 'public'
 AND t.table_name IN ('memorials', 'slideshow_media', 'heaven_characters', 'media', 'calls', 'avatars', 'voices', 'slideshows', 'profiles', 'collaborators', 'comments', 'likes', 'orders', 'payments', 'notifications', 'ai_jobs')
 ORDER BY t.table_name;
 
+
