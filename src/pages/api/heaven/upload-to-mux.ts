@@ -4,6 +4,9 @@ import fs from 'fs';
 import { uploadVideoToMux, isMuxConfigured } from '../../../utils/mux-integration';
 import { v2 as cloudinary } from 'cloudinary';
 
+// Log configuration status on module load (for debugging)
+console.log('Mux upload API loaded. Mux configured?', isMuxConfigured());
+
 export const config = {
   api: {
     bodyParser: false,
@@ -55,7 +58,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let playbackId: string | null = null;
 
     // Try Mux first (best for video streaming)
-    if (isMuxConfigured()) {
+    const muxConfigured = isMuxConfigured();
+    console.log('Mux configured?', muxConfigured);
+    console.log('MUX_TOKEN_ID exists?', !!process.env.MUX_TOKEN_ID);
+    console.log('MUX_TOKEN_SECRET exists?', !!process.env.MUX_TOKEN_SECRET);
+    
+    if (muxConfigured) {
       try {
         console.log('Uploading to Mux...');
         const muxAsset = await uploadVideoToMux(videoBlob as any, {
@@ -70,10 +78,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           playbackId = muxAsset.playback_ids[0].id;
           videoUrl = `https://stream.mux.com/${playbackId}.m3u8`;
           console.log('✅ Uploaded to Mux successfully:', playbackId);
+        } else {
+          console.error('Mux upload returned no playback ID:', muxAsset);
         }
-      } catch (muxError) {
+      } catch (muxError: any) {
         console.error('Mux upload failed, trying Cloudinary:', muxError);
+        console.error('Mux error details:', muxError.message, muxError.stack);
       }
+    } else {
+      console.log('Mux not configured, skipping Mux upload');
     }
 
     // Fallback to Cloudinary if Mux fails or not configured
