@@ -159,7 +159,7 @@ const AccountPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Create New Memorial Button */}
+        {/* Create New Dash Button */}
         <button
           onClick={handleCreateMemorial}
           style={{
@@ -176,10 +176,10 @@ const AccountPage: React.FC = () => {
             boxShadow: '0 4px 20px rgba(102,126,234,0.4)'
           }}
         >
-          + Create New Memorial
+          + Create New Dash
         </button>
 
-        {/* My Memorials */}
+        {/* My Dashes */}
         <div>
           <h2 style={{
             fontSize: '20px',
@@ -187,7 +187,7 @@ const AccountPage: React.FC = () => {
             marginBottom: '20px',
             color: 'rgba(255,255,255,0.9)'
           }}>
-            My Memorials ({memorials.length})
+            My Dashes ({memorials.length})
           </h2>
 
           {isLoading ? (
@@ -207,19 +207,19 @@ const AccountPage: React.FC = () => {
               border: '1px solid rgba(255,255,255,0.1)'
             }}>
               <div style={{ fontSize: '48px', marginBottom: '16px' }}>📸</div>
-              <p style={{
-                fontSize: '16px',
-                color: 'rgba(255,255,255,0.6)',
-                marginBottom: '8px'
-              }}>
-                No memorials yet
-              </p>
-              <p style={{
-                fontSize: '14px',
-                color: 'rgba(255,255,255,0.4)'
-              }}>
-                Create your first memorial to get started
-              </p>
+                    <p style={{
+                      fontSize: '16px',
+                      color: 'rgba(255,255,255,0.6)',
+                      marginBottom: '8px'
+                    }}>
+                      No dashes yet
+                    </p>
+                    <p style={{
+                      fontSize: '14px',
+                      color: 'rgba(255,255,255,0.4)'
+                    }}>
+                      Create your first dash to get started
+                    </p>
             </div>
           ) : (
             <div style={{
@@ -275,7 +275,7 @@ const AccountPage: React.FC = () => {
                       fontWeight: '600',
                       marginBottom: '4px'
                     }}>
-                      {memorial.lovedOneName || 'Untitled Memorial'}
+                            {memorial.lovedOneName || 'Untitled Dash'}
                     </h3>
                     {(memorial.sunrise || memorial.sunset) && (
                       <p style={{
