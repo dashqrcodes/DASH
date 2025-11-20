@@ -52,28 +52,64 @@ const HeavenDemoPage: React.FC = () => {
       return;
     }
 
-    // Check for saved video URL in localStorage
-    const savedVideoUrl = localStorage.getItem(`heaven_video_${name.toLowerCase()}`);
-    const videoToUse = savedVideoUrl || demoConfig.videoUrl;
-
-    // Set up the demo
-    setPerson({
-      name: demoConfig.name,
-      slideshowVideoUrl: videoToUse,
-      primaryPhotoUrl: demoConfig.photoUrl || null
-    });
+    // Load video URL in priority order:
+    // 1. Environment variable (permanent, works for all devices)
+    // 2. Supabase database (permanent, works for all devices)
+    // 3. localStorage (temporary, per-browser)
+    // 4. Default from config
     
-    // Only auto-start if video exists
-    if (videoToUse && videoToUse !== demoConfig.videoUrl) {
-      setIsInCall(true);
-      setStatusMessage(`Connected to HEAVEN – ${demoConfig.name}`);
-    } else if (!savedVideoUrl) {
-      // Show upload interface if no video is saved
-      setShowUpload(true);
-    } else {
-      setIsInCall(true);
-      setStatusMessage(`Connected to HEAVEN – ${demoConfig.name}`);
-    }
+    const loadVideoUrl = async () => {
+      const nameKey = name.toLowerCase();
+      
+      // Priority 1: Environment variable (already in DEMO_CONFIGS)
+      let videoUrl = demoConfig.videoUrl;
+      
+      // Priority 2: Check Supabase for saved video
+      try {
+        const { supabase } = await import('../../utils/supabase');
+        if (supabase) {
+          const { data } = await supabase
+            .from('heaven_characters')
+            .select('slideshow_video_url')
+            .eq('memorial_id', nameKey)
+            .eq('user_id', 'demo')
+            .single();
+          
+          if (data?.slideshow_video_url) {
+            videoUrl = data.slideshow_video_url;
+          }
+        }
+      } catch (dbError) {
+        console.log('Supabase check failed (optional):', dbError);
+      }
+      
+      // Priority 3: Check localStorage (fallback)
+      if (!videoUrl || videoUrl === demoConfig.videoUrl) {
+        const savedVideoUrl = localStorage.getItem(`heaven_video_${nameKey}`);
+        if (savedVideoUrl && !savedVideoUrl.startsWith('blob:') && !savedVideoUrl.startsWith('data:')) {
+          // Only use localStorage if it's a permanent URL (not blob or data URL)
+          videoUrl = savedVideoUrl;
+        }
+      }
+
+      // Set up the demo
+      setPerson({
+        name: demoConfig.name,
+        slideshowVideoUrl: videoUrl,
+        primaryPhotoUrl: demoConfig.photoUrl || null
+      });
+      
+      // Auto-start if we have a valid video (not the default placeholder)
+      if (videoUrl && videoUrl !== demoConfig.videoUrl && !videoUrl.includes('BigBuckBunny')) {
+        setIsInCall(true);
+        setStatusMessage(`Connected to HEAVEN – ${demoConfig.name}`);
+      } else {
+        // Show upload interface if no video is saved
+        setShowUpload(true);
+      }
+    };
+    
+    loadVideoUrl();
   }, [name]);
 
   const handleEndCall = () => {
@@ -122,7 +158,7 @@ const HeavenDemoPage: React.FC = () => {
     if (!file || !name || typeof name !== 'string') return;
 
     setIsUploading(true);
-    setStatusMessage('Processing video...');
+    setStatusMessage('Uploading to permanent storage...');
     
     try {
       const nameKey = name.toLowerCase();
@@ -132,53 +168,71 @@ const HeavenDemoPage: React.FC = () => {
         return;
       }
 
-      // Create blob URL immediately (works instantly, no upload needed)
-      const blobUrl = URL.createObjectURL(file);
+      // Upload to Mux/Cloudinary immediately (BLOCKING - must complete for permanent storage)
+      setStatusMessage('Uploading to Mux/Cloudinary for permanent storage...');
       
-      // Save blob URL to localStorage
-      localStorage.setItem(`heaven_video_${nameKey}`, blobUrl);
+      const formData = new FormData();
+      formData.append('video', file);
+      formData.append('name', nameKey);
       
-      // Update person with video URL
+      const response = await fetch('/api/heaven/upload-to-mux', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Upload failed. Please try again or use URL method.');
+      }
+
+      const result = await response.json();
+      
+      if (!result.videoUrl) {
+        throw new Error('No video URL returned. Upload may have failed.');
+      }
+
+      // Save permanent URL to localStorage (as backup)
+      localStorage.setItem(`heaven_video_${nameKey}`, result.videoUrl);
+      
+      // Also save to Supabase if available (for cross-device persistence)
+      try {
+        const { supabase } = await import('../../utils/supabase');
+        if (supabase) {
+          await supabase
+            .from('heaven_characters')
+            .upsert({
+              user_id: 'demo',
+              memorial_id: nameKey,
+              character_id: nameKey,
+              slideshow_video_url: result.videoUrl,
+              updated_at: new Date().toISOString(),
+            }, {
+              onConflict: 'memorial_id,user_id'
+            });
+        }
+      } catch (dbError) {
+        console.log('Supabase save failed (optional):', dbError);
+        // Continue - localStorage is backup
+      }
+      
+      // Update person with permanent video URL
       setPerson(prev => prev ? {
         ...prev,
-        slideshowVideoUrl: blobUrl
+        slideshowVideoUrl: result.videoUrl
       } : null);
       
       setShowUpload(false);
       setIsInCall(true);
-      setStatusMessage(`Connected to HEAVEN – ${demoConfig.name}`);
+      setStatusMessage(`✅ Video saved permanently! Connected to HEAVEN – ${demoConfig.name}`);
       setIsUploading(false);
       
-      // Optional: Try to upload to Mux/Cloudinary in background (non-blocking)
-      // This way the video works immediately, but can be upgraded later
-      fetch('/api/heaven/upload-to-mux', {
-        method: 'POST',
-        body: (() => {
-          const formData = new FormData();
-          formData.append('video', file);
-          formData.append('name', nameKey);
-          return formData;
-        })(),
-      }).then(async (response) => {
-        if (response.ok) {
-          const result = await response.json();
-          if (result.videoUrl) {
-            // Upgrade to permanent URL
-            localStorage.setItem(`heaven_video_${nameKey}`, result.videoUrl);
-            setPerson(prev => prev ? {
-              ...prev,
-              slideshowVideoUrl: result.videoUrl
-            } : null);
-          }
-        }
-      }).catch(err => {
-        // Silent fail - blob URL already works
-        console.log('Background upload failed, using blob URL:', err);
-      });
+      // Show success message with URL for manual environment variable setup
+      console.log(`✅ PERMANENT VIDEO URL for ${demoConfig.name}:`, result.videoUrl);
+      console.log(`Add to Vercel environment variable: NEXT_PUBLIC_${nameKey.toUpperCase().replace('-', '_')}_DEMO_VIDEO = ${result.videoUrl}`);
       
     } catch (error: any) {
-      console.error('Error processing video:', error);
-      setStatusMessage(`Error: ${error.message || 'Failed to process video.'}`);
+      console.error('Error uploading video:', error);
+      setStatusMessage(`❌ Upload failed: ${error.message || 'Please try again or use URL paste method for faster setup.'}`);
       setIsUploading(false);
     }
   };
