@@ -79,3 +79,4 @@ DASH_COMPLETE_SUPABASE_SETUP.sql  ❌
 3. Add environment variables to Vercel
 4. Test the connection!
 
+

@@ -112,3 +112,4 @@ Which option do you prefer?
 2. Go to Dashboard
 3. Copy Cloud Name, API Key, and API Secret
 
+

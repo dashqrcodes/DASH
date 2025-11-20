@@ -144,3 +144,4 @@ Your Supabase is now set up for the entire DASH webapp!
 - Check `COMPLETE_SUPABASE_SETUP.md` for detailed guide
 - Check Supabase dashboard for error messages
 
+

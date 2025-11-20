@@ -133,3 +133,4 @@ If you get stuck:
 2. Check browser console (F12) for error messages
 3. Make sure your video is in the right format (MP4)
 
+
