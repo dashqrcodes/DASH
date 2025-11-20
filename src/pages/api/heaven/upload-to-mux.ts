@@ -132,9 +132,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     if (!videoUrl) {
+      const muxConfigured = isMuxConfigured();
+      const cloudinaryConfigured = !!process.env.CLOUDINARY_CLOUD_NAME;
+      
       return res.status(500).json({ 
-        message: 'Failed to upload video. Please configure Mux or Cloudinary credentials.',
-        error: 'No video hosting service available'
+        message: 'Failed to upload video. No video hosting service available.',
+        error: 'No video hosting service available',
+        diagnostics: {
+          muxConfigured,
+          cloudinaryConfigured,
+          muxTokenIdExists: !!process.env.MUX_TOKEN_ID,
+          muxTokenSecretExists: !!process.env.MUX_TOKEN_SECRET,
+          cloudinaryCloudNameExists: !!process.env.CLOUDINARY_CLOUD_NAME,
+        },
+        suggestion: muxConfigured 
+          ? 'Mux is configured but upload failed. Check Mux dashboard for errors.'
+          : cloudinaryConfigured
+          ? 'Cloudinary is configured but upload failed. Check Cloudinary dashboard.'
+          : 'Please configure Mux or Cloudinary in Vercel environment variables. See CONFIGURE_MUX.md'
       });
     }
 
