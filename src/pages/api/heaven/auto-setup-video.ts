@@ -105,7 +105,15 @@ export default async function handler(
       console.log('Supabase save failed (optional):', dbError);
     }
 
-    const envVarName = `NEXT_PUBLIC_${name.toUpperCase().replace('-', '_')}_DEMO_VIDEO`;
+    // Special handling for demo names to match the expected env var names
+    let envVarName: string;
+    if (name.toLowerCase() === 'kobe-bryant') {
+      envVarName = 'NEXT_PUBLIC_KOBE_DEMO_VIDEO';
+    } else if (name.toLowerCase() === 'kelly-wong') {
+      envVarName = 'NEXT_PUBLIC_KELLY_DEMO_VIDEO';
+    } else {
+      envVarName = `NEXT_PUBLIC_${name.toUpperCase().replace('-', '_')}_DEMO_VIDEO`;
+    }
 
     return res.status(200).json({
       success: true,

@@ -100,12 +100,30 @@ const HeavenDemoPage: React.FC = () => {
       });
       
       // Auto-start if we have a valid video (not the default placeholder)
-      if (videoUrl && videoUrl !== demoConfig.videoUrl && !videoUrl.includes('BigBuckBunny')) {
+      const isDefaultPlaceholder = videoUrl && videoUrl.includes('BigBuckBunny');
+      const hasValidVideo = videoUrl && !isDefaultPlaceholder;
+      
+      // Debug logging
+      console.log('🔍 HEAVEN Demo Debug:', {
+        name: nameKey,
+        envVar: `NEXT_PUBLIC_${nameKey.toUpperCase().replace('-', '_')}_DEMO_VIDEO`,
+        videoUrl: videoUrl?.substring(0, 100) + (videoUrl && videoUrl.length > 100 ? '...' : ''),
+        isDefaultPlaceholder,
+        hasValidVideo,
+        demoConfigVideo: demoConfig.videoUrl?.substring(0, 100) + (demoConfig.videoUrl && demoConfig.videoUrl.length > 100 ? '...' : '')
+      });
+      
+      if (hasValidVideo) {
         setIsInCall(true);
         setStatusMessage(`Connected to HEAVEN – ${demoConfig.name}`);
       } else {
         // Show upload interface if no video is saved
         setShowUpload(true);
+        if (!videoUrl) {
+          setStatusMessage('No video URL found. Please upload or paste a video URL.');
+        } else if (isDefaultPlaceholder) {
+          setStatusMessage('Please set a video URL in environment variables or upload one.');
+        }
       }
     };
     
@@ -598,10 +616,12 @@ const HeavenDemoPage: React.FC = () => {
               boxShadow: '0 8px 32px rgba(0,0,0,0.5)'
             }}>
               <video
-                src={person.slideshowVideoUrl}
+                src={person.slideshowVideoUrl || ''}
                 autoPlay
                 loop
                 controls
+                playsInline
+                muted={false}
                 style={{
                   width: '100%',
                   height: '100%',
@@ -609,8 +629,27 @@ const HeavenDemoPage: React.FC = () => {
                   borderRadius: '16px'
                 }}
                 onError={(e) => {
-                  console.error('Error loading demo video:', e);
-                  setStatusMessage('Error loading demo video. Please check the URL.');
+                  const target = e.target as HTMLVideoElement;
+                  const error = target.error;
+                  console.error('❌ Error loading demo video:', {
+                    videoUrl: person.slideshowVideoUrl,
+                    error: error?.code,
+                    message: error?.message,
+                    networkState: target.networkState,
+                    readyState: target.readyState
+                  });
+                  setStatusMessage(`❌ Error loading video. Code: ${error?.code || 'unknown'}. Check console for details.`);
+                }}
+                onLoadStart={() => {
+                  console.log('📹 Video load started:', person.slideshowVideoUrl);
+                  setStatusMessage('Loading video...');
+                }}
+                onLoadedData={() => {
+                  console.log('✅ Video loaded successfully:', person.slideshowVideoUrl);
+                  setStatusMessage(`Connected to HEAVEN – ${person.name}`);
+                }}
+                onCanPlay={() => {
+                  console.log('▶️ Video can play:', person.slideshowVideoUrl);
                 }}
               />
             </div>
