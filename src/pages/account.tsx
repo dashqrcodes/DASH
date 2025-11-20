@@ -28,17 +28,47 @@ const AccountPage: React.FC = () => {
     const savedName = localStorage.getItem('userName') || 'User';
     setUserName(savedName);
 
-    // Load user's memorials
+    // Load user's memorials (async)
     loadUserMemorials();
   }, []);
 
-  const loadUserMemorials = () => {
+  const loadUserMemorials = async () => {
     try {
       // Get user ID
       const userId = localStorage.getItem('userId') || 'anonymous';
       
-      // Load all memorials from localStorage
-      // In production, this would come from Supabase/database
+      // Try to load from Supabase first
+      const { supabase } = await import('../utils/supabase');
+      
+      if (supabase) {
+        try {
+          // Load memorials from Supabase
+          const { data: supabaseMemorials, error } = await supabase
+            .from('memorials')
+            .select('*')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false });
+
+          if (!error && supabaseMemorials && supabaseMemorials.length > 0) {
+            const formattedMemorials: Memorial[] = supabaseMemorials.map((m: any) => ({
+              id: m.id,
+              lovedOneName: m.loved_one_name || '',
+              sunrise: m.sunrise_date || '',
+              sunset: m.sunset_date || '',
+              photo: m.card_design?.front?.photo || null,
+              createdAt: m.created_at || new Date().toISOString(),
+              memorialUrl: `/slideshow?name=${encodeURIComponent(m.loved_one_name || '')}&sunrise=${encodeURIComponent(m.sunrise_date || '')}&sunset=${encodeURIComponent(m.sunset_date || '')}`
+            }));
+            setMemorials(formattedMemorials);
+            setIsLoading(false);
+            return;
+          }
+        } catch (supabaseError) {
+          console.warn('Supabase load failed, falling back to localStorage:', supabaseError);
+        }
+      }
+
+      // Fallback to localStorage
       const allMemorials: Memorial[] = [];
       
       // Check for saved profile data (current memorial)
@@ -107,12 +137,12 @@ const AccountPage: React.FC = () => {
         fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
         color: 'white',
         padding: '20px',
-        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 100px)'
+        paddingTop: 'calc(env(safe-area-inset-top, 0px) + 80px)',
+        paddingBottom: '20px'
       }}>
         {/* Header */}
         <div style={{
-          marginBottom: '32px',
-          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 12px)'
+          marginBottom: '32px'
         }}>
           <h1 style={{
             fontSize: 'clamp(28px, 7vw, 36px)',
