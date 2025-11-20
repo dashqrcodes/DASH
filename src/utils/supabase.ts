@@ -55,6 +55,44 @@ export async function updateMemorial(id: string, updates: any) {
   return { memorial, error };
 }
 
+/**
+ * Upload HEAVEN demo video to Supabase Storage
+ * @param file - Video file
+ * @param demoName - Demo name (e.g., "kobe-bryant")
+ * @returns Public URL of uploaded video
+ */
+export async function uploadDemoVideo(
+  file: File | Blob,
+  demoName: string
+): Promise<string | null> {
+  if (!supabase) return null;
+  try {
+    const fileName = `demo-videos/${demoName.toLowerCase()}-${Date.now()}.mp4`;
+    
+    const { data, error } = await supabase.storage
+      .from('heaven-assets')
+      .upload(fileName, file, {
+        contentType: file.type || 'video/mp4',
+        upsert: false
+      });
+
+    if (error) {
+      console.error('Error uploading demo video:', error);
+      return null;
+    }
+
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('heaven-assets')
+      .getPublicUrl(fileName);
+
+    return publicUrl;
+  } catch (error) {
+    console.error('Error uploading demo video:', error);
+    return null;
+  }
+}
+
 // HEAVEN Storage Functions
 // Store slideshow videos/photos for voice cloning and avatar creation
 
@@ -351,5 +389,4 @@ export async function getSlideshowMedia(userId: string, memorialId: string) {
     return null;
   }
 }
-
 
