@@ -2,6 +2,7 @@ import React from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
+import BottomNav from '../components/BottomNav';
 
 const WhatWeBuild: React.FC = () => {
   const router = useRouter();
@@ -394,7 +395,7 @@ const WhatWeBuild: React.FC = () => {
             marginBottom: '20px',
             color: '#ffffff',
           }}>
-            Ready to Create a Memorial?
+            Ready to Create a Dash?
           </h2>
           <p style={{
             fontSize: 'clamp(16px, 3vw, 20px)',
@@ -446,6 +447,7 @@ const WhatWeBuild: React.FC = () => {
           }
         }
       `}</style>
+      <BottomNav activeTab="home" />
     </>
   );
 };
