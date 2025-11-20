@@ -52,7 +52,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Read file buffer
     const fileBuffer = fs.readFileSync(videoFile.filepath);
-    const videoBlob = new Blob([fileBuffer], { type: videoFile.mimetype || 'video/mp4' });
 
     let videoUrl: string | null = null;
     let playbackId: string | null = null;
@@ -60,30 +59,81 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Try Mux first (best for video streaming)
     const muxConfigured = isMuxConfigured();
     console.log('Mux configured?', muxConfigured);
-    console.log('MUX_TOKEN_ID exists?', !!process.env.MUX_TOKEN_ID);
-    console.log('MUX_TOKEN_SECRET exists?', !!process.env.MUX_TOKEN_SECRET);
     
     if (muxConfigured) {
       try {
-        console.log('Uploading to Mux...');
-        const muxAsset = await uploadVideoToMux(videoBlob as any, {
-          passthrough: `heaven-demo-${demoName}`,
+        console.log('Uploading to Mux using direct upload...');
+        
+        // Use Mux SDK directly for server-side upload
+        const Mux = require('@mux/mux-node');
+        const mux = new Mux(
+          process.env.MUX_TOKEN_ID!,
+          process.env.MUX_TOKEN_SECRET!
+        );
+
+        // Create direct upload
+        const directUpload = await mux.video.directUploads.create({
           new_asset_settings: {
             playback_policy: ['public'],
             mp4_support: 'standard',
           },
+          passthrough: `heaven-demo-${demoName}`,
         });
 
-        if (muxAsset && muxAsset.playback_ids && muxAsset.playback_ids.length > 0) {
-          playbackId = muxAsset.playback_ids[0].id;
+        console.log('Direct upload created, uploading file...', directUpload.id);
+
+        // Upload file to Mux's direct upload URL
+        const uploadResponse = await fetch(directUpload.url, {
+          method: 'PUT',
+          body: fileBuffer,
+          headers: {
+            'Content-Type': videoFile.mimetype || 'video/mp4',
+          },
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error(`Failed to upload to Mux: ${uploadResponse.status} ${uploadResponse.statusText}`);
+        }
+
+        console.log('File uploaded, waiting for asset to be ready...');
+
+        // Wait for asset to be ready
+        let asset: any = null;
+        let attempts = 0;
+        const maxAttempts = 60; // 2 minutes max wait
+
+        while (attempts < maxAttempts) {
+          await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
+          
+          asset = await mux.video.assets.retrieve(directUpload.asset_id);
+          
+          if (asset && asset.status === 'ready') {
+            break;
+          }
+          
+          if (asset && asset.status === 'errored') {
+            throw new Error(`Mux asset processing failed: ${asset.errors?.message || 'Unknown error'}`);
+          }
+
+          attempts++;
+          if (attempts % 10 === 0) {
+            console.log(`Waiting for Mux asset... (${attempts * 2}s)`);
+          }
+        }
+
+        if (asset && asset.status === 'ready' && asset.playback_ids && asset.playback_ids.length > 0) {
+          playbackId = asset.playback_ids[0].id;
           videoUrl = `https://stream.mux.com/${playbackId}.m3u8`;
           console.log('✅ Uploaded to Mux successfully:', playbackId);
         } else {
-          console.error('Mux upload returned no playback ID:', muxAsset);
+          throw new Error('Mux asset not ready after waiting');
         }
       } catch (muxError: any) {
         console.error('Mux upload failed, trying Cloudinary:', muxError);
-        console.error('Mux error details:', muxError.message, muxError.stack);
+        console.error('Mux error details:', muxError.message);
+        if (muxError.stack) {
+          console.error('Stack:', muxError.stack);
+        }
       }
     } else {
       console.log('Mux not configured, skipping Mux upload');
