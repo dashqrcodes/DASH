@@ -31,6 +31,7 @@ const HeavenDemoPage: React.FC = () => {
   const { name } = router.query;
   const [person, setPerson] = useState<Person | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [statusMessage, setStatusMessage] = useState('');
 
   useEffect(() => {
     if (!name || typeof name !== 'string') return;
@@ -74,6 +75,18 @@ const HeavenDemoPage: React.FC = () => {
         }
       }
 
+      // Convert Google Drive URL to alternative format if needed
+      // Try both download format and stream format
+      if (videoUrl.includes('drive.google.com')) {
+        const driveIdMatch = videoUrl.match(/id=([a-zA-Z0-9_-]+)/);
+        if (driveIdMatch) {
+          const fileId = driveIdMatch[1];
+          // Try stream format first (better for videos)
+          videoUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+          console.log('📹 Using Google Drive video URL:', videoUrl);
+        }
+      }
+
       // Set up the person with video
       setPerson({
         name: demoConfig.name,
@@ -81,6 +94,7 @@ const HeavenDemoPage: React.FC = () => {
       });
       
       setIsLoading(false);
+      console.log('✅ Video URL set:', videoUrl);
     };
     
     loadVideoUrl();
@@ -176,12 +190,15 @@ const HeavenDemoPage: React.FC = () => {
         {/* Full Screen Video Player - 9:16 Aspect Ratio */}
         {person.slideshowVideoUrl && (
           <video
+            key={person.slideshowVideoUrl}
             src={person.slideshowVideoUrl}
             autoPlay
             loop
             controls
             playsInline
             muted={false}
+            crossOrigin="anonymous"
+            preload="auto"
             style={{
               position: 'absolute',
               top: 0,
@@ -191,17 +208,62 @@ const HeavenDemoPage: React.FC = () => {
               objectFit: 'cover',
               display: 'block'
             }}
-              onError={(e) => {
-                const target = e.target as HTMLVideoElement;
-                console.error('❌ Error loading video:', {
-                  videoUrl: person.slideshowVideoUrl,
-                  error: target.error
-                });
-              }}
+            onError={(e) => {
+              const target = e.target as HTMLVideoElement;
+              const error = target.error;
+              console.error('❌ Error loading video:', {
+                videoUrl: person.slideshowVideoUrl,
+                errorCode: error?.code,
+                errorMessage: error?.message,
+                networkState: target.networkState,
+                readyState: target.readyState
+              });
+              setStatusMessage(`Error loading video. Check console for details.`);
+            }}
+            onLoadStart={() => {
+              console.log('📹 Video load started:', person.slideshowVideoUrl);
+              setStatusMessage('Loading video...');
+            }}
+            onLoadedMetadata={() => {
+              console.log('✅ Video metadata loaded');
+            }}
             onLoadedData={() => {
-              console.log('✅ Video loaded:', person.slideshowVideoUrl);
+              console.log('✅ Video loaded successfully:', person.slideshowVideoUrl);
+              setStatusMessage('');
+            }}
+            onCanPlay={() => {
+              console.log('▶️ Video can play');
+            }}
+            onWaiting={() => {
+              console.log('⏳ Video buffering...');
+              setStatusMessage('Buffering...');
+            }}
+            onPlaying={() => {
+              console.log('▶️ Video playing');
+              setStatusMessage('');
             }}
           />
+        )}
+        
+        {/* Error or Loading Message */}
+        {statusMessage && statusMessage !== '' && (
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            background: 'rgba(0,0,0,0.8)',
+            backdropFilter: 'blur(10px)',
+            padding: '20px 32px',
+            borderRadius: '12px',
+            border: '1px solid rgba(255,255,255,0.2)',
+            zIndex: 200,
+            color: 'white',
+            fontSize: '16px',
+            textAlign: 'center'
+          }}>
+            {statusMessage}
+          </div>
         )}
 
         {/* Back Button */}
