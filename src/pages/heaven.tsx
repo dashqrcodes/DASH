@@ -88,12 +88,12 @@ const HeavenPage: React.FC = () => {
 
   // Loading state
   if (isLoading || !videoUrl) {
-    return (
-      <>
-        <Head>
+  return (
+    <>
+      <Head>
           <title>HEAVEN | DASH</title>
-          <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-        </Head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+      </Head>
         <div style={{
           minHeight: '100vh',
           background: '#000000',
@@ -118,39 +118,39 @@ const HeavenPage: React.FC = () => {
         <meta name="description" content="Experience HEAVEN" />
       </Head>
 
-      <div style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: '#000000',
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: '#000000',
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
         overflow: 'hidden',
-        display: 'flex',
-        alignItems: 'center',
+              display: 'flex',
+              alignItems: 'center',
         justifyContent: 'center'
-      }}>
+            }}>
         {/* Full Screen Video Player */}
-        <video
+              <video
           key={videoUrl}
           src={videoUrl}
-          autoPlay
-          loop
-          controls
+                autoPlay
+                loop
+                controls
           playsInline
           muted={false}
           preload="auto"
-          style={{
+                style={{
             position: 'absolute',
             top: 0,
             left: 0,
-            width: '100%',
+                  width: '100%',
             height: '100%',
             objectFit: 'cover',
             display: 'block'
-          }}
-          onError={(e) => {
+                }}
+                onError={(e) => {
             const target = e.target as HTMLVideoElement;
             const error = target.error;
             console.error('❌ Error loading video:', {
@@ -206,7 +206,7 @@ const HeavenPage: React.FC = () => {
             {statusMessage}
           </div>
         )}
-      </div>
+        </div>
     </>
   );
 };
