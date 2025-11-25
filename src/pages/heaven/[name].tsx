@@ -45,6 +45,7 @@ const HeavenDemoPage: React.FC = () => {
 
     // Load video URL - priority: env var > Supabase > localStorage > default
     // This ensures consistency across dashqrcodes.com and dashmemories.com
+    // Both domains share the same Supabase database, so they'll use the same video
     const loadVideoUrl = async () => {
       const nameKey = name.toLowerCase();
       let videoUrl: string | null = null;
@@ -57,19 +58,33 @@ const HeavenDemoPage: React.FC = () => {
       }
       
       // Priority 2: Check Supabase for saved video
+      // This is the shared database source - ensures dashqrcodes.com and dashmemories.com use same video
       if (!videoUrl) {
         try {
           const { supabase } = await import('../../utils/supabase');
           if (supabase) {
-            const { data } = await supabase
+            // Try demo user_id first (for kelly-wong)
+            const { data: demoData } = await supabase
               .from('heaven_characters')
               .select('slideshow_video_url')
               .eq('memorial_id', nameKey)
               .eq('user_id', 'demo')
               .single();
             
-            if (data?.slideshow_video_url) {
-              videoUrl = data.slideshow_video_url;
+            if (demoData?.slideshow_video_url) {
+              videoUrl = demoData.slideshow_video_url;
+            } else {
+              // Fallback: Try default user_id
+              const { data: defaultData } = await supabase
+                .from('heaven_characters')
+                .select('slideshow_video_url')
+                .eq('memorial_id', nameKey)
+                .eq('user_id', 'default')
+                .single();
+              
+              if (defaultData?.slideshow_video_url) {
+                videoUrl = defaultData.slideshow_video_url;
+              }
             }
           }
         } catch (dbError) {
