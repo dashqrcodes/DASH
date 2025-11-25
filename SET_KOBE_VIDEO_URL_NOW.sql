@@ -36,7 +36,7 @@ VALUES (
   'demo',
   NULL,
   'kobe-bryant',
-  'https://www.dashqrcodes.com/heaven-kelly-wong',  -- ⚠️ VIDEO URL - Change this if needed
+  'https://www.dashqrcodes.com/heaven-kobe-bryant',  -- ⚠️ VIDEO URL - New Kobe Bryant video
   now(),
   now()
 );
@@ -63,7 +63,7 @@ VALUES (
   'default',
   NULL,
   'kobe-bryant',
-  'https://www.dashqrcodes.com/heaven-kelly-wong',  -- ⚠️ VIDEO URL - Change this if needed
+  'https://www.dashqrcodes.com/heaven-kobe-bryant',  -- ⚠️ VIDEO URL - New Kobe Bryant video
   now(),
   now()
 );
@@ -89,8 +89,8 @@ ORDER BY user_id;
 -- EXPECTED RESULT
 -- ============================================
 -- You should see 2 rows:
--- 1. user_id='demo', character_id='kobe-bryant', slideshow_video_url='https://www.dashqrcodes.com/heaven-kelly-wong'
--- 2. user_id='default', character_id='kobe-bryant', slideshow_video_url='https://www.dashqrcodes.com/heaven-kelly-wong'
+-- 1. user_id='demo', character_id='kobe-bryant', slideshow_video_url='https://www.dashqrcodes.com/heaven-kobe-bryant'
+-- 2. user_id='default', character_id='kobe-bryant', slideshow_video_url='https://www.dashqrcodes.com/heaven-kobe-bryant'
 --
 -- If you see this, the video URL is set! ✅
 -- The page should now load the video after Supabase is configured.

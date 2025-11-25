@@ -40,7 +40,7 @@ The page looks for the video in this order:
 2. Click **"Add New"**
 3. Fill in:
    - **Key:** `NEXT_PUBLIC_KOBE_DEMO_VIDEO`
-   - **Value:** `https://www.dashqrcodes.com/heaven-kelly-wong`
+   - **Value:** `https://www.dashqrcodes.com/heaven-kobe-bryant`
    - **Environments:** ☑️ Production ☑️ Preview ☑️ Development
 4. Click **"Save"**
 
@@ -76,7 +76,7 @@ After either solution:
 2. You should see the video playing (not the "No video available" message)
 3. Check browser console (F12) - should see:
    ```
-   ✅ Video URL set: https://www.dashqrcodes.com/heaven-kelly-wong
+   ✅ Video URL set: https://www.dashqrcodes.com/heaven-kobe-bryant
    ```
 
 ---
