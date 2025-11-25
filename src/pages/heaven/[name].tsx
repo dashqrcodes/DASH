@@ -75,16 +75,14 @@ const HeavenDemoPage: React.FC = () => {
         }
       }
 
-      // Convert Google Drive URL to use proxy if needed
-      // Google Drive videos often have CORS issues, so proxy them
+      // Ensure Google Drive URL is in correct format
       if (videoUrl.includes('drive.google.com')) {
-        const driveIdMatch = videoUrl.match(/id=([a-zA-Z0-9_-]+)/);
+        const driveIdMatch = videoUrl.match(/[\/=]([a-zA-Z0-9_-]{25,})/);
         if (driveIdMatch) {
           const fileId = driveIdMatch[1];
-          const directUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
-          // Use proxy endpoint to bypass CORS
-          videoUrl = `/api/heaven/video-proxy?url=${encodeURIComponent(directUrl)}`;
-          console.log('📹 Using proxied Google Drive video URL:', videoUrl);
+          // Use direct download URL format
+          videoUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+          console.log('📹 Using Google Drive video URL:', videoUrl);
         }
       }
 
@@ -198,7 +196,6 @@ const HeavenDemoPage: React.FC = () => {
             controls
             playsInline
             muted={false}
-            crossOrigin="anonymous"
             preload="auto"
             style={{
               position: 'absolute',
