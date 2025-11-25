@@ -21,7 +21,7 @@ const DEMO_CONFIGS: Record<string, {
   },
   'kelly-wong': {
     name: 'Kelly Wong',
-    videoUrl: process.env.NEXT_PUBLIC_KELLY_DEMO_VIDEO || 'https://drive.google.com/uc?export=download&id=1q3kjg5dBt_ECf0j_93QqicmqqHgzXIUu',
+    videoUrl: process.env.NEXT_PUBLIC_KELLY_DEMO_VIDEO || '', // No default - must be set via env var or Supabase
   },
   // Add more demo configs here
 };
@@ -85,13 +85,13 @@ const HeavenDemoPage: React.FC = () => {
         }
       }
       
-      // Priority 4: Use default from demo config
-      if (!videoUrl) {
+      // Priority 4: Use default from demo config (only if it's not empty)
+      if (!videoUrl && demoConfig.videoUrl) {
         videoUrl = demoConfig.videoUrl;
       }
 
-      // Ensure Google Drive URL is in correct format
-      if (videoUrl.includes('drive.google.com')) {
+      // Ensure Google Drive URL is in correct format (only if we have a video URL)
+      if (videoUrl && videoUrl.includes('drive.google.com')) {
         const driveIdMatch = videoUrl.match(/[\/=]([a-zA-Z0-9_-]{25,})/);
         if (driveIdMatch) {
           const fileId = driveIdMatch[1];
@@ -101,14 +101,18 @@ const HeavenDemoPage: React.FC = () => {
         }
       }
 
-      // Set up the person with video
+      // Set up the person with video (or null if no video available)
       setPerson({
         name: demoConfig.name,
-        slideshowVideoUrl: videoUrl
+        slideshowVideoUrl: videoUrl || null
       });
       
       setIsLoading(false);
-      console.log('✅ Video URL set:', videoUrl);
+      if (videoUrl) {
+        console.log('✅ Video URL set:', videoUrl);
+      } else {
+        console.warn('⚠️ No video URL available for', demoConfig.name);
+      }
     };
     
     loadVideoUrl();
@@ -202,7 +206,7 @@ const HeavenDemoPage: React.FC = () => {
         justifyContent: 'center'
       }}>
         {/* Full Screen Video Player - 9:16 Aspect Ratio */}
-        {person.slideshowVideoUrl && (
+        {person.slideshowVideoUrl ? (
           <video
             key={person.slideshowVideoUrl}
             src={person.slideshowVideoUrl}
@@ -256,6 +260,22 @@ const HeavenDemoPage: React.FC = () => {
               setStatusMessage('');
             }}
           />
+        ) : (
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            textAlign: 'center',
+            color: 'white',
+            zIndex: 100
+          }}>
+            <div style={{ fontSize: '24px', marginBottom: '16px' }}>☁️</div>
+            <div style={{ fontSize: '20px', marginBottom: '8px' }}>No video available</div>
+            <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.6)' }}>
+              Please set a video URL via environment variable or Supabase
+            </div>
+          </div>
         )}
         
         {/* Error or Loading Message */}
