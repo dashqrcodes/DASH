@@ -14,44 +14,54 @@ const HeavenKobeBryantPage: React.FC = () => {
   useEffect(() => {
     // Load video URL - priority: env var > Supabase > localStorage > default
     const loadVideoUrl = async () => {
-      let url = process.env.NEXT_PUBLIC_KOBE_DEMO_VIDEO || 'https://drive.google.com/uc?export=download&id=1mwXwubTJtD8yopRTzTm7MMoShV25JO62';
+      let url: string | null = null;
       
-      // Check Supabase
-      try {
-        const { supabase } = await import('../utils/supabase');
-        if (supabase) {
-          const { data } = await supabase
-            .from('heaven_characters')
-            .select('slideshow_video_url')
-            .eq('memorial_id', 'kobe-bryant')
-            .eq('user_id', 'demo')
-            .single();
-          
-          if (data?.slideshow_video_url) {
-            url = data.slideshow_video_url;
+      // Priority 1: Environment variable
+      url = process.env.NEXT_PUBLIC_KOBE_DEMO_VIDEO || null;
+      
+      // Priority 2: Check Supabase
+      if (!url) {
+        try {
+          const { supabase } = await import('../utils/supabase');
+          if (supabase) {
+            // Try demo user_id first
+            const { data: demoData } = await supabase
+              .from('heaven_characters')
+              .select('slideshow_video_url')
+              .eq('character_id', 'kobe-bryant')
+              .eq('user_id', 'demo')
+              .single();
+            
+            if (demoData?.slideshow_video_url) {
+              url = demoData.slideshow_video_url;
+            } else {
+              // Fallback: Try default user_id
+              const { data: defaultData } = await supabase
+                .from('heaven_characters')
+                .select('slideshow_video_url')
+                .eq('character_id', 'kobe-bryant')
+                .eq('user_id', 'default')
+                .single();
+              
+              if (defaultData?.slideshow_video_url) {
+                url = defaultData.slideshow_video_url;
+              }
+            }
           }
+        } catch (dbError) {
+          console.log('Supabase check failed (optional):', dbError);
         }
-      } catch (dbError) {
-        console.log('Supabase check failed (optional):', dbError);
       }
       
-      // Check localStorage
-      if (!url || url.includes('BigBuckBunny')) {
+      // Priority 3: Check localStorage
+      if (!url) {
         const savedUrl = localStorage.getItem('heaven_video_kobe-bryant');
-        if (savedUrl && !savedUrl.startsWith('blob:') && !savedUrl.startsWith('data:')) {
+        if (savedUrl && !savedUrl.startsWith('blob:') && !savedUrl.startsWith('data:') && !savedUrl.includes('BigBuckBunny')) {
           url = savedUrl;
         }
       }
 
-      // Ensure Google Drive URL is in correct format
-      if (url.includes('drive.google.com')) {
-        const driveIdMatch = url.match(/[\/=]([a-zA-Z0-9_-]{25,})/);
-        if (driveIdMatch) {
-          const fileId = driveIdMatch[1];
-          url = `https://drive.google.com/uc?export=download&id=${fileId}`;
-          console.log('📹 Using Google Drive video URL:', url);
-        }
-      }
+      // No default fallback - video must come from env var or Supabase
 
       setVideoUrl(url);
       setIsLoading(false);

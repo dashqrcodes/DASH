@@ -30,16 +30,12 @@ export default async function handler(
     let finalUrl = videoUrl.trim();
     let playbackId: string | null = null;
 
-    // Convert Google Drive share link to direct link
-    const driveMatch = finalUrl.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
-    if (driveMatch) {
-      finalUrl = `https://drive.google.com/uc?export=download&id=${driveMatch[1]}`;
-    }
-
-    // Convert Dropbox link
+    // Convert Dropbox link (if needed)
     if (finalUrl.includes('dropbox.com') && finalUrl.includes('?dl=0')) {
       finalUrl = finalUrl.replace('?dl=0', '?dl=1');
     }
+    
+    // Note: Google Drive links are no longer supported - use Mux, Cloudinary, or other hosting
 
     // Optionally upload to Mux for permanent hosting
     if (uploadToMux && isMuxConfigured()) {
