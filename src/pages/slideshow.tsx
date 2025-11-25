@@ -5,6 +5,7 @@ import MuxPlayerWrapper from '../components/MuxPlayerWrapper';
 import CollaborationPanel from '../components/CollaborationPanel';
 import HamburgerMenu from '../components/HamburgerMenu';
 import BottomNav from '../components/BottomNav';
+import SpotifyTrackSearch from '../components/SpotifyTrackSearch';
 import { initLazyLoading, preloadImages } from '../utils/lazy-loading';
 import { uploadSlideshowMedia, storeSlideshowMedia, getSlideshowMedia, supabase } from '../utils/supabase';
 
@@ -59,7 +60,25 @@ const SlideshowPage: React.FC = () => {
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [selectedSpotifyTracks, setSelectedSpotifyTracks] = useState<SpotifyTrack[]>([]);
   const [selectedSpotifyPlaylist, setSelectedSpotifyPlaylist] = useState<SpotifyPlaylist | null>(null);
+  const [selectedSpotifyTrack, setSelectedSpotifyTrack] = useState<{ id: string; uri: string } | null>(null);
+  const [spotifyAccessToken, setSpotifyAccessToken] = useState<string | null>(null);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
+  
+  // Load Spotify token on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('spotify_access_token');
+      setSpotifyAccessToken(token);
+      const savedTrack = localStorage.getItem('selectedSpotifyTrack');
+      if (savedTrack) {
+        try {
+          setSelectedSpotifyTrack(JSON.parse(savedTrack));
+        } catch (e) {
+          console.error('Error parsing saved Spotify track:', e);
+        }
+      }
+    }
+  }, []);
   const [spotifyPlayer, setSpotifyPlayer] = useState<any>(null); // Spotify Web Playback SDK player
   const [customAudioUrl, setCustomAudioUrl] = useState<string | null>(null); // Custom uploaded audio
   const [fallbackMusicEnabled, setFallbackMusicEnabled] = useState(true); // Enable ambient fallback
@@ -2028,18 +2047,6 @@ const SlideshowPage: React.FC = () => {
           </button>
         </div>
 
-        <div
-          style={{
-            textAlign:'center',
-            fontSize:'11px',
-            letterSpacing:'0.12em',
-            textTransform:'uppercase',
-            color:'rgba(255,255,255,0.5)',
-            marginBottom:'8px'
-          }}
-        >
-          Start here
-        </div>
 
         <div
           style={{
@@ -2151,7 +2158,7 @@ const SlideshowPage: React.FC = () => {
             profilePhotoUrl ? (
               <img
                 src={profilePhotoUrl}
-                alt="Profile photo"
+                alt=""
                 style={{
                   width: '100%',
                   height: '100%',
@@ -2199,177 +2206,87 @@ const SlideshowPage: React.FC = () => {
           {photos.length === 0 ? (
             <div style={{height:'40vh'}} />
           ) : (
-            <div style={{display:'flex',flexDirection:'column',gap:'14px',paddingBottom:'20px'}}>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill, minmax(150px, 1fr))',gap:'12px',paddingBottom:'20px'}}>
               {photos.map((photo, index) => {
-                const globalIndex = photos.findIndex((p) => p.id === photo.id);
-                const isFirst = globalIndex === 0;
-                const isLast = globalIndex === photos.length - 1;
                 return (
-                <div 
-                  key={photo.id} 
-                  style={{
-                    background:'rgba(255,255,255,0.08)',
-                    borderRadius:'16px',
-                    overflow:'hidden',
-                    position:'relative',
-                    border:'1px solid rgba(255,255,255,0.1)',
-                    backdropFilter:'blur(10px)'
-                  }}
-                >
-                  <div style={{display:'flex',gap:'14px',padding:'14px'}}>
-                    {/* Media Preview */}
-                    <div style={{
+                  <div 
+                    key={photo.id} 
+                    style={{
                       position:'relative',
-                      width:'90px',
-                      height:'90px',
+                      aspectRatio:'1',
                       borderRadius:'12px',
                       overflow:'hidden',
-                      flexShrink:0,
-                      background:'rgba(255,255,255,0.1)',
-                      border:'2px solid rgba(255,255,255,0.15)'
-                    }}>
-                      {photo.type === 'video' ? (
-                        // Video player with Mux
-                        photo.muxPlaybackId ? (
-                          <MuxPlayerWrapper
-                            playbackId={photo.muxPlaybackId}
-                            title=""
-                            muted
-                            controls={false}
-                            style={{
-                              width:'100%',
-                              height:'100%',
-                              objectFit:'cover'
-                            }}
-                          />
-                        ) : (
-                          // Fallback to regular video element
-                          <video
-                            src={photo.preview || photo.url}
-                            muted
-                            style={{
-                              width:'100%',
-                              height:'100%',
-                              objectFit:'cover'
-                            }}
-                          />
-                        )
-                      ) : (
-                        // Photo with lazy loading
-                        <img 
-                          data-src={photo.preview || photo.url}
-                          src={photo.preview ? undefined : photo.url}
-                          alt={`Photo ${index + 1}`} 
-                          loading="lazy"
+                      background:'rgba(255,255,255,0.05)'
+                    }}
+                  >
+                    {/* Photo Preview */}
+                    {photo.type === 'video' ? (
+                      photo.muxPlaybackId ? (
+                        <MuxPlayerWrapper
+                          playbackId={photo.muxPlaybackId}
+                          title=""
+                          muted
+                          controls={false}
                           style={{
                             width:'100%',
                             height:'100%',
                             objectFit:'cover'
-                          }} 
+                          }}
                         />
-                      )}
-                    </div>
-
-                    {/* Photo Info & Controls */}
-                    <div style={{
-                      flex:1,
-                      display:'flex',
-                      flexDirection:'column',
-                      gap:'10px',
-                      minWidth:0
-                    }}>
-                      {/* Date Input */}
-                      <input 
-                        type="date" 
-                        value={photo.date || ''} 
-                        onChange={(e)=>handlePhotoDateChange(photo.id, e.target.value)}
-                        placeholder={t.setDateOptional}
+                      ) : (
+                        <video
+                          src={photo.preview || photo.url}
+                          muted
+                          style={{
+                            width:'100%',
+                            height:'100%',
+                            objectFit:'cover'
+                          }}
+                        />
+                      )
+                    ) : (
+                      <img 
+                        src={photo.preview || photo.url}
+                        alt=""
+                        loading="lazy"
                         style={{
-                          background:'rgba(255,255,255,0.12)',
-                          border:'1px solid rgba(255,255,255,0.25)',
-                          borderRadius:'10px',
-                          padding:'10px 12px',
-                          color:'white',
-                          fontSize:'clamp(12px, 3vw, 14px)',
-                          outline:'none',
                           width:'100%',
-                          minHeight:'44px',
-                          WebkitTapHighlightColor:'transparent'
-                        }}
+                          height:'100%',
+                          objectFit:'cover'
+                        }} 
                       />
-
-                      {/* Reorder Buttons */}
-                      <div style={{display:'flex',gap:'8px',flexWrap:'wrap'}}>
-                        <button 
-                          onClick={()=>handleMovePhoto(photo.id, 'up')}
-                          disabled={isFirst}
-                          style={{
-                            flex:1,
-                            minWidth:'80px',
-                            padding:'10px',
-                            background:isFirst ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.12)',
-                            border:'1px solid rgba(255,255,255,0.2)',
-                            borderRadius:'10px',
-                            color:'white',
-                            fontSize:'clamp(12px, 3vw, 13px)',
-                            cursor:isFirst ? 'not-allowed' : 'pointer',
-                            opacity:isFirst ? 0.5 : 1,
-                            fontWeight:'600',
-                            minHeight:'44px',
-                            WebkitTapHighlightColor:'transparent',
-                            touchAction:'manipulation'
-                          }}
-                        >
-                          {t.earlier}
-                        </button>
-                        <button 
-                          onClick={()=>handleMovePhoto(photo.id, 'down')}
-                          disabled={isLast}
-                          style={{
-                            flex:1,
-                            minWidth:'80px',
-                            padding:'10px',
-                            background:isLast ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.12)',
-                            border:'1px solid rgba(255,255,255,0.2)',
-                            borderRadius:'10px',
-                            color:'white',
-                            fontSize:'clamp(12px, 3vw, 13px)',
-                            cursor:isLast ? 'not-allowed' : 'pointer',
-                            opacity:isLast ? 0.5 : 1,
-                            fontWeight:'600',
-                            minHeight:'44px',
-                            WebkitTapHighlightColor:'transparent',
-                            touchAction:'manipulation'
-                          }}
-                        >
-                          {t.later}
-                            </button>
-                        <button 
-                          onClick={()=>handleRemovePhoto(photo.id)}
-                          style={{
-                            padding:'10px 16px',
-                            background:'rgba(255,59,48,0.2)',
-                            border:'1px solid rgba(255,59,48,0.4)',
-                            borderRadius:'10px',
-                            color:'rgba(255,59,48,1)',
-                            fontSize:'clamp(12px, 3vw, 13px)',
-                            cursor:'pointer',
-                            fontWeight:'700',
-                            minHeight:'44px',
-                            minWidth:'80px',
-                            WebkitTapHighlightColor:'transparent',
-                            touchAction:'manipulation'
-                          }}
-                        >
-                          {t.remove}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                    )}
+                    
+                    {/* Remove Button */}
+                    <button
+                      onClick={()=>handleRemovePhoto(photo.id)}
+                      style={{
+                        position:'absolute',
+                        top:'8px',
+                        right:'8px',
+                        width:'32px',
+                        height:'32px',
+                        borderRadius:'50%',
+                        background:'rgba(0,0,0,0.7)',
+                        backdropFilter:'blur(8px)',
+                        border:'none',
+                        display:'flex',
+                        alignItems:'center',
+                        justifyContent:'center',
+                        cursor:'pointer',
+                        zIndex:10,
+                        padding:0,
+                        WebkitTapHighlightColor:'transparent'
+                      }}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                      </svg>
+                    </button>
+                  </div>
                 );
               })}
-                </div>
+            </div>
           )}
                 </div>
                 
@@ -2638,19 +2555,17 @@ const SlideshowPage: React.FC = () => {
               >
                 Your Music (Optional)
               </h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {/* Spotify - Green Pill Button */}
+              
+              {/* Spotify Track Search */}
+              {!spotifyAccessToken ? (
                 <button
                   onClick={() => {
-                    setShowMusicSelector(false);
-                    handleSpotify();
+                    window.location.href = '/api/spotify/auth';
                   }}
                   style={{
                     width: '100%',
                     padding: '12px 20px',
-                    background: selectedSpotifyPlaylist || selectedSpotifyTracks.length > 0
-                      ? '#1db954'
-                      : 'rgba(29,185,84,0.15)',
+                    background: 'rgba(29,185,84,0.15)',
                     border: 'none',
                     borderRadius: '9999px',
                     color: 'white',
@@ -2661,75 +2576,148 @@ const SlideshowPage: React.FC = () => {
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '10px',
-                    transition: 'all 0.2s ease',
-                    boxShadow: selectedSpotifyPlaylist || selectedSpotifyTracks.length > 0
-                      ? '0 4px 12px rgba(29,185,84,0.3)'
-                      : 'none',
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!selectedSpotifyPlaylist && selectedSpotifyTracks.length === 0) {
-                      e.currentTarget.style.background = 'rgba(29,185,84,0.25)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!selectedSpotifyPlaylist && selectedSpotifyTracks.length === 0) {
-                      e.currentTarget.style.background = 'rgba(29,185,84,0.15)';
-                    }
                   }}
                 >
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.42 1.56-.299.421-1.02.599-1.559.3z"/>
                   </svg>
-                  <span>
-                    {selectedSpotifyPlaylist
-                      ? `Spotify: ${selectedSpotifyPlaylist.name.substring(0, 25)}${selectedSpotifyPlaylist.name.length > 25 ? '...' : ''}`
-                      : selectedSpotifyTracks.length > 0
-                      ? `Spotify: ${selectedSpotifyTracks.length} tracks`
-                      : 'Connect Spotify'}
-                  </span>
-                  {(selectedSpotifyPlaylist || selectedSpotifyTracks.length > 0) && (
-                    <span style={{ fontSize: '16px' }}>✓</span>
+                  <span>Connect Spotify</span>
+                </button>
+              ) : (
+                <div>
+                  <SpotifyTrackSearch
+                    accessToken={spotifyAccessToken}
+                    onSelectTrack={(track) => {
+                      setSelectedSpotifyTrack(track);
+                      setSelectedSpotifyPlaylist(null);
+                      setSelectedSpotifyTracks([]);
+                      setSelectedYoutubeTrack(null);
+                      if (typeof window !== 'undefined') {
+                        localStorage.setItem('selectedSpotifyTrack', JSON.stringify(track));
+                      }
+                    }}
+                  />
+                  
+                  {/* Selected Track Embed & Buttons */}
+                  {selectedSpotifyTrack && (
+                    <div style={{
+                      marginTop: '16px',
+                      padding: '16px',
+                      background: 'rgba(255,255,255,0.05)',
+                      borderRadius: '12px',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                    }}>
+                      <iframe
+                        src={`https://open.spotify.com/embed/track/${selectedSpotifyTrack.id}?utm_source=generator`}
+                        width="100%"
+                        height="152"
+                        frameBorder="0"
+                        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                        loading="lazy"
+                        style={{
+                          borderRadius: '12px',
+                          marginBottom: '16px',
+                        }}
+                      />
+                      
+                      {/* Two Separate Buttons */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        <button
+                          onClick={() => {
+                            window.open(`https://open.spotify.com/track/${selectedSpotifyTrack.id}`, '_blank');
+                          }}
+                          style={{
+                            width: '100%',
+                            padding: '14px',
+                            background: '#1db954',
+                            border: 'none',
+                            borderRadius: '12px',
+                            color: 'white',
+                            fontSize: '15px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                          }}
+                        >
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.42 1.56-.299.421-1.02.599-1.559.3z"/>
+                          </svg>
+                          Play on Spotify
+                        </button>
+                        
+                        <button
+                          onClick={() => {
+                            setShowMusicSelector(false);
+                            handlePlaySlideshow();
+                          }}
+                          style={{
+                            width: '100%',
+                            padding: '14px',
+                            background: 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
+                            border: 'none',
+                            borderRadius: '12px',
+                            color: 'white',
+                            fontSize: '15px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                          }}
+                        >
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <polygon points="5 3 19 12 5 21 5 3"/>
+                          </svg>
+                          Play Slideshow
+                        </button>
+                      </div>
+                    </div>
                   )}
-                </button>
+                </div>
+              )}
 
-                {/* Apple Music Option */}
-                <button
-                  onClick={() => {
-                    setTransferFeedback('Apple Music integration coming soon. For now, please use Spotify or upload your own music file.');
-                    setShowMusicSelector(false);
-                  }}
-                  style={{
-                    width: '100%',
-                    padding: '12px 20px',
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: '9999px',
-                    color: 'white',
-                    fontSize: '15px',
-                    fontWeight: '500',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '10px',
-                    transition: 'all 0.2s ease',
-                    opacity: 0.7,
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
-                    e.currentTarget.style.opacity = '1';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
-                    e.currentTarget.style.opacity = '0.7';
-                  }}
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm0 2c5.52 0 10 4.48 10 10s-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"/>
-                  </svg>
-                  <span>Apple Music (Coming Soon)</span>
-                </button>
-              </div>
+              {/* Apple Music Option */}
+              <button
+                onClick={() => {
+                  setTransferFeedback('Apple Music integration coming soon. For now, please use Spotify or upload your own music file.');
+                  setShowMusicSelector(false);
+                }}
+                style={{
+                  width: '100%',
+                  padding: '12px 20px',
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '9999px',
+                  color: 'white',
+                  fontSize: '15px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '10px',
+                  transition: 'all 0.2s ease',
+                  opacity: 0.7,
+                  marginTop: '12px',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                  e.currentTarget.style.opacity = '1';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                  e.currentTarget.style.opacity = '0.7';
+                }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm0 2c5.52 0 10 4.48 10 10s-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"/>
+                </svg>
+                <span>Apple Music (Coming Soon)</span>
+              </button>
             </div>
 
             {/* Upload My Music Option */}

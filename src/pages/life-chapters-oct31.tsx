@@ -348,55 +348,6 @@ const LifeChaptersPage: React.FC = () => {
           )}
         </div>
 
-        {/* Timeline Visualization */}
-        {sunrise && sunset && (
-          <div style={{
-            margin:'0 20px 16px',
-            position:'relative',
-            height:'6px',
-            background:'rgba(255,255,255,0.15)',
-            borderRadius:'3px',
-            overflow:'visible'
-          }}>
-            <div style={{
-              position:'absolute',
-              left:0,
-              top:'-20px',
-              fontSize:'10px',
-              opacity:0.6,
-              fontWeight:'500'
-            }}>
-              {t.birth}
-            </div>
-            <div style={{
-              position:'absolute',
-              right:0,
-              top:'-20px',
-              fontSize:'10px',
-              opacity:0.6,
-              fontWeight:'500'
-            }}>
-              {t.present}
-            </div>
-            {photos.map((photo, idx) => photo.date && (
-              <div 
-                key={photo.id}
-                style={{
-                  position:'absolute',
-                  left:`${calculateTimelinePosition(photo.date)}%`,
-                  top:'-6px',
-                  width:'12px',
-                  height:'18px',
-                  background:'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
-                  borderRadius:'50%',
-                  transform:'translateX(-50%)',
-                  boxShadow:'0 2px 8px rgba(102,126,234,0.5)'
-                }}
-                title={photo.date}
-              />
-            ))}
-          </div>
-        )}
 
         {/* Add Photos Buttons */}
         <div style={{
@@ -406,67 +357,7 @@ const LifeChaptersPage: React.FC = () => {
           flexDirection:'column',
           gap:'12px'
         }}>
-          {/* Scan Physical Photo Button */}
-          <button 
-            onClick={() => setShowScanner(true)}
-            style={{
-              padding:'16px',
-              background:'rgba(102,126,234,0.15)',
-              border:'2px solid rgba(102,126,234,0.4)',
-              borderRadius:'16px',
-              textAlign:'center',
-              cursor:'pointer',
-              display:'flex',
-              alignItems:'center',
-              justifyContent:'flex-start',
-              gap:'12px',
-              transition:'all 0.2s',
-              WebkitTapHighlightColor:'transparent',
-              minHeight:'64px'
-            }}
-            onTouchStart={(e) => {
-              e.currentTarget.style.background = 'rgba(102,126,234,0.25)';
-            }}
-            onTouchEnd={(e) => {
-              e.currentTarget.style.background = 'rgba(102,126,234,0.15)';
-            }}
-          >
-            <div style={{
-              width:'48px',
-              height:'48px',
-              borderRadius:'12px',
-              background:'rgba(102,126,234,0.3)',
-              display:'flex',
-              alignItems:'center',
-              justifyContent:'center',
-              flexShrink:0
-            }}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M23 19C23 19.5304 22.7893 20.0391 22.4142 20.4142C22.0391 20.7893 21.5304 21 21 21H3C2.46957 21 1.96086 20.7893 1.58579 20.4142C1.21071 20.0391 1 19.5304 1 19V8C1 7.46957 1.21071 6.96086 1.58579 6.58579C1.96086 6.21071 2.46957 6 3 6H7L9 4H15L17 6H21C21.5304 6 22.0391 6.21071 22.4142 6.58579C22.7893 6.96086 23 7.46957 23 8V19Z"/>
-                <circle cx="12" cy="13" r="4"/>
-              </svg>
-            </div>
-            <div style={{display:'flex',flexDirection:'column',alignItems:'flex-start',flex:1}}>
-              <div style={{
-                fontSize:'clamp(15px, 3.5vw, 17px)',
-                fontWeight:'700',
-                color:'white',
-                marginBottom:'2px'
-              }}>
-                {t.scanPhysicalPhoto}
-              </div>
-              <div style={{
-                fontSize:'clamp(11px, 2.5vw, 13px)',
-                opacity:0.8,
-                color:'white',
-                lineHeight:'1.3'
-              }}>
-                {t.scanSubtitle}
-              </div>
-            </div>
-          </button>
-
-          {/* Add Digital Photos Button */}
+          {/* Add Photos Button */}
           <label style={{display:'block',width:'100%'}}>
             <input 
               type="file" 
@@ -480,29 +371,19 @@ const LifeChaptersPage: React.FC = () => {
               padding:'18px',
               background:'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
               borderRadius:'16px',
-              textAlign:'center',
               cursor:'pointer',
               boxShadow:'0 4px 20px rgba(102,126,234,0.4)',
               transition:'all 0.2s',
               minHeight:'64px',
               display:'flex',
-              flexDirection:'column',
+              alignItems:'center',
               justifyContent:'center',
               WebkitTapHighlightColor:'transparent'
             }}>
-              <div style={{
-                fontSize:'clamp(16px, 4vw, 18px)',
-                fontWeight:'700',
-                marginBottom:'4px'
-              }}>
-                {isProcessing ? t.processing : photos.length === 0 ? t.addPhotosVideos : `${t.addMore} (${photos.length} ${t.memories})`}
-              </div>
-              <div style={{
-                fontSize:'clamp(12px, 3vw, 14px)',
-                opacity:0.95
-              }}>
-                {t.startFromEarliest}
-              </div>
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
             </div>
           </label>
         </div>
@@ -530,160 +411,57 @@ const LifeChaptersPage: React.FC = () => {
             div::-webkit-scrollbar { display: none; }
           `}</style>
           {photos.length === 0 ? (
-            <div style={{
-              textAlign:'center',
-              padding:'60px 20px',
-              opacity:0.6
-            }}>
-              <div style={{
-                fontSize:'clamp(16px, 4vw, 18px)',
-                marginBottom:'12px',
-                fontWeight:'600'
-              }}>
-                {t.storyBegins}
-              </div>
-              <div style={{
-                fontSize:'clamp(13px, 3vw, 15px)',
-                lineHeight:'1.6',
-                opacity:0.8
-              }}>
-                {t.addPhotosHelp}<br/>
-                {t.arrangeChronologically}
-              </div>
-            </div>
+            <div style={{height:'40vh'}} />
           ) : (
-            <div style={{display:'flex',flexDirection:'column',gap:'14px',paddingBottom:'20px'}}>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill, minmax(150px, 1fr))',gap:'12px',paddingBottom:'20px'}}>
               {photos.map((photo, index) => (
                 <div 
                   key={photo.id} 
                   style={{
-                    background:'rgba(255,255,255,0.08)',
-                    borderRadius:'16px',
-                    overflow:'hidden',
                     position:'relative',
-                    border:'1px solid rgba(255,255,255,0.1)',
-                    backdropFilter:'blur(10px)'
+                    aspectRatio:'1',
+                    borderRadius:'12px',
+                    overflow:'hidden',
+                    background:'rgba(255,255,255,0.05)'
                   }}
                 >
-                  <div style={{display:'flex',gap:'14px',padding:'14px'}}>
-                    {/* Photo Preview */}
-                    <div style={{
-                      position:'relative',
-                      width:'90px',
-                      height:'90px',
-                      borderRadius:'12px',
-                      overflow:'hidden',
-                      flexShrink:0,
-                      background:'rgba(255,255,255,0.1)',
-                      border:'2px solid rgba(255,255,255,0.15)'
-                    }}>
-                      <img 
-                        src={photo.preview || photo.url} 
-                        alt={`Photo ${index + 1}`} 
-                        style={{
-                          width:'100%',
-                          height:'100%',
-                          objectFit:'cover'
-                        }} 
-                      />
-                    </div>
-
-                    {/* Photo Info & Controls */}
-                    <div style={{
-                      flex:1,
+                  {/* Photo Preview */}
+                  <img 
+                    src={photo.preview || photo.url} 
+                    alt=""
+                    style={{
+                      width:'100%',
+                      height:'100%',
+                      objectFit:'cover'
+                    }} 
+                  />
+                  
+                  {/* Remove Button */}
+                  <button
+                    onClick={()=>handleRemovePhoto(photo.id)}
+                    style={{
+                      position:'absolute',
+                      top:'8px',
+                      right:'8px',
+                      width:'32px',
+                      height:'32px',
+                      borderRadius:'50%',
+                      background:'rgba(0,0,0,0.7)',
+                      backdropFilter:'blur(8px)',
+                      border:'none',
                       display:'flex',
-                      flexDirection:'column',
-                      gap:'10px',
-                      minWidth:0
-                    }}>
-                      {/* Date Input */}
-                      <input 
-                        type="date" 
-                        value={photo.date || ''} 
-                        onChange={(e)=>handlePhotoDateChange(photo.id, e.target.value)}
-                        placeholder={t.setDateOptional}
-                        style={{
-                          background:'rgba(255,255,255,0.12)',
-                          border:'1px solid rgba(255,255,255,0.25)',
-                          borderRadius:'10px',
-                          padding:'10px 12px',
-                          color:'white',
-                          fontSize:'clamp(12px, 3vw, 14px)',
-                          outline:'none',
-                          width:'100%',
-                          minHeight:'44px',
-                          WebkitTapHighlightColor:'transparent'
-                        }}
-                      />
-
-                      {/* Reorder Buttons */}
-                      <div style={{display:'flex',gap:'8px',flexWrap:'wrap'}}>
-                        <button 
-                          onClick={()=>handleMovePhoto(photo.id, 'up')}
-                          disabled={index === 0}
-                          style={{
-                            flex:1,
-                            minWidth:'80px',
-                            padding:'10px',
-                            background:index === 0 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.12)',
-                            border:'1px solid rgba(255,255,255,0.2)',
-                            borderRadius:'10px',
-                            color:'white',
-                            fontSize:'clamp(12px, 3vw, 13px)',
-                            cursor:index === 0 ? 'not-allowed' : 'pointer',
-                            opacity:index === 0 ? 0.5 : 1,
-                            fontWeight:'600',
-                            minHeight:'44px',
-                            WebkitTapHighlightColor:'transparent',
-                            touchAction:'manipulation'
-                          }}
-                        >
-                          {t.earlier}
-                        </button>
-                        <button 
-                          onClick={()=>handleMovePhoto(photo.id, 'down')}
-                          disabled={index === photos.length - 1}
-                          style={{
-                            flex:1,
-                            minWidth:'80px',
-                            padding:'10px',
-                            background:index === photos.length - 1 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.12)',
-                            border:'1px solid rgba(255,255,255,0.2)',
-                            borderRadius:'10px',
-                            color:'white',
-                            fontSize:'clamp(12px, 3vw, 13px)',
-                            cursor:index === photos.length - 1 ? 'not-allowed' : 'pointer',
-                            opacity:index === photos.length - 1 ? 0.5 : 1,
-                            fontWeight:'600',
-                            minHeight:'44px',
-                            WebkitTapHighlightColor:'transparent',
-                            touchAction:'manipulation'
-                          }}
-                        >
-                          {t.later}
-                        </button>
-                        <button 
-                          onClick={()=>handleRemovePhoto(photo.id)}
-                          style={{
-                            padding:'10px 16px',
-                            background:'rgba(255,59,48,0.2)',
-                            border:'1px solid rgba(255,59,48,0.4)',
-                            borderRadius:'10px',
-                            color:'rgba(255,59,48,1)',
-                            fontSize:'clamp(12px, 3vw, 13px)',
-                            cursor:'pointer',
-                            fontWeight:'700',
-                            minHeight:'44px',
-                            minWidth:'80px',
-                            WebkitTapHighlightColor:'transparent',
-                            touchAction:'manipulation'
-                          }}
-                        >
-                          {t.remove}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+                      alignItems:'center',
+                      justifyContent:'center',
+                      cursor:'pointer',
+                      zIndex:10,
+                      padding:0,
+                      WebkitTapHighlightColor:'transparent'
+                    }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                    </svg>
+                  </button>
                 </div>
               ))}
             </div>
