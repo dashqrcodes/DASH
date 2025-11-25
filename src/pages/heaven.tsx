@@ -12,51 +12,60 @@ const HeavenPage: React.FC = () => {
   const [statusMessage, setStatusMessage] = useState('Loading...');
 
   useEffect(() => {
-    // Load video URL - priority: env var > Supabase > localStorage > default (Kobe Bryant)
+    // Load video URL - priority: env var > Supabase > localStorage > default
+    // This matches the video that would be shown on dashqrcodes.com/heaven
     const loadVideoUrl = async () => {
-      // Default to Kobe Bryant video
-      let url = process.env.NEXT_PUBLIC_KOBE_DEMO_VIDEO || 
-                process.env.NEXT_PUBLIC_HEAVEN_DEMO_VIDEO || 
-                'https://drive.google.com/uc?export=download&id=1mwXwubTJtD8yopRTzTm7MMoShV25JO62';
+      let url: string | null = null;
       
-      // Check Supabase for saved video
-      try {
-        const { supabase } = await import('../utils/supabase');
-        if (supabase) {
-          // Try 'default' user_id first
-          const { data: defaultData } = await supabase
-            .from('heaven_characters')
-            .select('slideshow_video_url')
-            .eq('user_id', 'default')
-            .single();
-          
-          if (defaultData?.slideshow_video_url) {
-            url = defaultData.slideshow_video_url;
-          } else {
-            // Try 'demo' user_id with kobe-bryant
-            const { data: kobeData } = await supabase
+      // Priority 1: Environment variable (highest priority)
+      url = process.env.NEXT_PUBLIC_HEAVEN_DEMO_VIDEO || 
+            process.env.NEXT_PUBLIC_KOBE_DEMO_VIDEO || 
+            null;
+      
+      // Priority 2: Check Supabase for saved video (same as dashqrcodes.com would use)
+      if (!url) {
+        try {
+          const { supabase } = await import('../utils/supabase');
+          if (supabase) {
+            // Try 'default' user_id first (main /heaven page video)
+            const { data: defaultData } = await supabase
               .from('heaven_characters')
               .select('slideshow_video_url')
-              .eq('user_id', 'demo')
-              .eq('memorial_id', 'kobe-bryant')
+              .eq('user_id', 'default')
               .single();
             
-            if (kobeData?.slideshow_video_url) {
-              url = kobeData.slideshow_video_url;
+            if (defaultData?.slideshow_video_url) {
+              url = defaultData.slideshow_video_url;
+            } else {
+              // Try 'demo' user_id with kobe-bryant as fallback
+              const { data: kobeData } = await supabase
+                .from('heaven_characters')
+                .select('slideshow_video_url')
+                .eq('user_id', 'demo')
+                .eq('memorial_id', 'kobe-bryant')
+                .single();
+              
+              if (kobeData?.slideshow_video_url) {
+                url = kobeData.slideshow_video_url;
+              }
             }
           }
+        } catch (dbError) {
+          console.log('Supabase check failed (optional):', dbError);
         }
-      } catch (dbError) {
-        console.log('Supabase check failed (optional):', dbError);
       }
       
-      // Check localStorage
-      if (!url || url.includes('BigBuckBunny')) {
-        const savedUrl = localStorage.getItem('heaven_video_url') || 
-                        localStorage.getItem('heaven_video_kobe-bryant');
-        if (savedUrl && !savedUrl.startsWith('blob:') && !savedUrl.startsWith('data:')) {
+      // Priority 3: Check localStorage
+      if (!url) {
+        const savedUrl = localStorage.getItem('heaven_video_url');
+        if (savedUrl && !savedUrl.startsWith('blob:') && !savedUrl.startsWith('data:') && !savedUrl.includes('BigBuckBunny')) {
           url = savedUrl;
         }
+      }
+      
+      // Priority 4: Default fallback (Kobe Bryant video)
+      if (!url) {
+        url = 'https://drive.google.com/uc?export=download&id=1mwXwubTJtD8yopRTzTm7MMoShV25JO62';
       }
 
       // Ensure Google Drive URL is in correct format
