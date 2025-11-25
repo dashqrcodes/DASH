@@ -20,7 +20,7 @@ const DEMO_CONFIGS: Record<string, {
 }> = {
   'kobe-bryant': {
     name: 'Kobe Bryant',
-    videoUrl: process.env.NEXT_PUBLIC_KOBE_DEMO_VIDEO || 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+    videoUrl: process.env.NEXT_PUBLIC_KOBE_DEMO_VIDEO || 'https://drive.google.com/uc?export=download&id=1mwXwubTJtD8yopRTzTm7MMoShV25JO62',
     photoUrl: process.env.NEXT_PUBLIC_KOBE_DEMO_PHOTO || undefined
   },
   'kelly-wong': {
@@ -367,141 +367,232 @@ const HeavenDemoPage: React.FC = () => {
         </Head>
         <div style={{
           minHeight: '100vh',
-          background: '#000000',
-          fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
+          background: 'linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #0f0f1e 100%)',
+          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
           color: 'white',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '20px',
-          textAlign: 'center'
+          padding: '24px',
+          textAlign: 'center',
+          position: 'relative',
+          overflow: 'hidden'
         }}>
-          <div style={{ fontSize: '64px', marginBottom: '20px' }}>☁️</div>
-          <h1 style={{
-            fontSize: 'clamp(32px, 8vw, 48px)',
-            fontWeight: '700',
-            marginBottom: '16px',
-            background: 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text'
-          }}>
-            HEAVEN - {demoConfig?.name || name}
-          </h1>
-          <p style={{
-            fontSize: 'clamp(16px, 4vw, 20px)',
-            color: 'rgba(255,255,255,0.6)',
-            maxWidth: '400px',
-            margin: '0 auto 40px'
-          }}>
-            Upload a video to get started
-          </p>
+          {/* Animated background particles */}
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'radial-gradient(circle at 20% 50%, rgba(102, 126, 234, 0.1) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(118, 75, 162, 0.1) 0%, transparent 50%)',
+            pointerEvents: 'none',
+            animation: 'float 20s ease-in-out infinite'
+          }} />
           
           <div style={{
-            width: '100%',
-            maxWidth: '500px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '20px'
+            position: 'relative',
+            zIndex: 1,
+            maxWidth: '480px',
+            width: '100%'
           }}>
-            {/* URL Input - RECOMMENDED (Instant!) */}
-            <div>
-              <p style={{
-                fontSize: '14px',
-                color: 'rgba(255,255,255,0.7)',
-                marginBottom: '12px',
-                textAlign: 'center'
-              }}>
-                ⚡ FASTEST: Paste a video URL (Google Drive, Dropbox, etc.)
-              </p>
-              <input
-                type="text"
-                value={videoUrl}
-                onChange={(e) => setVideoUrl(e.target.value)}
-                placeholder="Paste video URL here (works instantly!)"
-                style={{
-                  width: '100%',
-                  padding: '16px',
-                  background: 'rgba(255,255,255,0.1)',
-                  border: '1px solid rgba(255,255,255,0.2)',
-                  borderRadius: '12px',
-                  color: 'white',
-                  fontSize: '16px',
-                  outline: 'none'
-                }}
-              />
-              <button
-                onClick={handleVideoUrlSubmit}
-                disabled={!videoUrl.trim() || isUploading}
-                style={{
-                  width: '100%',
-                  marginTop: '12px',
-                  background: videoUrl.trim() ? 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)' : 'rgba(255,255,255,0.1)',
-                  border: 'none',
-                  borderRadius: '12px',
-                  padding: '16px 24px',
-                  color: 'white',
-                  fontSize: '16px',
-                  fontWeight: '600',
-                  cursor: videoUrl.trim() ? 'pointer' : 'not-allowed',
-                  opacity: videoUrl.trim() ? 1 : 0.5
-                }}
-              >
-                Use Video URL (Instant!)
-              </button>
-            </div>
-
-            {/* Or Divider */}
+            {/* Icon */}
             <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              color: 'rgba(255,255,255,0.4)',
-              margin: '20px 0'
+              fontSize: '72px',
+              marginBottom: '24px',
+              animation: 'pulse 3s ease-in-out infinite',
+              filter: 'drop-shadow(0 4px 20px rgba(102, 126, 234, 0.3))'
             }}>
-              <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.2)' }} />
-              <span>OR</span>
-              <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.2)' }} />
+              ✨
             </div>
 
-            {/* File Upload - Alternative */}
-            <div>
-              <p style={{
-                fontSize: '14px',
-                color: 'rgba(255,255,255,0.7)',
-                marginBottom: '12px',
-                textAlign: 'center'
-              }}>
-                Upload from your device (works immediately)
-              </p>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="video/*"
-                onChange={handleFileUpload}
-                style={{ display: 'none' }}
-              />
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isUploading}
-                style={{
-                  width: '100%',
-                  background: isUploading ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.15)',
-                  border: '1px solid rgba(255,255,255,0.2)',
-                  borderRadius: '12px',
-                  padding: '16px 24px',
-                  color: 'white',
-                  fontSize: '16px',
+            {/* Title */}
+            <h1 style={{
+              fontSize: 'clamp(36px, 8vw, 56px)',
+              fontWeight: '800',
+              marginBottom: '12px',
+              background: 'linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              letterSpacing: '-0.02em',
+              lineHeight: '1.1'
+            }}>
+              HEAVEN
+            </h1>
+            
+            <h2 style={{
+              fontSize: 'clamp(20px, 5vw, 28px)',
+              fontWeight: '600',
+              marginBottom: '32px',
+              color: 'rgba(255,255,255,0.9)',
+              letterSpacing: '-0.01em'
+            }}>
+              {demoConfig?.name || name}
+            </h2>
+
+            {/* Upload Form */}
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.03)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '24px',
+              padding: '32px 24px',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)'
+            }}>
+              {/* URL Input */}
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{
+                  display: 'block',
+                  fontSize: '14px',
                   fontWeight: '600',
-                  cursor: isUploading ? 'not-allowed' : 'pointer',
-                  opacity: isUploading ? 0.6 : 1
-                }}
-              >
-                {isUploading ? 'Processing...' : '📹 Upload Video File'}
-              </button>
+                  color: 'rgba(255,255,255,0.8)',
+                  marginBottom: '12px',
+                  textAlign: 'left'
+                }}>
+                  Paste Video URL
+                </label>
+                <input
+                  type="text"
+                  value={videoUrl}
+                  onChange={(e) => setVideoUrl(e.target.value)}
+                  placeholder="https://drive.google.com/..."
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && videoUrl.trim() && !isUploading) {
+                      handleVideoUrlSubmit();
+                    }
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '16px 20px',
+                    background: 'rgba(255,255,255,0.08)',
+                    border: '2px solid rgba(255,255,255,0.15)',
+                    borderRadius: '16px',
+                    color: 'white',
+                    fontSize: '15px',
+                    outline: 'none',
+                    transition: 'all 0.3s ease',
+                    fontFamily: 'inherit'
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.12)';
+                    e.currentTarget.style.borderColor = 'rgba(102, 126, 234, 0.5)';
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
+                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)';
+                  }}
+                />
+                <button
+                  onClick={handleVideoUrlSubmit}
+                  disabled={!videoUrl.trim() || isUploading}
+                  style={{
+                    width: '100%',
+                    marginTop: '16px',
+                    background: videoUrl.trim() 
+                      ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
+                      : 'rgba(255,255,255,0.08)',
+                    border: 'none',
+                    borderRadius: '16px',
+                    padding: '18px 24px',
+                    color: 'white',
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    cursor: videoUrl.trim() ? 'pointer' : 'not-allowed',
+                    opacity: videoUrl.trim() ? 1 : 0.5,
+                    transition: 'all 0.3s ease',
+                    boxShadow: videoUrl.trim() 
+                      ? '0 4px 20px rgba(102, 126, 234, 0.4)' 
+                      : 'none',
+                    transform: 'translateY(0)'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (videoUrl.trim() && !isUploading) {
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 6px 24px rgba(102, 126, 234, 0.5)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                >
+                  {isUploading ? '⏳ Loading...' : '✨ Load Video'}
+                </button>
+              </div>
+
+              {/* Divider */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '16px',
+                margin: '32px 0',
+                color: 'rgba(255,255,255,0.3)'
+              }}>
+                <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }} />
+                <span style={{ fontSize: '12px', fontWeight: '600', textTransform: 'uppercase' }}>OR</span>
+                <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }} />
+              </div>
+
+              {/* File Upload */}
+              <div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="video/*"
+                  onChange={handleFileUpload}
+                  style={{ display: 'none' }}
+                />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading}
+                  style={{
+                    width: '100%',
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '2px dashed rgba(255,255,255,0.2)',
+                    borderRadius: '16px',
+                    padding: '20px 24px',
+                    color: 'white',
+                    fontSize: '15px',
+                    fontWeight: '600',
+                    cursor: isUploading ? 'not-allowed' : 'pointer',
+                    opacity: isUploading ? 0.5 : 1,
+                    transition: 'all 0.3s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isUploading) {
+                      e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
+                      e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isUploading) {
+                      e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                      e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)';
+                    }
+                  }}
+                >
+                  <span style={{ fontSize: '20px' }}>📹</span>
+                  <span>{isUploading ? 'Uploading...' : 'Upload Video File'}</span>
+                </button>
+              </div>
             </div>
           </div>
+
+          <style jsx>{`
+            @keyframes pulse {
+              0%, 100% { transform: scale(1); opacity: 1; }
+              50% { transform: scale(1.05); opacity: 0.8; }
+            }
+            @keyframes float {
+              0%, 100% { transform: translateY(0) rotate(0deg); }
+              50% { transform: translateY(-20px) rotate(5deg); }
+            }
+          `}</style>
         </div>
       </>
     );
@@ -576,7 +667,7 @@ const HeavenDemoPage: React.FC = () => {
         <meta name="description" content={`Experience HEAVEN with ${person.name}`} />
       </Head>
 
-      {/* Call UI - Full Screen */}
+      {/* Full Screen Video Experience */}
       <div style={{
         position: 'fixed',
         top: 0,
@@ -587,33 +678,121 @@ const HeavenDemoPage: React.FC = () => {
         zIndex: 2000,
         display: 'flex',
         flexDirection: 'column',
-        fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif'
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        overflow: 'hidden'
       }}>
-        {/* Call Header */}
-        <CallHeader
-          personName={person.name}
-          status="connected"
-          onEndCall={handleEndCall}
-        />
+        {/* Minimal Header */}
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          background: 'linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 100%)',
+          backdropFilter: 'blur(10px)',
+          padding: 'clamp(12px, 3vw, 20px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          zIndex: 100,
+          pointerEvents: 'none'
+        }}>
+          <div style={{ pointerEvents: 'auto' }}>
+            <h2 style={{
+              fontSize: 'clamp(18px, 4vw, 22px)',
+              fontWeight: '700',
+              color: 'white',
+              margin: 0,
+              textShadow: '0 2px 10px rgba(0,0,0,0.5)'
+            }}>
+              {person.name}
+            </h2>
+            <p style={{
+              fontSize: 'clamp(12px, 3vw, 14px)',
+              color: 'rgba(255,255,255,0.8)',
+              margin: '4px 0 0 0',
+              textShadow: '0 1px 5px rgba(0,0,0,0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}>
+              <span style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                background: '#4caf50',
+                display: 'inline-block',
+                animation: 'pulseDot 2s infinite'
+              }} />
+              Connected to HEAVEN
+            </p>
+          </div>
 
-        {/* Demo Video Player */}
+          <button
+            onClick={handleEndCall}
+            style={{
+              pointerEvents: 'auto',
+              background: 'rgba(255,255,255,0.15)',
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255,255,255,0.2)',
+              borderRadius: '50%',
+              width: 'clamp(44px, 11vw, 48px)',
+              height: 'clamp(44px, 11vw, 48px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              WebkitTapHighlightColor: 'transparent'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(220, 38, 38, 0.9)';
+              e.currentTarget.style.transform = 'scale(1.1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(255,255,255,0.15)';
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+            title="End Call"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
+              <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        {/* Video Player - Centered and Immersive */}
         {person.slideshowVideoUrl && (
           <div style={{
             flex: 1,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: '20px',
-            position: 'relative'
+            padding: 'clamp(60px, 12vw, 100px) 20px 80px',
+            position: 'relative',
+            overflow: 'hidden'
           }}>
+            {/* Ambient glow behind video */}
             <div style={{
-              width: '100%',
-              maxWidth: 'min(90vw, 400px)',
-              aspectRatio: '9 / 16',
+              position: 'absolute',
+              width: '120%',
+              height: '120%',
+              background: 'radial-gradient(ellipse at center, rgba(102, 126, 234, 0.15) 0%, transparent 70%)',
+              filter: 'blur(40px)',
+              pointerEvents: 'none',
+              animation: 'glow 4s ease-in-out infinite'
+            }} />
+
+            {/* Video Container */}
+            <div style={{
               position: 'relative',
-              borderRadius: '16px',
+              width: '100%',
+              maxWidth: 'min(90vw, 420px)',
+              aspectRatio: '9 / 16',
+              borderRadius: '24px',
               overflow: 'hidden',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.5)'
+              boxShadow: '0 20px 60px rgba(0,0,0,0.8), 0 0 40px rgba(102, 126, 234, 0.2)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              background: '#000'
             }}>
               <video
                 src={person.slideshowVideoUrl || ''}
@@ -626,7 +805,7 @@ const HeavenDemoPage: React.FC = () => {
                   width: '100%',
                   height: '100%',
                   objectFit: 'cover',
-                  borderRadius: '16px'
+                  display: 'block'
                 }}
                 onError={(e) => {
                   const target = e.target as HTMLVideoElement;
@@ -653,54 +832,50 @@ const HeavenDemoPage: React.FC = () => {
                 }}
               />
             </div>
-            <div style={{
-              position: 'absolute',
-              top: '100px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              background: 'rgba(102,126,234,0.9)',
-              backdropFilter: 'blur(20px)',
-              padding: '8px 16px',
-              borderRadius: '999px',
-              border: '1px solid rgba(255,255,255,0.2)',
-              zIndex: 150
-            }}>
-              <p style={{
-                color: 'white',
-                fontSize: '12px',
-                margin: 0,
-                fontWeight: '600'
-              }}>
-                🎬 DEMO MODE - {person.name}
-              </p>
-            </div>
           </div>
         )}
 
-        {/* Status Message */}
-        <div style={{
-          position: 'absolute',
-          bottom: '120px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          background: 'rgba(0,0,0,0.8)',
-          backdropFilter: 'blur(20px)',
-          padding: '12px 20px',
-          borderRadius: '999px',
-          border: '1px solid rgba(255,255,255,0.2)',
-          zIndex: 150
-        }}>
-          <p style={{
-            color: 'white',
-            fontSize: '14px',
-            margin: 0,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
+        {/* Status Message - Bottom */}
+        {statusMessage && (
+          <div style={{
+            position: 'absolute',
+            bottom: 'clamp(20px, 5vw, 40px)',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: 'rgba(0,0,0,0.7)',
+            backdropFilter: 'blur(20px)',
+            padding: '12px 24px',
+            borderRadius: '999px',
+            border: '1px solid rgba(255,255,255,0.1)',
+            zIndex: 150,
+            maxWidth: '90%',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.3)'
           }}>
-            ✨ {statusMessage}
-          </p>
-        </div>
+            <p style={{
+              color: 'white',
+              fontSize: 'clamp(13px, 3vw, 15px)',
+              margin: 0,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontWeight: '500'
+            }}>
+              <span>✨</span>
+              <span>{statusMessage}</span>
+            </p>
+          </div>
+        )}
+
+        <style jsx>{`
+          @keyframes pulseDot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+          }
+          @keyframes glow {
+            0%, 100% { opacity: 0.5; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.1); }
+          }
+        `}</style>
       </div>
     </>
   );
