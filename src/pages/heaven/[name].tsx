@@ -167,38 +167,27 @@ const HeavenDemoPage: React.FC = () => {
         right: 0,
         bottom: 0,
         background: '#000000',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
         overflow: 'hidden'
       }}>
-        {/* Video Container - 9:16 Aspect Ratio */}
+        {/* Full Screen Video Player */}
         {person.slideshowVideoUrl && (
-          <div style={{
-            width: '100%',
-            height: '100%',
-            maxWidth: 'min(100vw, 100vh * 9 / 16)',
-            maxHeight: 'min(100vh, 100vw * 16 / 9)',
-            position: 'relative',
-            background: '#000',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
-            <video
-              src={person.slideshowVideoUrl}
-              autoPlay
-              loop
-              controls
-              playsInline
-              muted={false}
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'contain',
-                display: 'block'
-              }}
+          <video
+            src={person.slideshowVideoUrl}
+            autoPlay
+            loop
+            controls
+            playsInline
+            muted={false}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              display: 'block'
+            }}
               onError={(e) => {
                 const target = e.target as HTMLVideoElement;
                 console.error('❌ Error loading video:', {
@@ -209,8 +198,7 @@ const HeavenDemoPage: React.FC = () => {
               onLoadedData={() => {
                 console.log('✅ Video loaded:', person.slideshowVideoUrl);
               }}
-            />
-          </div>
+          />
         )}
 
         {/* Back Button */}
