@@ -586,20 +586,6 @@ const LifeChaptersPage: React.FC = () => {
                           objectFit:'cover'
                         }} 
                       />
-                      <div style={{
-                        position:'absolute',
-                        bottom:'6px',
-                        right:'6px',
-                        background:'rgba(0,0,0,0.7)',
-                        color:'white',
-                        fontSize:'11px',
-                        padding:'3px 8px',
-                        borderRadius:'6px',
-                        fontWeight:'700',
-                        backdropFilter:'blur(10px)'
-                      }}>
-                        #{index + 1}
-                      </div>
                     </div>
 
                     {/* Photo Info & Controls */}
@@ -610,14 +596,6 @@ const LifeChaptersPage: React.FC = () => {
                       gap:'10px',
                       minWidth:0
                     }}>
-                      <div style={{
-                        fontSize:'clamp(14px, 3.5vw, 16px)',
-                        fontWeight:'700',
-                        marginBottom:'2px'
-                      }}>
-                        {t.memory} {index + 1}
-                      </div>
-                      
                       {/* Date Input */}
                       <input 
                         type="date" 
