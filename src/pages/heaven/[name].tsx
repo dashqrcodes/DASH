@@ -21,7 +21,7 @@ const DEMO_CONFIGS: Record<string, {
   },
   'kelly-wong': {
     name: 'Kelly Wong',
-    videoUrl: process.env.NEXT_PUBLIC_KELLY_DEMO_VIDEO || 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+    videoUrl: process.env.NEXT_PUBLIC_KELLY_DEMO_VIDEO || 'https://drive.google.com/uc?export=download&id=1q3kjg5dBt_ECf0j_93QqicmqqHgzXIUu',
   },
   // Add more demo configs here
 };
