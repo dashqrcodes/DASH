@@ -43,36 +43,51 @@ const HeavenDemoPage: React.FC = () => {
       return;
     }
 
-    // Load video URL - simple priority: env var > Supabase > localStorage > default
+    // Load video URL - priority: env var > Supabase > localStorage > default
+    // This ensures consistency across dashqrcodes.com and dashmemories.com
     const loadVideoUrl = async () => {
       const nameKey = name.toLowerCase();
-      let videoUrl = demoConfig.videoUrl;
+      let videoUrl: string | null = null;
       
-      // Check Supabase for saved video
-      try {
-        const { supabase } = await import('../../utils/supabase');
-        if (supabase) {
-          const { data } = await supabase
-            .from('heaven_characters')
-            .select('slideshow_video_url')
-            .eq('memorial_id', nameKey)
-            .eq('user_id', 'demo')
-            .single();
-          
-          if (data?.slideshow_video_url) {
-            videoUrl = data.slideshow_video_url;
-          }
-        }
-      } catch (dbError) {
-        console.log('Supabase check failed (optional):', dbError);
+      // Priority 1: Environment variable (highest priority)
+      if (nameKey === 'kobe-bryant') {
+        videoUrl = process.env.NEXT_PUBLIC_KOBE_DEMO_VIDEO || null;
+      } else if (nameKey === 'kelly-wong') {
+        videoUrl = process.env.NEXT_PUBLIC_KELLY_DEMO_VIDEO || null;
       }
       
-      // Check localStorage (fallback)
-      if (!videoUrl || videoUrl.includes('BigBuckBunny')) {
+      // Priority 2: Check Supabase for saved video
+      if (!videoUrl) {
+        try {
+          const { supabase } = await import('../../utils/supabase');
+          if (supabase) {
+            const { data } = await supabase
+              .from('heaven_characters')
+              .select('slideshow_video_url')
+              .eq('memorial_id', nameKey)
+              .eq('user_id', 'demo')
+              .single();
+            
+            if (data?.slideshow_video_url) {
+              videoUrl = data.slideshow_video_url;
+            }
+          }
+        } catch (dbError) {
+          console.log('Supabase check failed (optional):', dbError);
+        }
+      }
+      
+      // Priority 3: Check localStorage (fallback)
+      if (!videoUrl) {
         const savedVideoUrl = localStorage.getItem(`heaven_video_${nameKey}`);
-        if (savedVideoUrl && !savedVideoUrl.startsWith('blob:') && !savedVideoUrl.startsWith('data:')) {
+        if (savedVideoUrl && !savedVideoUrl.startsWith('blob:') && !savedVideoUrl.startsWith('data:') && !savedVideoUrl.includes('BigBuckBunny')) {
           videoUrl = savedVideoUrl;
         }
+      }
+      
+      // Priority 4: Use default from demo config
+      if (!videoUrl) {
+        videoUrl = demoConfig.videoUrl;
       }
 
       // Ensure Google Drive URL is in correct format
