@@ -168,9 +168,12 @@ const HeavenDemoPage: React.FC = () => {
         bottom: 0,
         background: '#000000',
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-        overflow: 'hidden'
+        overflow: 'hidden',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
       }}>
-        {/* Full Screen Video Player */}
+        {/* Full Screen Video Player - 9:16 Aspect Ratio */}
         {person.slideshowVideoUrl && (
           <video
             src={person.slideshowVideoUrl}
@@ -195,9 +198,9 @@ const HeavenDemoPage: React.FC = () => {
                   error: target.error
                 });
               }}
-              onLoadedData={() => {
-                console.log('✅ Video loaded:', person.slideshowVideoUrl);
-              }}
+            onLoadedData={() => {
+              console.log('✅ Video loaded:', person.slideshowVideoUrl);
+            }}
           />
         )}
 
