@@ -64,10 +64,11 @@ const HeavenDemoPage: React.FC = () => {
           const { supabase } = await import('../../utils/supabase');
           if (supabase) {
             // Try demo user_id first (for kelly-wong)
+            // Query by character_id since memorial_id is UUID type and nameKey is text
             const { data: demoData } = await supabase
               .from('heaven_characters')
               .select('slideshow_video_url')
-              .eq('memorial_id', nameKey)
+              .eq('character_id', nameKey)
               .eq('user_id', 'demo')
               .single();
             
@@ -78,7 +79,7 @@ const HeavenDemoPage: React.FC = () => {
               const { data: defaultData } = await supabase
                 .from('heaven_characters')
                 .select('slideshow_video_url')
-                .eq('memorial_id', nameKey)
+                .eq('character_id', nameKey)
                 .eq('user_id', 'default')
                 .single();
               
