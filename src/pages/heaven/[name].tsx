@@ -104,6 +104,7 @@ const HeavenDemoPage: React.FC = () => {
       // Priority 4: Use default from demo config (only if it's not empty)
       if (!videoUrl && demoConfig.videoUrl) {
         videoUrl = demoConfig.videoUrl;
+        console.log('📹 Using default video URL from config:', videoUrl);
       }
 
       // Ensure Google Drive URL is in correct format (only if we have a video URL)
@@ -113,9 +114,12 @@ const HeavenDemoPage: React.FC = () => {
           const fileId = driveIdMatch[1];
           // Use direct download URL format
           videoUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
-          console.log('📹 Using Google Drive video URL:', videoUrl);
+          console.log('📹 Converted to Google Drive direct download URL:', videoUrl);
         }
       }
+
+      // Log final video URL for debugging
+      console.log('🎬 Final video URL for', demoConfig.name, ':', videoUrl);
 
       // Set up the person with video (or null if no video available)
       setPerson({
@@ -244,14 +248,19 @@ const HeavenDemoPage: React.FC = () => {
             onError={(e) => {
               const target = e.target as HTMLVideoElement;
               const error = target.error;
-              console.error('❌ Error loading video:', {
+              const errorDetails = {
                 videoUrl: person.slideshowVideoUrl,
                 errorCode: error?.code,
                 errorMessage: error?.message,
                 networkState: target.networkState,
-                readyState: target.readyState
-              });
-              setStatusMessage(`Error loading video. Check console for details.`);
+                readyState: target.readyState,
+                errorCodeMeaning: error?.code === 1 ? 'MEDIA_ERR_ABORTED' :
+                                 error?.code === 2 ? 'MEDIA_ERR_NETWORK' :
+                                 error?.code === 3 ? 'MEDIA_ERR_DECODE' :
+                                 error?.code === 4 ? 'MEDIA_ERR_SRC_NOT_SUPPORTED' : 'UNKNOWN'
+              };
+              console.error('❌ Error loading video:', errorDetails);
+              setStatusMessage(`Error loading video (Code: ${error?.code || 'unknown'}). Check console for details.`);
             }}
             onLoadStart={() => {
               console.log('📹 Video load started:', person.slideshowVideoUrl);
