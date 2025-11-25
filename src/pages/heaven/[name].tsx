@@ -17,7 +17,7 @@ const DEMO_CONFIGS: Record<string, {
 }> = {
   'kobe-bryant': {
     name: 'Kobe Bryant',
-    videoUrl: process.env.NEXT_PUBLIC_KOBE_DEMO_VIDEO || 'https://drive.google.com/uc?export=download&id=1mwXwubTJtD8yopRTzTm7MMoShV25JO62',
+    videoUrl: process.env.NEXT_PUBLIC_KOBE_DEMO_VIDEO || '', // No default - must be set via env var or Supabase
   },
   'kelly-wong': {
     name: 'Kelly Wong',
@@ -107,16 +107,7 @@ const HeavenDemoPage: React.FC = () => {
         console.log('📹 Using default video URL from config:', videoUrl);
       }
 
-      // Ensure Google Drive URL is in correct format (only if we have a video URL)
-      if (videoUrl && videoUrl.includes('drive.google.com')) {
-        const driveIdMatch = videoUrl.match(/[\/=]([a-zA-Z0-9_-]{25,})/);
-        if (driveIdMatch) {
-          const fileId = driveIdMatch[1];
-          // Use direct download URL format
-          videoUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
-          console.log('📹 Converted to Google Drive direct download URL:', videoUrl);
-        }
-      }
+      // No Google Drive URL processing - videos must come from env vars or Supabase
 
       // Log final video URL for debugging
       console.log('🎬 Final video URL for', demoConfig.name, ':', videoUrl);

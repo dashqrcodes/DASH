@@ -42,7 +42,7 @@ const HeavenPage: React.FC = () => {
                 .from('heaven_characters')
                 .select('slideshow_video_url')
                 .eq('user_id', 'demo')
-                .eq('memorial_id', 'kobe-bryant')
+                .eq('character_id', 'kobe-bryant')
                 .single();
               
               if (kobeData?.slideshow_video_url) {
@@ -63,20 +63,7 @@ const HeavenPage: React.FC = () => {
         }
       }
       
-      // Priority 4: Default fallback (Kobe Bryant video)
-      if (!url) {
-        url = 'https://drive.google.com/uc?export=download&id=1mwXwubTJtD8yopRTzTm7MMoShV25JO62';
-      }
-
-      // Ensure Google Drive URL is in correct format
-      if (url.includes('drive.google.com')) {
-        const driveIdMatch = url.match(/[\/=]([a-zA-Z0-9_-]{25,})/);
-        if (driveIdMatch) {
-          const fileId = driveIdMatch[1];
-          url = `https://drive.google.com/uc?export=download&id=${fileId}`;
-          console.log('📹 Using Google Drive video URL:', url);
-        }
-      }
+      // No default fallback - video must come from env vars or Supabase
 
       setVideoUrl(url);
       setIsLoading(false);
