@@ -79,7 +79,10 @@ const HeavenDemoPage: React.FC = () => {
   const [statusMessage, setStatusMessage] = useState('');
 
   useEffect(() => {
-    if (!name || typeof name !== 'string') return;
+    if (!name || typeof name !== 'string') {
+      setIsLoading(false);
+      return;
+    }
 
     const nameKey = name.toLowerCase();
 
@@ -106,6 +109,14 @@ const HeavenDemoPage: React.FC = () => {
         }
       } catch (jsonError) {
         console.log('JSON file check failed:', jsonError);
+        // If JSON fails, just continue with fallbacks
+      }
+      
+      // QUICK FIX: For kobe-bryant, use hardcoded playbackId if nothing found
+      if (nameKey === 'kobe-bryant' && !playbackIdFromJson && !videoUrl) {
+        playbackIdFromJson = 'BVzwixnKSqqpqmEdELwUWRIMQ7kKI02YZamR00wJdI624';
+        profileName = profileName || 'Kobe Bryant';
+        console.log('✅ Using hardcoded playbackId for kobe-bryant');
       }
       
       // Priority 2: Load from Supabase (fallback)
@@ -226,15 +237,26 @@ const HeavenDemoPage: React.FC = () => {
         playbackId: playbackId || null
       });
       
+      // ALWAYS set loading to false, even if no video found
       setIsLoading(false);
-      if (videoUrl) {
-        console.log('✅ Video URL set:', videoUrl);
+      
+      if (videoUrl || playbackId) {
+        console.log('✅ Video URL/playbackId set:', videoUrl || playbackId);
       } else {
-        console.warn('⚠️ No video URL available for', profileName);
+        console.warn('⚠️ No video URL or playbackId available for', profileName);
       }
     };
     
-    loadProfile();
+    loadProfile().catch((error) => {
+      console.error('Error loading profile:', error);
+      setIsLoading(false);
+      // Still set person even if loading failed
+      setPerson({
+        name: nameKey.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        slideshowVideoUrl: null,
+        playbackId: null
+      });
+    });
   }, [name]);
 
   const handleBack = () => {
