@@ -4,6 +4,12 @@
 import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
+import dynamic from 'next/dynamic';
+
+// Dynamically import MuxPlayer to avoid SSR issues
+const MuxPlayer = dynamic(() => import('@mux/mux-player-react'), {
+  ssr: false,
+});
 
 // Helper function to check if URL is a direct video file
 function isDirectVideoUrl(url: string): boolean {
@@ -47,6 +53,7 @@ async function extractVideoFromWebpage(url: string): Promise<string | null> {
 interface Person {
   name: string;
   slideshowVideoUrl: string | null;
+  playbackId?: string | null;
 }
 
 // Legacy demo configurations (for backward compatibility)
@@ -80,8 +87,10 @@ const HeavenDemoPage: React.FC = () => {
     const loadProfile = async () => {
       let profileName: string | null = null;
       let videoUrl: string | null = null;
+      let playbackId: string | null = null;
       
       // Priority 1: Load from JSON file (simple file-based storage)
+      let playbackIdFromJson: string | null = null;
       try {
         const profilesResponse = await fetch('/api/heaven/get-profiles');
         if (profilesResponse.ok) {
@@ -90,8 +99,9 @@ const HeavenDemoPage: React.FC = () => {
           
           if (profile) {
             profileName = profile.name || nameKey.replace(/-/g, ' ');
+            playbackIdFromJson = profile.playbackId || null;
             videoUrl = profile.videoUrl || null;
-            console.log('✅ Loaded profile from JSON file:', profileName);
+            console.log('✅ Loaded profile from JSON file:', profileName, playbackIdFromJson ? `(playbackId: ${playbackIdFromJson})` : '');
           }
         }
       } catch (jsonError) {
@@ -190,13 +200,30 @@ const HeavenDemoPage: React.FC = () => {
         }
       }
 
+      // Extract playbackId from videoUrl if it's a Mux URL
+      if (!playbackId && videoUrl) {
+        const muxMatch = videoUrl.match(/stream\.mux\.com\/([^/.]+)/);
+        if (muxMatch) {
+          playbackId = muxMatch[1];
+        }
+      }
+      
+      // Use playbackId from JSON if available
+      if (playbackIdFromJson) {
+        playbackId = playbackIdFromJson;
+      }
+
       // Log final video URL for debugging
       console.log('🎬 Final video URL for', profileName, ':', videoUrl);
+      if (playbackId) {
+        console.log('🎬 Mux playback ID:', playbackId);
+      }
 
       // Set up the person with video (or null if no video available)
       setPerson({
         name: profileName || nameKey,
-        slideshowVideoUrl: videoUrl || null
+        slideshowVideoUrl: videoUrl || null,
+        playbackId: playbackId || null
       });
       
       setIsLoading(false);
@@ -298,65 +325,111 @@ const HeavenDemoPage: React.FC = () => {
         justifyContent: 'center'
       }}>
         {/* Full Screen Video Player - 9:16 Aspect Ratio */}
-        {person.slideshowVideoUrl ? (
-          <video
-            key={person.slideshowVideoUrl}
-            src={person.slideshowVideoUrl}
-            autoPlay
-            loop
-            controls
-            playsInline
-            muted={false}
-            preload="auto"
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              display: 'block'
-            }}
-            onError={(e) => {
-              const target = e.target as HTMLVideoElement;
-              const error = target.error;
-              const errorDetails = {
-                videoUrl: person.slideshowVideoUrl,
-                errorCode: error?.code,
-                errorMessage: error?.message,
-                networkState: target.networkState,
-                readyState: target.readyState,
-                errorCodeMeaning: error?.code === 1 ? 'MEDIA_ERR_ABORTED' :
-                                 error?.code === 2 ? 'MEDIA_ERR_NETWORK' :
-                                 error?.code === 3 ? 'MEDIA_ERR_DECODE' :
-                                 error?.code === 4 ? 'MEDIA_ERR_SRC_NOT_SUPPORTED' : 'UNKNOWN'
-              };
-              console.error('❌ Error loading video:', errorDetails);
-              setStatusMessage(`Error loading video (Code: ${error?.code || 'unknown'}). Check console for details.`);
-            }}
-            onLoadStart={() => {
-              console.log('📹 Video load started:', person.slideshowVideoUrl);
-              setStatusMessage('Loading video...');
-            }}
-            onLoadedMetadata={() => {
-              console.log('✅ Video metadata loaded');
-            }}
-            onLoadedData={() => {
-              console.log('✅ Video loaded successfully:', person.slideshowVideoUrl);
-              setStatusMessage('');
-            }}
-            onCanPlay={() => {
-              console.log('▶️ Video can play');
-            }}
-            onWaiting={() => {
-              console.log('⏳ Video buffering...');
-              setStatusMessage('Buffering...');
-            }}
-            onPlaying={() => {
-              console.log('▶️ Video playing');
-              setStatusMessage('');
-            }}
-          />
+        {person.slideshowVideoUrl || person.playbackId ? (
+          person.playbackId ? (
+            <MuxPlayer
+              playbackId={person.playbackId}
+              autoPlay="muted"
+              loop={true}
+              controls={true}
+              streamType="on-demand"
+              metadata={{
+                video_id: person.playbackId,
+                video_title: person.name,
+              }}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                display: 'block'
+              }}
+              onLoadStart={() => {
+                console.log('📹 Mux video load started:', person.playbackId);
+                setStatusMessage('Loading video...');
+              }}
+              onLoadedMetadata={() => {
+                console.log('✅ Mux video metadata loaded');
+                setStatusMessage('');
+              }}
+              onCanPlay={() => {
+                console.log('▶️ Mux video can play');
+              }}
+              onWaiting={() => {
+                console.log('⏳ Video buffering...');
+                setStatusMessage('Buffering...');
+              }}
+              onPlaying={() => {
+                console.log('▶️ Video playing');
+                setStatusMessage('');
+              }}
+              onError={(error) => {
+                console.error('❌ Error loading Mux video:', error);
+                setStatusMessage('Error loading video. Check console for details.');
+              }}
+            />
+          ) : (
+            <video
+              key={person.slideshowVideoUrl}
+              src={person.slideshowVideoUrl || ''}
+              autoPlay
+              loop
+              controls
+              playsInline
+              muted={false}
+              preload="auto"
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                display: 'block'
+              }}
+              onError={(e) => {
+                const target = e.target as HTMLVideoElement;
+                const error = target.error;
+                const errorDetails = {
+                  videoUrl: person.slideshowVideoUrl,
+                  errorCode: error?.code,
+                  errorMessage: error?.message,
+                  networkState: target.networkState,
+                  readyState: target.readyState,
+                  errorCodeMeaning: error?.code === 1 ? 'MEDIA_ERR_ABORTED' :
+                                   error?.code === 2 ? 'MEDIA_ERR_NETWORK' :
+                                   error?.code === 3 ? 'MEDIA_ERR_DECODE' :
+                                   error?.code === 4 ? 'MEDIA_ERR_SRC_NOT_SUPPORTED' : 'UNKNOWN'
+                };
+                console.error('❌ Error loading video:', errorDetails);
+                setStatusMessage(`Error loading video (Code: ${error?.code || 'unknown'}). Check console for details.`);
+              }}
+              onLoadStart={() => {
+                console.log('📹 Video load started:', person.slideshowVideoUrl);
+                setStatusMessage('Loading video...');
+              }}
+              onLoadedMetadata={() => {
+                console.log('✅ Video metadata loaded');
+              }}
+              onLoadedData={() => {
+                console.log('✅ Video loaded successfully:', person.slideshowVideoUrl);
+                setStatusMessage('');
+              }}
+              onCanPlay={() => {
+                console.log('▶️ Video can play');
+              }}
+              onWaiting={() => {
+                console.log('⏳ Video buffering...');
+                setStatusMessage('Buffering...');
+              }}
+              onPlaying={() => {
+                console.log('▶️ Video playing');
+                setStatusMessage('');
+              }}
+            />
+          )
         ) : (
           <div style={{
             position: 'absolute',
