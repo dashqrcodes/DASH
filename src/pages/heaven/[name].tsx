@@ -360,47 +360,26 @@ const HeavenDemoPage: React.FC = () => {
         {/* Full Screen Video Player - 9:16 Aspect Ratio */}
         {person.slideshowVideoUrl || person.playbackId ? (
           person.playbackId ? (
-            <MuxPlayer
-              playbackId={person.playbackId}
-              autoPlay="muted"
-              loop={true}
-              controls={true}
-              streamType="on-demand"
-              metadata={{
-                video_id: person.playbackId,
-                video_title: person.name,
-              }}
+            <iframe
+              src={`https://player.mux.com/${person.playbackId}?autoplay=true&loop=true&muted=false`}
+              allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+              allowFullScreen
               style={{
                 position: 'absolute',
                 top: 0,
                 left: 0,
                 width: '100%',
                 height: '100%',
-                objectFit: 'cover',
+                border: 'none',
                 display: 'block'
               }}
-              onLoadStart={() => {
-                console.log('📹 Mux video load started:', person.playbackId);
-                setStatusMessage('Loading video...');
-              }}
-              onLoadedMetadata={() => {
-                console.log('✅ Mux video metadata loaded');
+              onLoad={() => {
+                console.log('✅ Mux iframe loaded');
                 setStatusMessage('');
               }}
-              onCanPlay={() => {
-                console.log('▶️ Mux video can play');
-              }}
-              onWaiting={() => {
-                console.log('⏳ Video buffering...');
-                setStatusMessage('Buffering...');
-              }}
-              onPlaying={() => {
-                console.log('▶️ Video playing');
-                setStatusMessage('');
-              }}
-              onError={(error) => {
-                console.error('❌ Error loading Mux video:', error);
-                setStatusMessage('Error loading video. Check console for details.');
+              onError={() => {
+                console.error('❌ Error loading Mux iframe');
+                setStatusMessage('Error loading video');
               }}
             />
           ) : (
