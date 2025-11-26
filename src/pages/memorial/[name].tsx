@@ -337,8 +337,13 @@ const MemorialProfilePage: React.FC = () => {
               {slideshowMedia[currentSlideIndex].type === 'video' && slideshowMedia[currentSlideIndex].muxPlaybackId ? (
                 <MuxPlayerWrapper
                   playbackId={slideshowMedia[currentSlideIndex].muxPlaybackId}
+                  title={`${lovedOneName} - Memorial Video`}
+                  viewerUserId="memorial-viewer"
+                  videoId={slideshowMedia[currentSlideIndex].id}
                   autoPlay
+                  muted={false}
                   loop={false}
+                  accentColor="#667eea"
                 />
               ) : (
                 <img
