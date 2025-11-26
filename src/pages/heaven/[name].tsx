@@ -99,15 +99,14 @@ const HeavenDemoPage: React.FC = () => {
         playbackId: playbackId
       });
       setIsLoading(false);
-      return;
+    } else {
+      // Always stop loading after a short delay
+      const timer = setTimeout(() => {
+        setIsLoading(false);
+      }, 500);
+      
+      return () => clearTimeout(timer);
     }
-    
-    // Always stop loading after a short delay
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 500);
-    
-    return () => clearTimeout(timer);
   }, [name]);
   
   // OLD CODE BELOW - NOT USED ANYMORE
