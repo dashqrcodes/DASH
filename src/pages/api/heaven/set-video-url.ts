@@ -67,7 +67,7 @@ export default async function handler(
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           slug: name.toLowerCase(),
-          name: req.body.profileName || name.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+          name: req.body.profileName || name.replace(/-/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()),
           videoUrl: finalUrl,
         }),
       });
