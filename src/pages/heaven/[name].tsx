@@ -86,12 +86,30 @@ const HeavenDemoPage: React.FC = () => {
 
     const nameKey = name.toLowerCase();
     
-    // HARDCODED - Just works. No questions.
+    // Priority 1: Environment variable (override hardcoded)
     if (nameKey === 'kobe-bryant') {
+      // Check environment variable first
+      const envVideoUrl = process.env.NEXT_PUBLIC_KOBE_DEMO_VIDEO;
+      let playbackId: string | null = null;
+      
+      // Extract playbackId from env var if it's a Mux URL
+      if (envVideoUrl) {
+        const muxMatch = envVideoUrl.match(/player\.mux\.com\/([^/?]+)/) || 
+                        envVideoUrl.match(/stream\.mux\.com\/([^/.]+)/);
+        if (muxMatch) {
+          playbackId = muxMatch[1];
+        }
+      }
+      
+      // Fallback to hardcoded if env var not set
+      if (!playbackId) {
+        playbackId = 'BVzwixnKSqqpqmEdELwUWRIMQ7kKI02YZamR00wJdI624';
+      }
+      
       setPerson({
         name: 'Kobe Bryant',
         slideshowVideoUrl: null,
-        playbackId: 'BVzwixnKSqqpqmEdELwUWRIMQ7kKI02YZamR00wJdI624'
+        playbackId: playbackId
       });
       setIsLoading(false);
       return;
