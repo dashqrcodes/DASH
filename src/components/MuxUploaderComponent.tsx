@@ -113,16 +113,18 @@ const MuxUploaderComponent: React.FC<MuxUploaderComponentProps> = ({
     }
   };
 
-  const handleError = (event: CustomEvent) => {
-    console.error('Upload error:', event.detail);
+  const handleError = (event: any) => {
+    // Handle both CustomEvent and React SyntheticEvent
+    const errorDetail = (event as CustomEvent)?.detail || event;
+    console.error('Upload error:', errorDetail);
     const error = new Error(
-      (event.detail as any)?.message || 
-      (event.detail as any)?.error || 
+      errorDetail?.message || 
+      errorDetail?.error || 
       'Upload failed'
     );
     setError(error.message);
     if (onError) {
-      onError(error);
+      onError(error instanceof Error ? error : new Error(String(error)));
     }
   };
 
