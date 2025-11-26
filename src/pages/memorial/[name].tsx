@@ -3,6 +3,7 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import BottomNav from 'components/BottomNav';
 import MuxPlayerWrapper from 'components/MuxPlayerWrapper';
+import MuxUploaderComponent from 'components/MuxUploaderComponent';
 
 interface MediaItem {
   id: string;
@@ -41,6 +42,10 @@ const MemorialProfilePage: React.FC = () => {
   // Donate
   const [showDonateModal, setShowDonateModal] = useState(false);
   const [donateAmount, setDonateAmount] = useState('');
+  
+  // Upload media
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploadType, setUploadType] = useState<'photo' | 'video'>('photo');
   
   // HEAVEN settings
   const [heavenEnabled, setHeavenEnabled] = useState(false);
@@ -212,6 +217,63 @@ const MemorialProfilePage: React.FC = () => {
         freeCallsRemaining: freeCallsRemaining // Keep original count
       }));
     }
+  };
+
+  const handleVideoUploadSuccess = (uploadId: string, assetId: string, playbackId?: string) => {
+    console.log('Video upload successful:', { uploadId, assetId, playbackId });
+    
+    if (playbackId) {
+      // Add video to slideshow media
+      const newMedia: MediaItem = {
+        id: assetId || uploadId,
+        url: `https://stream.mux.com/${playbackId}.m3u8`,
+        type: 'video',
+        muxPlaybackId: playbackId,
+      };
+      
+      const updatedMedia = [...slideshowMedia, newMedia];
+      setSlideshowMedia(updatedMedia);
+      
+      // Save to localStorage (in production, save to Supabase)
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('slideshowMedia', JSON.stringify(updatedMedia));
+      }
+      
+      alert('Video uploaded successfully! It will be added to the slideshow.');
+      setShowUploadModal(false);
+    } else {
+      // Wait for playback ID
+      alert('Video uploaded! Processing... Please check back in a moment.');
+      setShowUploadModal(false);
+    }
+  };
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // TODO: Upload to Supabase Storage and save to media table
+    // For now, add to localStorage
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const imageUrl = event.target?.result as string;
+      const newMedia: MediaItem = {
+        id: Date.now().toString(),
+        url: imageUrl,
+        type: 'photo',
+      };
+      
+      const updatedMedia = [...slideshowMedia, newMedia];
+      setSlideshowMedia(updatedMedia);
+      
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('slideshowMedia', JSON.stringify(updatedMedia));
+      }
+      
+      alert('Photo uploaded successfully!');
+      setShowUploadModal(false);
+    };
+    reader.readAsDataURL(file);
   };
 
   return (
@@ -399,6 +461,35 @@ const MemorialProfilePage: React.FC = () => {
             }}
           >
             ☁️ HEAVEN {heavenEnabled ? '(Free)' : '(Disabled)'}
+          </button>
+        </div>
+
+        {/* Upload Media Button */}
+        <div style={{
+          padding: '0 clamp(16px, 4vw, 20px)',
+          marginBottom: '20px'
+        }}>
+          <button
+            onClick={() => setShowUploadModal(true)}
+            style={{
+              width: '100%',
+              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+              border: 'none',
+              borderRadius: '12px',
+              padding: '14px 20px',
+              color: 'white',
+              fontSize: 'clamp(14px, 4vw, 16px)',
+              fontWeight: '600',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              boxShadow: '0 4px 12px rgba(16,185,129,0.3)'
+            }}
+          >
+            <span style={{ fontSize: '20px' }}>📤</span>
+            <span>Add Photos & Videos</span>
           </button>
         </div>
 
@@ -684,6 +775,186 @@ const MemorialProfilePage: React.FC = () => {
                   Donate
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Upload Modal */}
+        {showUploadModal && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.9)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '20px'
+          }}
+          onClick={() => setShowUploadModal(false)}
+          >
+            <div style={{
+              background: '#1a1a1a',
+              borderRadius: '20px',
+              padding: '24px',
+              maxWidth: '500px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              border: '1px solid rgba(255,255,255,0.1)'
+            }}
+            onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '20px'
+              }}>
+                <h3 style={{
+                  fontSize: '20px',
+                  fontWeight: '700',
+                  margin: 0
+                }}>
+                  Add Media
+                </h3>
+                <button
+                  onClick={() => setShowUploadModal(false)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'rgba(255,255,255,0.6)',
+                    fontSize: '24px',
+                    cursor: 'pointer',
+                    padding: '0',
+                    width: '32px',
+                    height: '32px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+
+              {/* Upload Type Tabs */}
+              <div style={{
+                display: 'flex',
+                gap: '8px',
+                marginBottom: '20px'
+              }}>
+                <button
+                  onClick={() => setUploadType('photo')}
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    background: uploadType === 'photo' 
+                      ? 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)' 
+                      : 'rgba(255,255,255,0.1)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    color: 'white',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                >
+                  📷 Photo
+                </button>
+                <button
+                  onClick={() => setUploadType('video')}
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    background: uploadType === 'video' 
+                      ? 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)' 
+                      : 'rgba(255,255,255,0.1)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    color: 'white',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                >
+                  🎥 Video
+                </button>
+              </div>
+
+              {/* Upload Content */}
+              {uploadType === 'photo' ? (
+                <div>
+                  <label
+                    style={{
+                      display: 'block',
+                      padding: '40px',
+                      border: '2px dashed rgba(255,255,255,0.3)',
+                      borderRadius: '12px',
+                      textAlign: 'center',
+                      cursor: 'pointer',
+                      background: 'rgba(255,255,255,0.05)',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = 'rgba(102,126,234,0.5)';
+                      e.currentTarget.style.background = 'rgba(102,126,234,0.1)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)';
+                      e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                    }}
+                  >
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoUpload}
+                      style={{ display: 'none' }}
+                    />
+                    <div style={{
+                      fontSize: '48px',
+                      marginBottom: '12px'
+                    }}>
+                      📷
+                    </div>
+                    <div style={{
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      marginBottom: '4px'
+                    }}>
+                      Click to upload photo
+                    </div>
+                    <div style={{
+                      fontSize: '12px',
+                      color: 'rgba(255,255,255,0.5)'
+                    }}>
+                      PNG, JPG, or GIF
+                    </div>
+                  </label>
+                </div>
+              ) : (
+                <div>
+                  <MuxUploaderComponent
+                    memorialId={lovedOneName}
+                    onSuccess={handleVideoUploadSuccess}
+                    onError={(error) => {
+                      console.error('Upload error:', error);
+                      alert(`Upload failed: ${error.message}`);
+                    }}
+                  />
+                  <p style={{
+                    marginTop: '16px',
+                    fontSize: '12px',
+                    color: 'rgba(255,255,255,0.5)',
+                    textAlign: 'center'
+                  }}>
+                    Videos are automatically processed and will appear in your slideshow once ready.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         )}

@@ -34,6 +34,7 @@ export default async function handler(
 
     // Create direct upload
     const upload = await mux.video.directUploads.create({
+      cors_origin: '*', // Allow uploads from any origin
       new_asset_settings: {
         playback_policy: playbackPolicy || ['public'],
         mp4_support: 'standard',
