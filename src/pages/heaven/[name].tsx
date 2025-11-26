@@ -1,11 +1,10 @@
 // HEAVEN Demo Page - Display video in 9:16 format
 // Example: /heaven/kobe-bryant
-// Updated: Using MuxPlayerWrapper for reliable playback
+// Updated: Using direct Mux iframe for maximum reliability
 
 import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import MuxPlayerWrapper from '../../components/MuxPlayerWrapper';
 
 // Helper function to check if URL is a direct video file
 function isDirectVideoUrl(url: string): boolean {
@@ -89,19 +88,26 @@ const HeavenDemoPage: React.FC = () => {
       if (match) nameKey = match[1].toLowerCase();
     }
     
-    // KOBE VIDEO - JUST SET IT IMMEDIATELY
+    // IMMEDIATE SETUP FOR KOBE - No async needed
     if (nameKey === 'kobe-bryant') {
+      const playbackId = 'BVzwixnKSqqpqmEdELwUWRIMQ7kKI02YZamR00wJdI624';
+      
+      // Set immediately - no waiting
       setPerson({
         name: 'Kobe Bryant',
         slideshowVideoUrl: null,
-        playbackId: 'BVzwixnKSqqpqmEdELwUWRIMQ7kKI02YZamR00wJdI624'
+        playbackId: playbackId
       });
       setIsLoading(false);
       return;
     }
     
-    // If no match, still stop loading
-    setIsLoading(false);
+    // Always stop loading after a short delay
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 500);
+    
+    return () => clearTimeout(timer);
   }, [name]);
   
   // OLD CODE BELOW - NOT USED ANYMORE
@@ -282,8 +288,8 @@ const HeavenDemoPage: React.FC = () => {
     router.push('/heaven');
   };
 
-  // Loading state - show loading only if still loading
-  if (isLoading) {
+  // Loading state - show loading if router not ready OR still loading OR no person
+  if (!router.isReady || isLoading || !person) {
     return (
       <>
         <Head>
@@ -306,7 +312,7 @@ const HeavenDemoPage: React.FC = () => {
   }
 
   // Not found state - now shows even if profile exists but has no video
-  if (!isLoading && !person) {
+  if (!isLoading && !person.playbackId && !person.slideshowVideoUrl) {
     return (
       <>
         <Head>
@@ -324,7 +330,10 @@ const HeavenDemoPage: React.FC = () => {
           flexDirection: 'column',
           gap: '20px'
         }}>
-          <div style={{ fontSize: '24px' }}>Profile not found</div>
+          <div style={{ fontSize: '24px' }}>Profile not found or no video available</div>
+          <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.6)', textAlign: 'center' }}>
+            Please ensure a video is uploaded or configured for this profile.
+          </div>
           <button
             onClick={handleBack}
             style={{
@@ -368,24 +377,26 @@ const HeavenDemoPage: React.FC = () => {
         {/* Full Screen Video Player - 9:16 Aspect Ratio */}
         {person.slideshowVideoUrl || person.playbackId ? (
           person.playbackId ? (
-            <MuxPlayerWrapper
-              playbackId={person.playbackId}
-              autoPlay={true}
-              muted={false}
-              loop={true}
-              controls={true}
-              streamType="on-demand"
-              metadata={{
-                video_id: person.playbackId,
-                video_title: person.name,
-              }}
+            <iframe
+              src={`https://player.mux.com/${person.playbackId}?autoplay=true&loop=true&muted=false`}
+              allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+              allowFullScreen
               style={{
                 position: 'absolute',
                 top: 0,
                 left: 0,
                 width: '100%',
                 height: '100%',
-                objectFit: 'cover'
+                border: 'none',
+                display: 'block'
+              }}
+              onLoad={() => {
+                console.log('✅ Mux iframe loaded');
+                setStatusMessage('');
+              }}
+              onError={() => {
+                console.error('❌ Error loading Mux iframe');
+                setStatusMessage('Error loading video');
               }}
             />
           ) : (
