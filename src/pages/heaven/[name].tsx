@@ -4,12 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import dynamic from 'next/dynamic';
-
-// Dynamically import MuxPlayer to avoid SSR issues
-const MuxPlayer = dynamic(() => import('@mux/mux-player-react'), {
-  ssr: false,
-});
+import MuxPlayerWrapper from '../../components/MuxPlayerWrapper';
 
 // Helper function to check if URL is a direct video file
 function isDirectVideoUrl(url: string): boolean {
@@ -372,26 +367,24 @@ const HeavenDemoPage: React.FC = () => {
         {/* Full Screen Video Player - 9:16 Aspect Ratio */}
         {person.slideshowVideoUrl || person.playbackId ? (
           person.playbackId ? (
-            <iframe
-              src={`https://player.mux.com/${person.playbackId}?autoplay=true&loop=true&muted=false`}
-              allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
-              allowFullScreen
+            <MuxPlayerWrapper
+              playbackId={person.playbackId}
+              autoPlay={true}
+              muted={false}
+              loop={true}
+              controls={true}
+              streamType="on-demand"
+              metadata={{
+                video_id: person.playbackId,
+                video_title: person.name,
+              }}
               style={{
                 position: 'absolute',
                 top: 0,
                 left: 0,
                 width: '100%',
                 height: '100%',
-                border: 'none',
-                display: 'block'
-              }}
-              onLoad={() => {
-                console.log('✅ Mux iframe loaded');
-                setStatusMessage('');
-              }}
-              onError={() => {
-                console.error('❌ Error loading Mux iframe');
-                setStatusMessage('Error loading video');
+                objectFit: 'cover'
               }}
             />
           ) : (
