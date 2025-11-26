@@ -1,5 +1,6 @@
 // HEAVEN Demo Page - Display video in 9:16 format
 // Example: /heaven/kobe-bryant
+// Updated: Using MuxPlayerWrapper for reliable playback
 
 import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
