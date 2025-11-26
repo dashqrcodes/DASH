@@ -5,6 +5,45 @@ import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 
+// Helper function to check if URL is a direct video file
+function isDirectVideoUrl(url: string): boolean {
+  if (!url) return false;
+  const videoExtensions = ['.mp4', '.m3u8', '.webm', '.m4v', '.mov', '.avi', '.mkv'];
+  const lowerUrl = url.toLowerCase();
+  
+  // Check if URL ends with video extension
+  if (videoExtensions.some(ext => lowerUrl.includes(ext))) {
+    return true;
+  }
+
+  // Check if URL is from known video hosting services
+  const videoHostingPatterns = [
+    'stream.mux.com',
+    'cloudinary.com/video',
+    'vimeo.com/video',
+    'youtube.com/embed',
+    '.m3u8',
+    '/video/',
+  ];
+
+  return videoHostingPatterns.some(pattern => lowerUrl.includes(pattern));
+}
+
+// Extract video URL from webpage
+async function extractVideoFromWebpage(url: string): Promise<string | null> {
+  try {
+    // Try to fetch via our API proxy
+    const response = await fetch(`/api/extract-video-url?url=${encodeURIComponent(url)}`);
+    if (response.ok) {
+      const data = await response.json();
+      return data.videoUrl || null;
+    }
+  } catch (error) {
+    console.warn('Video extraction API failed:', error);
+  }
+  return null;
+}
+
 interface Person {
   name: string;
   slideshowVideoUrl: string | null;
@@ -107,7 +146,21 @@ const HeavenDemoPage: React.FC = () => {
         console.log('📹 Using default video URL from config:', videoUrl);
       }
 
-      // No Google Drive URL processing - videos must come from env vars or Supabase
+      // Auto-extract video URL from webpage if needed
+      if (videoUrl && !isDirectVideoUrl(videoUrl)) {
+        try {
+          console.log('🔍 Detected webpage URL, extracting video file URL...');
+          const extractedUrl = await extractVideoFromWebpage(videoUrl);
+          if (extractedUrl) {
+            console.log('✅ Extracted video URL:', extractedUrl);
+            videoUrl = extractedUrl;
+          } else {
+            console.warn('⚠️ Could not extract video from webpage, trying direct URL');
+          }
+        } catch (error) {
+          console.warn('⚠️ Video extraction failed, using original URL:', error);
+        }
+      }
 
       // Log final video URL for debugging
       console.log('🎬 Final video URL for', demoConfig.name, ':', videoUrl);
