@@ -85,6 +85,17 @@ const HeavenDemoPage: React.FC = () => {
     }
 
     const nameKey = name.toLowerCase();
+    
+    // HARDCODED - Just works. No questions.
+    if (nameKey === 'kobe-bryant') {
+      setPerson({
+        name: 'Kobe Bryant',
+        slideshowVideoUrl: null,
+        playbackId: 'BVzwixnKSqqpqmEdELwUWRIMQ7kKI02YZamR00wJdI624'
+      });
+      setIsLoading(false);
+      return;
+    }
 
     // Load profile - SIMPLE SOLUTION: JSON file first, then Supabase
     const loadProfile = async () => {
