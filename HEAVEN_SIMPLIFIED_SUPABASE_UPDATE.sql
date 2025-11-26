@@ -151,8 +151,9 @@ COMMIT;
 -- WHERE tablename = 'heaven_characters';
 
 -- Test insert (should work without auth):
+-- ⚠️ IMPORTANT: Replace 'YOUR_VIDEO_URL_HERE' with an actual video URL!
 -- INSERT INTO public.heaven_characters (user_id, memorial_id, character_id, slideshow_video_url)
--- VALUES ('default', 'default', 'default', 'https://example.com/video.mp4')
+-- VALUES ('default', 'default', 'default', 'YOUR_VIDEO_URL_HERE')
 -- ON CONFLICT (user_id, memorial_id) 
 -- DO UPDATE SET slideshow_video_url = EXCLUDED.slideshow_video_url;
 

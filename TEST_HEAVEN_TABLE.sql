@@ -17,8 +17,13 @@ FROM pg_policies
 WHERE tablename = 'heaven_characters';
 
 -- 3. Test INSERT (should work without authentication)
+-- ⚠️ IMPORTANT: Replace 'YOUR_VIDEO_URL_HERE' with an actual video URL!
+-- Examples:
+--   - https://www.dashqrcodes.com/heaven-kobe-bryant
+--   - https://stream.mux.com/abc123.m3u8
+--   - https://yourcdn.com/video.mp4
 INSERT INTO public.heaven_characters (user_id, memorial_id, character_id, slideshow_video_url)
-VALUES ('default', NULL, 'default', 'https://example.com/test-video.mp4')
+VALUES ('default', NULL, 'default', 'YOUR_VIDEO_URL_HERE')
 ON CONFLICT (user_id, memorial_id) 
 DO UPDATE SET 
   slideshow_video_url = EXCLUDED.slideshow_video_url,
