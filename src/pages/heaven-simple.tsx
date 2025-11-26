@@ -36,7 +36,6 @@ const HeavenSimplePage: React.FC = () => {
           playbackId={playbackId}
           autoPlay="muted"
           loop={true}
-          controls={true}
           style={{
             width: '100%',
             height: '100%',

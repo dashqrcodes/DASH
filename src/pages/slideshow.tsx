@@ -2842,7 +2842,6 @@ const SlideshowPage: React.FC = () => {
                       playbackId={photos[currentSlideIndex].muxPlaybackId!}
                       title=""
                       muted={false}
-                      controls={true}
                       style={{
                         width: '100%',
                         height: '100%',
