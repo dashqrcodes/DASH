@@ -283,8 +283,8 @@ const HeavenDemoPage: React.FC = () => {
     router.push('/heaven');
   };
 
-  // Loading state
-  if ((isLoading || !person) && router.isReady) {
+  // Loading state - show loading if router not ready OR still loading OR no person
+  if (!router.isReady || isLoading || !person) {
     return (
       <>
         <Head>
