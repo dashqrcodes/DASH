@@ -39,7 +39,7 @@ export default async function handler(
     const existingIndex = profiles.profiles.findIndex((p: any) => p.slug === slug);
     const profileData = {
       slug: slug.toLowerCase(),
-      name: name || slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+      name: name || slug.replace(/-/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()),
       videoUrl: videoUrl || '',
       updatedAt: new Date().toISOString(),
       ...(existingIndex === -1 ? { createdAt: new Date().toISOString() } : {})
