@@ -87,13 +87,13 @@ const HeavenDemoPage: React.FC = () => {
       nameKey = name.toLowerCase();
     }
     
-    // Fallback to window location
+    // Fallback to window location (works immediately)
     if (!nameKey && typeof window !== 'undefined') {
       const match = window.location.pathname.match(/\/heaven\/([^/]+)/);
       if (match) nameKey = match[1].toLowerCase();
     }
     
-    // KOBE VIDEO - JUST SET IT AND DONE
+    // KOBE VIDEO - JUST SET IT IMMEDIATELY
     if (nameKey === 'kobe-bryant') {
       setPerson({
         name: 'Kobe Bryant',
@@ -104,14 +104,12 @@ const HeavenDemoPage: React.FC = () => {
       return;
     }
     
-    // Always stop loading after a short delay
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 500);
-    
-    return () => clearTimeout(timer);
-
-    // Load profile - SIMPLE SOLUTION: JSON file first, then Supabase
+    // If no match, still stop loading
+    setIsLoading(false);
+  }, [name]);
+  
+  // OLD CODE BELOW - NOT USED ANYMORE
+  /*
     const loadProfile = async () => {
       let profileName: string | null = null;
       let videoUrl: string | null = null;
@@ -288,8 +286,8 @@ const HeavenDemoPage: React.FC = () => {
     router.push('/heaven');
   };
 
-  // Loading state - show loading if router not ready OR still loading OR no person
-  if (!router.isReady || isLoading || !person) {
+  // Loading state - show loading only if still loading
+  if (isLoading) {
     return (
       <>
         <Head>
