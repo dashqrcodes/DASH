@@ -1,5 +1,6 @@
 // Simple video upload page - upload your video file right now
 // Route: /upload-video
+// Updated: Ensures route is recognized
 
 import React, { useState } from 'react';
 import Head from 'next/head';
