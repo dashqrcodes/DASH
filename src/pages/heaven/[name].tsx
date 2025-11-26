@@ -79,6 +79,12 @@ const HeavenDemoPage: React.FC = () => {
   const [statusMessage, setStatusMessage] = useState('');
 
   useEffect(() => {
+    // Wait for router to be ready
+    if (!router.isReady) {
+      return;
+    }
+
+    // If name is still undefined after router is ready, set loading to false
     if (!name || typeof name !== 'string') {
       setIsLoading(false);
       return;
@@ -86,26 +92,11 @@ const HeavenDemoPage: React.FC = () => {
 
     const nameKey = name.toLowerCase();
     
-    // Priority 1: Environment variable (override hardcoded)
+    // IMMEDIATE SETUP FOR KOBE - No async needed
     if (nameKey === 'kobe-bryant') {
-      // Check environment variable first
-      const envVideoUrl = process.env.NEXT_PUBLIC_KOBE_DEMO_VIDEO;
-      let playbackId: string | null = null;
+      const playbackId = 'BVzwixnKSqqpqmEdELwUWRIMQ7kKI02YZamR00wJdI624';
       
-      // Extract playbackId from env var if it's a Mux URL
-      if (envVideoUrl) {
-        const muxMatch = envVideoUrl.match(/player\.mux\.com\/([^/?]+)/) || 
-                        envVideoUrl.match(/stream\.mux\.com\/([^/.]+)/);
-        if (muxMatch) {
-          playbackId = muxMatch[1];
-        }
-      }
-      
-      // Fallback to hardcoded if env var not set
-      if (!playbackId) {
-        playbackId = 'BVzwixnKSqqpqmEdELwUWRIMQ7kKI02YZamR00wJdI624';
-      }
-      
+      // Set immediately - no waiting
       setPerson({
         name: 'Kobe Bryant',
         slideshowVideoUrl: null,
@@ -293,7 +284,7 @@ const HeavenDemoPage: React.FC = () => {
   };
 
   // Loading state
-  if (isLoading || !person) {
+  if ((isLoading || !person) && router.isReady) {
     return (
       <>
         <Head>
