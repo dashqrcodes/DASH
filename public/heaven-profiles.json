@@ -3,8 +3,9 @@
     {
       "slug": "kobe-bryant",
       "name": "Kobe Bryant",
-      "videoUrl": "",
-      "createdAt": "2024-01-01T00:00:00Z"
+      "videoUrl": "https://stream.mux.com/uDTKfu9iYYlLGWZaWo6WXSgEyOUM2lz7AvmLTQ45CSs.m3u8",
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-11-25T00:00:00Z"
     }
   ]
 }
