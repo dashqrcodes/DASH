@@ -79,39 +79,37 @@ const HeavenDemoPage: React.FC = () => {
   const [statusMessage, setStatusMessage] = useState('');
 
   useEffect(() => {
-    // Get name from router query or window location as fallback
-    const getRouteName = () => {
-      if (name && typeof name === 'string') return name.toLowerCase();
-      if (typeof window !== 'undefined') {
-        const pathMatch = window.location.pathname.match(/\/heaven\/([^/]+)/);
-        if (pathMatch) return pathMatch[1].toLowerCase();
-      }
-      return null;
-    };
-
-    const nameKey = getRouteName();
+    // GET NAME FROM URL PATH - SIMPLE
+    let nameKey: string | null = null;
     
-    // IMMEDIATE SETUP FOR KOBE - No async needed
+    // Try router first
+    if (name && typeof name === 'string') {
+      nameKey = name.toLowerCase();
+    }
+    
+    // Fallback to window location
+    if (!nameKey && typeof window !== 'undefined') {
+      const match = window.location.pathname.match(/\/heaven\/([^/]+)/);
+      if (match) nameKey = match[1].toLowerCase();
+    }
+    
+    // KOBE VIDEO - JUST SET IT AND DONE
     if (nameKey === 'kobe-bryant') {
-      const playbackId = 'BVzwixnKSqqpqmEdELwUWRIMQ7kKI02YZamR00wJdI624';
-      
-      // Set immediately - no waiting
       setPerson({
         name: 'Kobe Bryant',
         slideshowVideoUrl: null,
-        playbackId: playbackId
+        playbackId: 'BVzwixnKSqqpqmEdELwUWRIMQ7kKI02YZamR00wJdI624'
       });
       setIsLoading(false);
       return;
     }
-
-    // If no name found, still stop loading after a timeout
-    if (!nameKey) {
-      const timeout = setTimeout(() => {
-        setIsLoading(false);
-      }, 1000);
-      return () => clearTimeout(timeout);
-    }
+    
+    // Always stop loading after a short delay
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 500);
+    
+    return () => clearTimeout(timer);
 
     // Load profile - SIMPLE SOLUTION: JSON file first, then Supabase
     const loadProfile = async () => {
