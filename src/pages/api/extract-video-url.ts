@@ -87,11 +87,9 @@ function extractVideoFromHTML(html: string, baseUrl: string): string | null {
   ];
 
   for (const pattern of videoServicePatterns) {
-    const matches = html.matchAll(pattern);
-    for (const match of matches) {
-      if (match[1]) {
-        return match[1];
-      }
+    const match = html.match(pattern);
+    if (match && match[1]) {
+      return match[1];
     }
   }
 
