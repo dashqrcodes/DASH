@@ -49,20 +49,19 @@ interface Person {
   slideshowVideoUrl: string | null;
 }
 
-// Demo configurations for specific memorials
+// Legacy demo configurations (for backward compatibility)
 const DEMO_CONFIGS: Record<string, {
   name: string;
   videoUrl: string;
 }> = {
   'kobe-bryant': {
     name: 'Kobe Bryant',
-    videoUrl: process.env.NEXT_PUBLIC_KOBE_DEMO_VIDEO || '', // No default - must be set via env var or Supabase
+    videoUrl: process.env.NEXT_PUBLIC_KOBE_DEMO_VIDEO || '',
   },
   'kelly-wong': {
     name: 'Kelly Wong',
-    videoUrl: process.env.NEXT_PUBLIC_KELLY_DEMO_VIDEO || '', // No default - must be set via env var or Supabase
+    videoUrl: process.env.NEXT_PUBLIC_KELLY_DEMO_VIDEO || '',
   },
-  // Add more demo configs here
 };
 
 const HeavenDemoPage: React.FC = () => {
@@ -75,75 +74,104 @@ const HeavenDemoPage: React.FC = () => {
   useEffect(() => {
     if (!name || typeof name !== 'string') return;
 
-    const demoConfig = DEMO_CONFIGS[name.toLowerCase()];
-    
-    if (!demoConfig) {
-      setIsLoading(false);
-      return;
-    }
+    const nameKey = name.toLowerCase();
 
-    // Load video URL - priority: env var > Supabase > localStorage > default
-    // This ensures consistency across dashqrcodes.com and dashmemories.com
-    // Both domains share the same Supabase database, so they'll use the same video
-    const loadVideoUrl = async () => {
-      const nameKey = name.toLowerCase();
+    // Load profile - SIMPLE SOLUTION: JSON file first, then Supabase
+    const loadProfile = async () => {
+      let profileName: string | null = null;
       let videoUrl: string | null = null;
       
-      // Priority 1: Environment variable (highest priority)
-      if (nameKey === 'kobe-bryant') {
-        videoUrl = process.env.NEXT_PUBLIC_KOBE_DEMO_VIDEO || null;
-      } else if (nameKey === 'kelly-wong') {
-        videoUrl = process.env.NEXT_PUBLIC_KELLY_DEMO_VIDEO || null;
+      // Priority 1: Load from JSON file (simple file-based storage)
+      try {
+        const profilesResponse = await fetch('/api/heaven/get-profiles');
+        if (profilesResponse.ok) {
+          const data = await profilesResponse.json();
+          const profile = data.profiles?.find((p: any) => p.slug === nameKey);
+          
+          if (profile) {
+            profileName = profile.name || nameKey.replace(/-/g, ' ');
+            videoUrl = profile.videoUrl || null;
+            console.log('✅ Loaded profile from JSON file:', profileName);
+          }
+        }
+      } catch (jsonError) {
+        console.log('JSON file check failed:', jsonError);
       }
       
-      // Priority 2: Check Supabase for saved video
-      // This is the shared database source - ensures dashqrcodes.com and dashmemories.com use same video
+      // Priority 2: Load from Supabase (fallback)
       if (!videoUrl) {
         try {
           const { supabase } = await import('../../utils/supabase');
           if (supabase) {
-            // Try demo user_id first (for kelly-wong)
-            // Query by character_id since memorial_id is UUID type and nameKey is text
-            const { data: demoData } = await supabase
+            // Query by character_id (slug) - find any profile with this slug
+            const { data: profileData, error } = await supabase
               .from('heaven_characters')
-              .select('slideshow_video_url')
+              .select('character_name, slideshow_video_url, user_id')
               .eq('character_id', nameKey)
-              .eq('user_id', 'demo')
+              .order('updated_at', { ascending: false })
+              .limit(1)
               .single();
             
-            if (demoData?.slideshow_video_url) {
-              videoUrl = demoData.slideshow_video_url;
-            } else {
-              // Fallback: Try default user_id
-              const { data: defaultData } = await supabase
-                .from('heaven_characters')
-                .select('slideshow_video_url')
-                .eq('character_id', nameKey)
-                .eq('user_id', 'default')
-                .single();
-              
-              if (defaultData?.slideshow_video_url) {
-                videoUrl = defaultData.slideshow_video_url;
-              }
+            if (!error && profileData) {
+              profileName = profileData.character_name || nameKey.replace(/-/g, ' ');
+              videoUrl = profileData.slideshow_video_url || null;
+              console.log('✅ Loaded profile from Supabase:', profileName);
             }
           }
         } catch (dbError) {
-          console.log('Supabase check failed (optional):', dbError);
+          console.log('Supabase check failed:', dbError);
         }
       }
       
+      // Priority 2: Fallback to legacy demo configs
+      if (!profileName) {
+        const demoConfig = DEMO_CONFIGS[nameKey];
+        if (demoConfig) {
+          profileName = demoConfig.name;
+          
+          // Try environment variable for legacy configs
+          if (nameKey === 'kobe-bryant') {
+            videoUrl = process.env.NEXT_PUBLIC_KOBE_DEMO_VIDEO || demoConfig.videoUrl || null;
+          } else if (nameKey === 'kelly-wong') {
+            videoUrl = process.env.NEXT_PUBLIC_KELLY_DEMO_VIDEO || demoConfig.videoUrl || null;
+          } else {
+            videoUrl = demoConfig.videoUrl || null;
+          }
+          
+          // Also try Supabase for legacy profiles
+          if (!videoUrl) {
+            try {
+              const { supabase } = await import('../../utils/supabase');
+              if (supabase) {
+                const { data: demoData } = await supabase
+                  .from('heaven_characters')
+                  .select('slideshow_video_url')
+                  .eq('character_id', nameKey)
+                  .in('user_id', ['demo', 'default'])
+                  .order('updated_at', { ascending: false })
+                  .limit(1)
+                  .single();
+                
+                if (demoData?.slideshow_video_url) {
+                  videoUrl = demoData.slideshow_video_url;
+                }
+              }
+            } catch (e) {
+              console.log('Legacy Supabase check failed:', e);
+            }
+          }
+        } else {
+          // No profile found - format name from slug
+          profileName = nameKey.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        }
+      }
+
       // Priority 3: Check localStorage (fallback)
       if (!videoUrl) {
         const savedVideoUrl = localStorage.getItem(`heaven_video_${nameKey}`);
         if (savedVideoUrl && !savedVideoUrl.startsWith('blob:') && !savedVideoUrl.startsWith('data:') && !savedVideoUrl.includes('BigBuckBunny')) {
           videoUrl = savedVideoUrl;
         }
-      }
-      
-      // Priority 4: Use default from demo config (only if it's not empty)
-      if (!videoUrl && demoConfig.videoUrl) {
-        videoUrl = demoConfig.videoUrl;
-        console.log('📹 Using default video URL from config:', videoUrl);
       }
 
       // Auto-extract video URL from webpage if needed
@@ -163,11 +191,11 @@ const HeavenDemoPage: React.FC = () => {
       }
 
       // Log final video URL for debugging
-      console.log('🎬 Final video URL for', demoConfig.name, ':', videoUrl);
+      console.log('🎬 Final video URL for', profileName, ':', videoUrl);
 
       // Set up the person with video (or null if no video available)
       setPerson({
-        name: demoConfig.name,
+        name: profileName || nameKey,
         slideshowVideoUrl: videoUrl || null
       });
       
@@ -175,11 +203,11 @@ const HeavenDemoPage: React.FC = () => {
       if (videoUrl) {
         console.log('✅ Video URL set:', videoUrl);
       } else {
-        console.warn('⚠️ No video URL available for', demoConfig.name);
+        console.warn('⚠️ No video URL available for', profileName);
       }
     };
     
-    loadVideoUrl();
+    loadProfile();
   }, [name]);
 
   const handleBack = () => {
@@ -209,8 +237,8 @@ const HeavenDemoPage: React.FC = () => {
     );
   }
 
-  // Not found state
-  if (!DEMO_CONFIGS[name?.toString().toLowerCase() || '']) {
+  // Not found state - now shows even if profile exists but has no video
+  if (!isLoading && !person) {
     return (
       <>
         <Head>
@@ -228,7 +256,7 @@ const HeavenDemoPage: React.FC = () => {
           flexDirection: 'column',
           gap: '20px'
         }}>
-          <div style={{ fontSize: '24px' }}>Demo not found</div>
+          <div style={{ fontSize: '24px' }}>Profile not found</div>
           <button
             onClick={handleBack}
             style={{

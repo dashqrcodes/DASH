@@ -8,9 +8,12 @@ import Head from 'next/head';
 const UploadVideoPage: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [profileName, setProfileName] = useState('Kobe Bryant');
+  const [profileSlug, setProfileSlug] = useState('kobe-bryant');
   const [result, setResult] = useState<{
     success: boolean;
     videoUrl?: string;
+    profileUrl?: string;
     error?: string;
   } | null>(null);
 
@@ -87,20 +90,36 @@ const UploadVideoPage: React.FC = () => {
 
       const videoUrl = `https://stream.mux.com/${playbackId}.m3u8`;
 
-      // Step 4: Save to Supabase
+      // Step 4: Save to JSON file (simple Vercel solution)
+      const currentSlug = profileSlug || 'kobe-bryant';
+      const saveResponse = await fetch('/api/heaven/update-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          slug: currentSlug,
+          name: profileName || 'Kobe Bryant',
+          videoUrl: videoUrl,
+        }),
+      });
+
+      // Also save via set-video-url (backward compatibility)
       await fetch('/api/heaven/set-video-url', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: 'kobe-bryant',
+          name: currentSlug,
           videoUrl: videoUrl,
           uploadToMux: false,
+          profileName: profileName,
         }),
       });
+
+      const profileUrl = `/heaven/${currentSlug}`;
 
       setResult({
         success: true,
         videoUrl: videoUrl,
+        profileUrl: profileUrl,
       });
 
     } catch (err: any) {
@@ -261,8 +280,10 @@ const UploadVideoPage: React.FC = () => {
                     color: 'rgba(255,255,255,0.5)',
                     textAlign: 'center'
                   }}>
-                    Video saved to database! Visit:<br/>
-                    <strong>https://dashmemories.com/heaven/kobe-bryant</strong>
+                    Video saved! Visit:<br/>
+                    <strong><a href={result.profileUrl || '/heaven/kobe-bryant'} style={{ color: '#10b981', textDecoration: 'underline' }}>
+                      {window.location.origin}{result.profileUrl || '/heaven/kobe-bryant'}
+                    </a></strong>
                   </p>
                 </>
               ) : (

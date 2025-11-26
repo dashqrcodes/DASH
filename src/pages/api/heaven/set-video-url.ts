@@ -60,14 +60,36 @@ export default async function handler(
       }
     }
 
-    // Save to Supabase if available
+    // Save to JSON file (simple Vercel solution)
+    try {
+      const updateResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/heaven/update-profile`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          slug: name.toLowerCase(),
+          name: req.body.profileName || name.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+          videoUrl: finalUrl,
+        }),
+      });
+      
+      if (updateResponse.ok) {
+        console.log('✅ Saved to JSON file');
+      }
+    } catch (fileError) {
+      console.log('JSON file save failed (optional):', fileError);
+    }
+    
+    // Also save to Supabase if available (optional fallback)
     try {
       const { supabase } = await import('../../../utils/supabase');
       if (supabase) {
+        // Get userId from request body (passed from frontend)
+        const userId = req.body.userId || 'demo'; // Default to 'demo' for backward compatibility
+        
         await supabase
           .from('heaven_characters')
           .upsert({
-            user_id: 'demo',
+            user_id: userId,
             memorial_id: name.toLowerCase(),
             character_id: name.toLowerCase(),
             slideshow_video_url: finalUrl,
@@ -75,7 +97,7 @@ export default async function handler(
           }, {
             onConflict: 'memorial_id,user_id'
           });
-        console.log('✅ Saved to Supabase');
+        console.log('✅ Saved to Supabase for user:', userId);
       }
     } catch (dbError) {
       console.log('Supabase save failed (optional):', dbError);
