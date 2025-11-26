@@ -79,18 +79,17 @@ const HeavenDemoPage: React.FC = () => {
   const [statusMessage, setStatusMessage] = useState('');
 
   useEffect(() => {
-    // Wait for router to be ready
-    if (!router.isReady) {
-      return;
-    }
+    // Get name from router query or window location as fallback
+    const getRouteName = () => {
+      if (name && typeof name === 'string') return name.toLowerCase();
+      if (typeof window !== 'undefined') {
+        const pathMatch = window.location.pathname.match(/\/heaven\/([^/]+)/);
+        if (pathMatch) return pathMatch[1].toLowerCase();
+      }
+      return null;
+    };
 
-    // If name is still undefined after router is ready, set loading to false
-    if (!name || typeof name !== 'string') {
-      setIsLoading(false);
-      return;
-    }
-
-    const nameKey = name.toLowerCase();
+    const nameKey = getRouteName();
     
     // IMMEDIATE SETUP FOR KOBE - No async needed
     if (nameKey === 'kobe-bryant') {
@@ -104,6 +103,14 @@ const HeavenDemoPage: React.FC = () => {
       });
       setIsLoading(false);
       return;
+    }
+
+    // If no name found, still stop loading after a timeout
+    if (!nameKey) {
+      const timeout = setTimeout(() => {
+        setIsLoading(false);
+      }, 1000);
+      return () => clearTimeout(timeout);
     }
 
     // Load profile - SIMPLE SOLUTION: JSON file first, then Supabase
