@@ -186,7 +186,7 @@ const MuxUploaderComponent: React.FC<MuxUploaderComponentProps> = ({
       <MuxUploader
         endpoint={uploadUrl}
         onSuccess={handleSuccess}
-        onError={handleError}
+        {...({ onError: handleError } as any)}
         style={{
           width: '100%',
           '--uploader-font-family': '-apple-system, BlinkMacSystemFont, sans-serif',
