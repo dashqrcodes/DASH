@@ -50,21 +50,24 @@ Based on what you showed me, you have these tables:
 
 ---
 
-## 🗑️ Tables You Can Probably DELETE
+## ✅ ALL TABLES ARE NEEDED
 
-### Can Delete (Not Used in Current Code):
+**Update:** After reviewing your full application, **ALL these tables are needed** for different features!
 
-- ❌ `ai_jobs` - Not referenced in codebase
-- ❌ `avatars` - Not referenced in codebase
-- ❌ `calls` - Not referenced in codebase
-- ❌ `collaborators` - Not referenced in codebase
-- ❌ `comments` - Not referenced in codebase
-- ❌ `likes` - Not referenced in codebase
-- ❌ `media` - Not referenced in codebase
-- ❌ `messages` - Not referenced in codebase
-- ❌ `profiles` - Not referenced in codebase
-- ❌ `slideshows` - Not referenced (different from `slideshow_media`)
-- ❌ `voices` - Not referenced in codebase
+### Tables Required for Features:
+
+- ✅ `ai_jobs` - AI processing jobs (Heaven AI features)
+- ✅ `avatars` - Avatar creation (AI memorial avatars)
+- ✅ `calls` - Voice call records (AI conversations)
+- ✅ `collaborators` - Collaboration features (invite family/friends)
+- ✅ `comments` - Comments on memorials
+- ✅ `likes` - Likes on memorials
+- ✅ `media` - Media files metadata
+- ✅ `messages` - Messages/chat features
+- ✅ `profiles` - User profiles (phone, email, Spotify)
+- ✅ `voices` - Voice cloning data (AI features)
+- ✅ `payments` - Stripe payment records
+- ✅ `orders` - Orders linked to payments
 
 ---
 
@@ -82,38 +85,24 @@ Based on what you showed me, you have these tables:
 
 ---
 
-## ✅ Safe Cleanup SQL
+## ⚠️ DO NOT DELETE TABLES
 
-**Here's SQL to delete unused tables (run in Supabase SQL Editor):**
+**All tables are needed!** See `COMPLETE_INTEGRATION_SETUP.md` for what each table is used for.
+
+### Instead: Verify Tables Exist
+
+**Run this SQL to check what tables you have:**
 
 ```sql
--- ⚠️ WARNING: This will permanently delete these tables!
--- Only run if you're sure you don't need them
-
-BEGIN;
-
--- Drop unused tables
-DROP TABLE IF EXISTS public.ai_jobs CASCADE;
-DROP TABLE IF EXISTS public.avatars CASCADE;
-DROP TABLE IF EXISTS public.calls CASCADE;
-DROP TABLE IF EXISTS public.collaborators CASCADE;
-DROP TABLE IF EXISTS public.comments CASCADE;
-DROP TABLE IF EXISTS public.likes CASCADE;
-DROP TABLE IF EXISTS public.media CASCADE;
-DROP TABLE IF EXISTS public.messages CASCADE;
-DROP TABLE IF EXISTS public.profiles CASCADE;
-DROP TABLE IF EXISTS public.slideshows CASCADE;
-DROP TABLE IF EXISTS public.voices CASCADE;
-
-COMMIT;
-
--- Verify what's left
+-- List all tables
 SELECT table_name 
 FROM information_schema.tables 
 WHERE table_schema = 'public' 
   AND table_type = 'BASE TABLE'
 ORDER BY table_name;
 ```
+
+**If a table is missing, see `COMPLETE_INTEGRATION_SETUP.md` for SQL to create it.**
 
 ---
 
