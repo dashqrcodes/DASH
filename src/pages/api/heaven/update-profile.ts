@@ -28,7 +28,7 @@ export default async function handler(
     const filePath = path.join(process.cwd(), 'public', 'heaven-profiles.json');
     
     // Read existing profiles
-    let profiles = { profiles: [] };
+    let profiles: { profiles: any[] } = { profiles: [] };
     
     if (fs.existsSync(filePath)) {
       const fileContents = fs.readFileSync(filePath, 'utf8');
