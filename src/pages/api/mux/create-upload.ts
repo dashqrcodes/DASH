@@ -19,7 +19,13 @@ export default async function handler(
   if (!isMuxConfigured()) {
     return res.status(500).json({ 
       error: 'Mux credentials not configured',
-      message: 'Please set MUX_TOKEN_ID and MUX_TOKEN_SECRET in Vercel environment variables'
+      message: 'Please set MUX_TOKEN_ID and MUX_TOKEN_SECRET in Vercel environment variables',
+      details: {
+        hasTokenId: !!process.env.MUX_TOKEN_ID,
+        hasTokenSecret: !!process.env.MUX_TOKEN_SECRET,
+        tokenIdLength: process.env.MUX_TOKEN_ID?.length || 0,
+        tokenSecretLength: process.env.MUX_TOKEN_SECRET?.length || 0,
+      }
     });
   }
 
