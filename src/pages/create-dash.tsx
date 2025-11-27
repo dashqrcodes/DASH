@@ -281,7 +281,12 @@ const DateScrollPicker: React.FC<DateScrollPickerProps> = ({ label, value, onCha
             </div>
             
             <button
-              onClick={handleConfirm}
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleConfirm();
+              }}
               style={{
                 width: '100%',
                 background: 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
@@ -662,7 +667,21 @@ const CreateMemorialPage: React.FC = () => {
     const isProfileComplete = Boolean(name.trim() && sunrise.trim() && sunset.trim() && photo);
 
     const handleNext = () => {
-        if (!isProfileComplete) {
+        // Validate form is complete
+        if (!name.trim()) {
+            alert('Please enter a name');
+            return;
+        }
+        if (!sunrise.trim()) {
+            alert('Please select a birth date (Sunrise)');
+            return;
+        }
+        if (!sunset.trim()) {
+            alert('Please select a death date (Sunset)');
+            return;
+        }
+        if (!photo) {
+            alert('Please upload a photo');
             return;
         }
         
@@ -673,10 +692,10 @@ const CreateMemorialPage: React.FC = () => {
         
         // Save profile data
         const profileData = {
-            name,
-            sunrise,
-            sunset,
-            photo,
+            name: name.trim(),
+            sunrise: sunrise.trim(),
+            sunset: sunset.trim(),
+            photo: photo,
             updatedAt: new Date().toISOString()
         };
         localStorage.setItem('profileData', JSON.stringify(profileData));
@@ -686,16 +705,17 @@ const CreateMemorialPage: React.FC = () => {
         const memorial = {
             id: memorialId,
             slug: slug,
-            name: name,
-            lovedOneName: name,
-            sunrise: sunrise,
-            sunset: sunset,
+            name: name.trim(),
+            lovedOneName: name.trim(),
+            sunrise: sunrise.trim(),
+            sunset: sunset.trim(),
             photo: photo,
             photoUrl: photo,
-            birthDate: sunrise,
-            deathDate: sunset,
+            birthDate: sunrise.trim(),
+            deathDate: sunset.trim(),
             url: memorialUrl,
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
+            memorialUrl: memorialUrl
         };
         
         // Save to memorials list
@@ -708,7 +728,10 @@ const CreateMemorialPage: React.FC = () => {
         localStorage.setItem(`memorial_${slug}`, JSON.stringify(memorial));
         
         // Navigate to design page (shows QR code and links to card/poster builders)
-        router.push(`/life-dash/${slug}/design`);
+        router.push(`/life-dash/${slug}/design`).catch((error) => {
+            console.error('Navigation error:', error);
+            alert('Error navigating to design page. Please try again.');
+        });
     };
 
     return (
@@ -1018,7 +1041,12 @@ const CreateMemorialPage: React.FC = () => {
                     {/* Next Button */}
                     <div style={{ width: '100%', marginTop: '20px' }}>
                         <button
-                            onClick={handleNext}
+                            type="button"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleNext();
+                            }}
                             disabled={!isProfileComplete}
                             style={{
                                 width: '100%',
