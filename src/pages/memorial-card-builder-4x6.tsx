@@ -864,7 +864,7 @@ const MemorialCardBuilder4x6Page: React.FC = () => {
           flexShrink:0
         }}>
           <button 
-            onClick={()=>router.push('/profile')} 
+            onClick={()=>router.push('/account')} 
             style={{
               background:'transparent',
               border:'none',

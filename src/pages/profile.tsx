@@ -1,6 +1,6 @@
-// Redirect /profile to /create-memorial for backward compatibility
-// The old "profile" page is now "create-memorial" (for creating memorials)
-// User accounts are now at /account
+// Redirect /profile to /account for backward compatibility
+// User accounts are at /account
+// Deceased memorial creation is at /create-memorial
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
@@ -10,10 +10,8 @@ const ProfileRedirect: React.FC = () => {
   const router = useRouter();
   
   useEffect(() => {
-    // Redirect to create-memorial (preserving query params)
-    const queryString = router.asPath.split('?')[1];
-    const redirectUrl = queryString ? `/create-memorial?${queryString}` : '/create-memorial';
-    router.replace(redirectUrl);
+    // Redirect to account (user's dashboard)
+    router.replace('/account');
   }, [router]);
 
     return (

@@ -90,7 +90,7 @@ const OrganizerProfilePage: React.FC = () => {
       return;
     }
     handlePersist();
-    router.push('/profile');
+    router.push('/account');
   };
 
   const renderLanguageToggle = () => (

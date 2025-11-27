@@ -122,7 +122,7 @@ const SuccessPage: React.FC = () => {
                         Go to Order Tracking →
                     </Link>
                     <Link 
-                        href="/profile" 
+                        href="/account" 
                         className="social-button"
                         style={{ 
                             textAlign: 'center', 

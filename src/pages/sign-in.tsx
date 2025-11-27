@@ -126,7 +126,7 @@ const SignInPage: React.FC = () => {
         setTimeout(() => {
             setIsLoading(false);
             const { order } = router.query;
-            const query: Record<string, string> = { returnTo: '/profile' };
+            const query: Record<string, string> = { returnTo: '/account' };
             if (typeof order === 'string') {
                 query.order = order;
                 localStorage.setItem('currentOrder', order);

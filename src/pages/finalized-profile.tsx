@@ -49,7 +49,7 @@ const CustomBottomNav: React.FC<{ onHeartClick: () => void }> = ({ onHeartClick 
     }}>
       {/* Home */}
       <button
-        onClick={() => router.push('/profile')}
+        onClick={() => router.push('/account')}
         style={{
           background: 'transparent',
           border: 'none',
@@ -1081,7 +1081,7 @@ const FinalizedProfilePage: React.FC = () => {
                 <circle cx="12" cy="7" r="4"/>
               </svg>
             ),
-            onClick: () => router.push('/profile'),
+            onClick: () => router.push('/account'),
           },
           {
             id: 'share',

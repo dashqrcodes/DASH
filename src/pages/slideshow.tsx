@@ -1895,7 +1895,7 @@ const SlideshowPage: React.FC = () => {
       router.back();
       return;
     }
-    router.push('/profile');
+    router.push('/account');
   };
 
   const renderHeroMedia = () => {
