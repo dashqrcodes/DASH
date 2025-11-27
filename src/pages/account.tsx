@@ -29,32 +29,48 @@ const AccountPage: React.FC = () => {
   const [setupPhoto, setSetupPhoto] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check if user profile exists
+    // IMPORTANT: Check for user account creation flag first
+    // This distinguishes between user account (userProfile) and deceased memorial profile (profileData)
+    const userAccountCreated = localStorage.getItem('userAccountCreated');
     const userProfile = localStorage.getItem('userProfile');
-    if (userProfile) {
+    
+    // Only show dashboard if account is explicitly marked as created AND has valid profile
+    if (userAccountCreated === 'true' && userProfile) {
       try {
         const profile = JSON.parse(userProfile);
-        setUserName(profile.name || 'User');
-        setUserPhoto(profile.photo || null);
-        setShowSetup(false);
+        // Validate that we have at least a name (basic requirement)
+        if (profile.name && profile.name.trim()) {
+          setUserName(profile.name || 'User');
+          setUserPhoto(profile.photo || null);
+          setShowSetup(false);
+          // Load user's memorials (async)
+          loadUserMemorials();
+          return; // Exit early - account is set up
+        } else {
+          // Profile exists but invalid - clear it and show setup
+          console.warn('Invalid userProfile detected, clearing and showing setup');
+          localStorage.removeItem('userProfile');
+          localStorage.removeItem('userAccountCreated');
+        }
       } catch (e) {
         console.error('Error parsing user profile:', e);
-        setShowSetup(true);
+        // Corrupted profile - clear it
+        localStorage.removeItem('userProfile');
+        localStorage.removeItem('userAccountCreated');
       }
-    } else {
-      // No profile - show setup form
-      setShowSetup(true);
     }
     
-    // Load email from phone number or existing data
+    // If we get here, account is NOT set up - show setup form
+    // DO NOT load profileData here - that's for deceased memorials only
+    console.log('Showing account setup form - userAccountCreated:', userAccountCreated, 'userProfile exists:', !!userProfile);
+    setShowSetup(true);
+    
+    // Load email from phone number or existing data (for pre-filling form)
     const phoneNumber = localStorage.getItem('phoneNumber');
     const savedEmail = localStorage.getItem('userEmail');
     if (savedEmail) {
       setSetupEmail(savedEmail);
     }
-
-    // Load user's memorials (async)
-    loadUserMemorials();
   }, []);
 
   const loadUserMemorials = async () => {
