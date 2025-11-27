@@ -81,6 +81,36 @@ const PosterBuilderPage: React.FC = () => {
 
   // Load profile data on mount
   useEffect(() => {
+    if (!router.isReady) return;
+    
+    // Check if we have a memorialSlug from the design page
+    const memorialSlug = router.query.memorialSlug as string | undefined;
+    
+    if (memorialSlug) {
+      // Load memorial data from localStorage using slug
+      const savedMemorial = localStorage.getItem(`memorial_${memorialSlug}`);
+      if (savedMemorial) {
+        try {
+          const memorial = JSON.parse(savedMemorial);
+          if (memorial.name) setName(memorial.name);
+          if (memorial.sunrise) setSunrise(toISODateSafe(memorial.sunrise));
+          if (memorial.sunset) setSunset(toISODateSafe(memorial.sunset));
+          if (memorial.photo) {
+            setPhoto(memorial.photo);
+            analyzeImageBrightness(memorial.photo);
+          }
+          
+          // Generate QR code using the slug from URL
+          const memorialUrl = getMemorialUrl(memorialSlug);
+          generateQRCode();
+          return;
+        } catch (e) {
+          console.error('Error loading memorial:', e);
+        }
+      }
+    }
+    
+    // Fallback: Load saved profile data from profile page
     const profileData = localStorage.getItem('profileData');
     if (profileData) {
       try {
@@ -102,7 +132,7 @@ const PosterBuilderPage: React.FC = () => {
         console.error('Error loading profile data:', e);
       }
     }
-  }, []);
+  }, [router.isReady, router.query]);
 
   useEffect(() => {
     if (!photo) {
@@ -119,14 +149,18 @@ const PosterBuilderPage: React.FC = () => {
       // Generate memorial URL using slug system
       let memorialUrl: string | null = null;
       
-      if (name) {
+      // First, check if we have a memorialSlug from query param
+      const memorialSlug = router.query.memorialSlug as string | undefined;
+      if (memorialSlug) {
+        memorialUrl = getMemorialUrl(memorialSlug);
+      } else if (name) {
+        // Fallback: generate slug from name
         const slug = generateSlug(name);
         memorialUrl = getMemorialUrl(slug);
       }
       
-      // Fallback if no name
+      // Final fallback: try to get from localStorage
       if (!memorialUrl) {
-        // Try to get from localStorage
         const savedMemorials = typeof window !== 'undefined' ? localStorage.getItem('memorials') : null;
         if (savedMemorials) {
           try {

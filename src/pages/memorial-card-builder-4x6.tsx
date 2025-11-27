@@ -121,8 +121,37 @@ const MemorialCardBuilder4x6Page: React.FC = () => {
       setLanguage(savedLanguage);
     }
     
-    // Load saved profile data from profile page (one-time data entry)
     if (typeof window !== 'undefined') {
+      // Check if we have a memorialSlug from the design page
+      const memorialSlug = router.query.memorialSlug as string | undefined;
+      
+      if (memorialSlug) {
+        // Load memorial data from localStorage using slug
+        const savedMemorial = localStorage.getItem(`memorial_${memorialSlug}`);
+        if (savedMemorial) {
+          try {
+            const memorial = JSON.parse(savedMemorial);
+            if (memorial.name) setName(memorial.name);
+            if (memorial.sunrise) setSunrise(toISODateSafe(memorial.sunrise));
+            if (memorial.sunset) setSunset(toISODateSafe(memorial.sunset));
+            if (memorial.photo) {
+              setSelectedPhotos([memorial.photo]);
+              setPhoto(memorial.photo);
+              setTimeout(() => enhanceImage(memorial.photo), 100);
+            }
+            
+            // Generate QR code using the slug from URL
+            const memorialUrl = getMemorialUrl(memorialSlug);
+            generateQRCode(memorialUrl);
+            isDataLoaded.current = true;
+            return;
+          } catch (e) {
+            console.error('Error loading memorial:', e);
+          }
+        }
+      }
+      
+      // Fallback: Load saved profile data from profile page (one-time data entry)
       const savedProfile = localStorage.getItem('profileData');
       if (savedProfile) {
         try {
@@ -160,20 +189,12 @@ const MemorialCardBuilder4x6Page: React.FC = () => {
   };
 
   useEffect(() => {
-    // Load data on mount
+    // Wait for router to be ready before loading data
+    if (!router.isReady) return;
+    
+    // Load data on mount or when query changes
     loadProfileData();
-    
-    // Listen for route changes and reload data
-    const handleRouteChange = () => {
-      loadProfileData();
-    };
-    
-    router.events.on('routeChangeComplete', handleRouteChange);
-    
-    return () => {
-      router.events.off('routeChangeComplete', handleRouteChange);
-    };
-  }, []);
+  }, [router.isReady, router.query]);
   
   // Save profile data whenever name, dates, or photos change (sync back to profileData)
   useEffect(() => {
