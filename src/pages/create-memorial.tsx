@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
+import { generateSlug } from '../utils/slug';
 
 const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -664,7 +665,13 @@ const CreateMemorialPage: React.FC = () => {
         if (!isProfileComplete) {
             return;
         }
-        // Save profile data before navigating
+        
+        // Generate slug from name
+        const slug = generateSlug(name);
+        const memorialId = `memorial-${Date.now()}`;
+        const memorialUrl = `/memorial/${slug}`;
+        
+        // Save profile data
         const profileData = {
             name,
             sunrise,
@@ -674,6 +681,31 @@ const CreateMemorialPage: React.FC = () => {
         };
         localStorage.setItem('profileData', JSON.stringify(profileData));
         localStorage.setItem('profileResume', 'true');
+        
+        // Save memorial with slug
+        const memorial = {
+            id: memorialId,
+            slug: slug,
+            name: name,
+            lovedOneName: name,
+            sunrise: sunrise,
+            sunset: sunset,
+            photo: photo,
+            photoUrl: photo,
+            birthDate: sunrise,
+            deathDate: sunset,
+            url: memorialUrl,
+            createdAt: new Date().toISOString()
+        };
+        
+        // Save to memorials list
+        const existingMemorials = localStorage.getItem('memorials');
+        const memorials = existingMemorials ? JSON.parse(existingMemorials) : [];
+        memorials.push(memorial);
+        localStorage.setItem('memorials', JSON.stringify(memorials));
+        
+        // Also save as current memorial (for easy access)
+        localStorage.setItem(`memorial_${slug}`, JSON.stringify(memorial));
         
         // Navigate to the cleaned-up card builder
         router.push('/memorial-card-builder-4x6');
