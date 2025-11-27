@@ -707,8 +707,8 @@ const CreateMemorialPage: React.FC = () => {
         // Also save as current memorial (for easy access)
         localStorage.setItem(`memorial_${slug}`, JSON.stringify(memorial));
         
-        // Navigate to the cleaned-up card builder
-        router.push('/memorial-card-builder-4x6');
+        // Navigate to design page (shows QR code and links to card/poster builders)
+        router.push(`/memorial/${slug}/design`);
     };
 
     return (
