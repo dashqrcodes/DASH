@@ -31,7 +31,7 @@ const EnlargementPage: React.FC = () => {
     // Simple QR code generation (placeholder - would use actual QR library in production)
     const generateQRCode = (text: string) => {
         // For now, return a placeholder. In production, use a QR code library
-        const qrUrl = `https://dash.app/memorial/${encodeURIComponent(text)}`;
+        const qrUrl = `https://dash.app/life-dash/${encodeURIComponent(text)}`;
         // Using a QR code API service as placeholder
         return `https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent(qrUrl)}`;
     };
@@ -50,7 +50,7 @@ const EnlargementPage: React.FC = () => {
         const qrUrl = generateQRCode(lovedOneName);
         
         console.log('Generating 20x30 enlargement with QR:', qrUrl);
-        alert(`20x30 Enlargement PDF generated!\nQR code links to: https://dash.app/memorial/${encodeURIComponent(lovedOneName)}`);
+        alert(`20x30 Enlargement PDF generated!\nQR code links to: https://dash.app/life-dash/${encodeURIComponent(lovedOneName)}`);
     };
 
     return (

@@ -1,6 +1,6 @@
 // Memorial Design Page - QR Code & Design Hub
 // Simple page showing QR code and links to card/poster builders
-// Example: /memorial/kobe-bryant/design
+// Example: /life-dash/kobe-bryant/design
 
 import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
@@ -232,7 +232,7 @@ const MemorialDesignPage: React.FC = () => {
 
             {/* View Memorial Page */}
             <button
-              onClick={() => router.push(`/memorial/${name}`)}
+              onClick={() => router.push(`/life-dash/${name}`)}
               style={{
                 width: '100%',
                 background: 'rgba(255,255,255,0.08)',

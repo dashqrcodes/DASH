@@ -322,7 +322,7 @@ const FinalizedProfilePage: React.FC = () => {
   };
 
   const shareMemorial = async () => {
-    const shareUrl = `${window.location.origin}/memorial/${encodeURIComponent(lovedOneName)}`;
+    const shareUrl = `${window.location.origin}/life-dash/${encodeURIComponent(lovedOneName)}`;
     const shareText = `Remembering ${lovedOneName} - ${shareUrl}`;
 
     if (navigator.share) {

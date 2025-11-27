@@ -12,12 +12,13 @@ export function generateSlug(name: string): string {
 }
 
 /**
- * Get memorial URL from slug
+ * Get Life-Dash URL from slug
+ * The "dash" represents all the memories between birth and death dates
  */
 export function getMemorialUrl(slug: string): string {
   const baseUrl = typeof window !== 'undefined' 
     ? window.location.origin 
     : process.env.NEXT_PUBLIC_BASE_URL || 'https://dashmemories.com';
-  return `${baseUrl}/memorial/${slug}`;
+  return `${baseUrl}/life-dash/${slug}`;
 }
 

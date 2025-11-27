@@ -1,6 +1,6 @@
 // Public Memorial Page - QR Code Link Destination
 // Simple, clean page displaying memorial with slideshow
-// Example: /memorial/kobe-bryant
+// Example: /life-dash/kobe-bryant
 
 import React, { useState, useEffect } from 'react';
 import Head from 'next/head';

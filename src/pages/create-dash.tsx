@@ -669,7 +669,7 @@ const CreateMemorialPage: React.FC = () => {
         // Generate slug from name
         const slug = generateSlug(name);
         const memorialId = `memorial-${Date.now()}`;
-        const memorialUrl = `/memorial/${slug}`;
+        const memorialUrl = `/life-dash/${slug}`;
         
         // Save profile data
         const profileData = {
@@ -708,7 +708,7 @@ const CreateMemorialPage: React.FC = () => {
         localStorage.setItem(`memorial_${slug}`, JSON.stringify(memorial));
         
         // Navigate to design page (shows QR code and links to card/poster builders)
-        router.push(`/memorial/${slug}/design`);
+        router.push(`/life-dash/${slug}/design`);
     };
 
     return (
