@@ -181,16 +181,26 @@ const AccountPage: React.FC = () => {
       name: setupName.trim(),
       email: setupEmail.trim() || null,
       photo: setupPhoto,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
     
     localStorage.setItem('userProfile', JSON.stringify(userProfile));
     if (setupEmail.trim()) {
       localStorage.setItem('userEmail', setupEmail.trim());
     }
+    
+    // Mark user as fully set up (account created)
+    localStorage.setItem('userAccountCreated', 'true');
+    
     setUserName(setupName.trim());
     setUserPhoto(setupPhoto);
     setShowSetup(false);
+    
+    // Small delay to ensure state updates before showing nav
+    setTimeout(() => {
+      // Account setup complete - TopNav will now show
+    }, 100);
   };
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -211,15 +221,21 @@ const AccountPage: React.FC = () => {
         fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
         color: 'white',
         padding: '20px',
-        paddingTop: 'calc(env(safe-area-inset-top, 0px) + 80px)',
-        paddingBottom: '20px'
+        paddingTop: showSetup 
+          ? 'calc(env(safe-area-inset-top, 0px) + 40px)' // Less padding during setup (no TopNav)
+          : 'calc(env(safe-area-inset-top, 0px) + 80px)', // Full padding when TopNav is shown
+        paddingBottom: '20px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: showSetup ? 'center' : 'flex-start'
       }}>
         {/* Account Setup Form */}
         {showSetup ? (
           <div style={{
             maxWidth: '400px',
-            margin: '0 auto',
-            paddingTop: '60px'
+            width: '100%',
+            margin: '0 auto'
           }}>
             {/* Photo Upload - Big and Simple */}
             <div style={{
@@ -279,7 +295,7 @@ const AccountPage: React.FC = () => {
               type="email"
               value={setupEmail}
               onChange={(e) => setSetupEmail(e.target.value)}
-              placeholder="Email"
+              placeholder="Email (Optional)"
               style={{
                 width: '100%',
                 background: 'rgba(255,255,255,0.08)',
@@ -521,8 +537,8 @@ const AccountPage: React.FC = () => {
         )}
       </div>
 
-      {/* Top Navigation */}
-      <TopNav activeTab="home" />
+             {/* Top Navigation - Only show after account is set up */}
+             {!showSetup && <TopNav activeTab="home" />}
     </>
   );
 };
