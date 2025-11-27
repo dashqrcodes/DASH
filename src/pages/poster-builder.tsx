@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
+import { generateSlug, getMemorialUrl } from '../utils/slug';
 
 const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 const SPANISH_MONTH_MAP: Record<string, string> = {
@@ -115,14 +116,35 @@ const PosterBuilderPage: React.FC = () => {
   // Generate QR code
   const generateQRCode = async () => {
     try {
-      // Generate URL to finalized-profile page (what QR code scanners will see)
-      const nameSlug = name 
-        ? name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
-        : 'loved-one';
+      // Generate memorial URL using slug system
+      let memorialUrl: string | null = null;
       
-      const memorialUrl = typeof window !== 'undefined' 
-        ? `${window.location.origin}/finalized-profile?name=${encodeURIComponent(nameSlug)}`
-        : `http://localhost:3000/finalized-profile?name=${encodeURIComponent(nameSlug)}`;
+      if (name) {
+        const slug = generateSlug(name);
+        memorialUrl = getMemorialUrl(slug);
+      }
+      
+      // Fallback if no name
+      if (!memorialUrl) {
+        // Try to get from localStorage
+        const savedMemorials = typeof window !== 'undefined' ? localStorage.getItem('memorials') : null;
+        if (savedMemorials) {
+          try {
+            const memorials = JSON.parse(savedMemorials);
+            const memorial = memorials[memorials.length - 1]; // Get latest
+            if (memorial?.slug) {
+              memorialUrl = getMemorialUrl(memorial.slug);
+            }
+          } catch (e) {
+            console.error('Error loading memorial for QR:', e);
+          }
+        }
+      }
+      
+      if (!memorialUrl) {
+        console.warn('No memorial URL available for QR code');
+        return;
+      }
       
       // Store the URL for PDF generation
       if (typeof window !== 'undefined') {

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { getPopularContent, searchBibleVerse } from '../utils/bible-api';
+import { generateSlug, getMemorialUrl } from '../utils/slug';
 
 const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 const SPANISH_MONTH_MAP: Record<string, string> = {
@@ -143,12 +144,11 @@ const MemorialCardBuilder4x6Page: React.FC = () => {
             setTimeout(() => enhanceImage(profile.photo), 100);
           }
           
-          // Auto-generate QR code URL based on user's profile
-          // Format: dash.app/memorial/{name-slug}
+          // Auto-generate QR code URL based on memorial slug
           if (profile.name) {
-            const nameSlug = profile.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-            const profileUrl = `https://dash.app/memorial/${nameSlug}`;
-            generateQRCode(profileUrl);
+            const slug = generateSlug(profile.name);
+            const memorialUrl = getMemorialUrl(slug);
+            generateQRCode(memorialUrl);
           }
         } catch (e) {
           console.error('Error loading profile:', e);
@@ -740,15 +740,35 @@ const MemorialCardBuilder4x6Page: React.FC = () => {
   // Generate QR code with color matching
   const generateQRCode = async (customUrl?: string) => {
     try {
-      // Generate URL to finalized-profile page (what QR code scanners will see)
-      // Use the name to create a slug for the URL
-      const nameSlug = name 
-        ? name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
-        : 'loved-one';
+      // Generate memorial URL using slug system
+      let memorialUrl = customUrl;
       
-      const memorialUrl = customUrl || (typeof window !== 'undefined' 
-        ? `${window.location.origin}/finalized-profile?name=${encodeURIComponent(nameSlug)}`
-        : `http://localhost:3000/finalized-profile?name=${encodeURIComponent(nameSlug)}`);
+      if (!memorialUrl && name) {
+        const slug = generateSlug(name);
+        memorialUrl = getMemorialUrl(slug);
+      }
+      
+      // Fallback if no name
+      if (!memorialUrl) {
+        // Try to get from localStorage
+        const savedMemorials = typeof window !== 'undefined' ? localStorage.getItem('memorials') : null;
+        if (savedMemorials) {
+          try {
+            const memorials = JSON.parse(savedMemorials);
+            const memorial = memorials[memorials.length - 1]; // Get latest
+            if (memorial?.slug) {
+              memorialUrl = getMemorialUrl(memorial.slug);
+            }
+          } catch (e) {
+            console.error('Error loading memorial for QR:', e);
+          }
+        }
+      }
+      
+      if (!memorialUrl) {
+        console.warn('No memorial URL available for QR code');
+        return;
+      }
       
       // Store the URL for PDF generation
       if (typeof window !== 'undefined') {
