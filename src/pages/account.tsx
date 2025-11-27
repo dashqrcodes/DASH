@@ -20,13 +20,38 @@ interface Memorial {
 const AccountPage: React.FC = () => {
   const router = useRouter();
   const [userName, setUserName] = useState('');
+  const [userPhoto, setUserPhoto] = useState<string | null>(null);
   const [memorials, setMemorials] = useState<Memorial[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showSetup, setShowSetup] = useState(false);
+  const [setupName, setSetupName] = useState('');
+  const [setupEmail, setSetupEmail] = useState('');
+  const [setupPhoto, setSetupPhoto] = useState<string | null>(null);
 
   useEffect(() => {
-    // Get user info
-    const savedName = localStorage.getItem('userName') || 'User';
-    setUserName(savedName);
+    // Check if user profile exists
+    const userProfile = localStorage.getItem('userProfile');
+    if (userProfile) {
+      try {
+        const profile = JSON.parse(userProfile);
+        setUserName(profile.name || 'User');
+        setUserPhoto(profile.photo || null);
+        setShowSetup(false);
+      } catch (e) {
+        console.error('Error parsing user profile:', e);
+        setShowSetup(true);
+      }
+    } else {
+      // No profile - show setup form
+      setShowSetup(true);
+    }
+    
+    // Load email from phone number or existing data
+    const phoneNumber = localStorage.getItem('phoneNumber');
+    const savedEmail = localStorage.getItem('userEmail');
+    if (savedEmail) {
+      setSetupEmail(savedEmail);
+    }
 
     // Load user's memorials (async)
     loadUserMemorials();
@@ -125,6 +150,55 @@ const AccountPage: React.FC = () => {
     router.push(`/create-memorial?edit=${memorial.id}`);
   };
 
+  const handleSetupPhotoUpload = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.style.display = 'none';
+    document.body.appendChild(input);
+    
+    input.onchange = (e: any) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e: any) => {
+          setSetupPhoto(e.target.result);
+        };
+        reader.readAsDataURL(file);
+      }
+      document.body.removeChild(input);
+    };
+    input.click();
+  };
+
+  const handleSaveSetup = () => {
+    if (!setupName.trim()) {
+      alert('Please enter your name');
+      return;
+    }
+    
+    const userProfile = {
+      name: setupName.trim(),
+      email: setupEmail.trim() || null,
+      photo: setupPhoto,
+      createdAt: new Date().toISOString()
+    };
+    
+    localStorage.setItem('userProfile', JSON.stringify(userProfile));
+    if (setupEmail.trim()) {
+      localStorage.setItem('userEmail', setupEmail.trim());
+    }
+    setUserName(setupName.trim());
+    setUserPhoto(setupPhoto);
+    setShowSetup(false);
+  };
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const capitalized = value.replace(/\b\w/g, (char) => char.toUpperCase());
+    setSetupName(capitalized);
+  };
+
   return (
     <>
       <Head>
@@ -140,55 +214,176 @@ const AccountPage: React.FC = () => {
         paddingTop: 'calc(env(safe-area-inset-top, 0px) + 80px)',
         paddingBottom: '20px'
       }}>
-        {/* Header */}
-        <div style={{
-          marginBottom: '32px'
-        }}>
-          <h1 style={{
-            fontSize: 'clamp(28px, 7vw, 36px)',
-            fontWeight: '700',
-            marginBottom: '8px'
+        {/* Account Setup Form */}
+        {showSetup ? (
+          <div style={{
+            maxWidth: '400px',
+            margin: '0 auto',
+            paddingTop: '60px'
           }}>
-            My Account
-          </h1>
-          <p style={{
-            fontSize: '16px',
-            color: 'rgba(255,255,255,0.6)'
-          }}>
-            {userName}
-          </p>
-        </div>
+            {/* Photo Upload - Big and Simple */}
+            <div style={{
+              width: '120px',
+              height: '120px',
+              margin: '0 auto 40px',
+              position: 'relative'
+            }}>
+              <div 
+                onClick={handleSetupPhotoUpload}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  borderRadius: '50%',
+                  overflow: 'hidden',
+                  background: 'rgba(255,255,255,0.08)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer'
+                }}
+              >
+                {setupPhoto ? (
+                  <img src={setupPhoto} alt="Profile" style={{width: '100%', height: '100%', objectFit: 'cover'}} />
+                ) : (
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                    <circle cx="12" cy="13" r="4"/>
+                  </svg>
+                )}
+              </div>
+            </div>
 
-        {/* Create New Dash Button */}
+            {/* Name Input - Big */}
+            <input
+              type="text"
+              value={setupName}
+              onChange={handleNameChange}
+              placeholder="Your Name"
+              style={{
+                width: '100%',
+                background: 'rgba(255,255,255,0.08)',
+                border: 'none',
+                borderRadius: '16px',
+                padding: '20px',
+                color: 'white',
+                fontSize: '18px',
+                fontWeight: '400',
+                outline: 'none',
+                marginBottom: '16px',
+                textAlign: 'center'
+              }}
+            />
+
+            {/* Email Input - Big, Optional */}
+            <input
+              type="email"
+              value={setupEmail}
+              onChange={(e) => setSetupEmail(e.target.value)}
+              placeholder="Email"
+              style={{
+                width: '100%',
+                background: 'rgba(255,255,255,0.08)',
+                border: 'none',
+                borderRadius: '16px',
+                padding: '20px',
+                color: 'white',
+                fontSize: '18px',
+                fontWeight: '400',
+                outline: 'none',
+                marginBottom: '32px',
+                textAlign: 'center'
+              }}
+            />
+
+            {/* Continue Button - Big */}
+            <button
+              onClick={handleSaveSetup}
+              disabled={!setupName.trim()}
+              style={{
+                width: '100%',
+                background: setupName.trim() 
+                  ? 'rgba(102,126,234,0.8)' 
+                  : 'rgba(102,126,234,0.2)',
+                border: 'none',
+                borderRadius: '16px',
+                padding: '20px',
+                color: 'white',
+                fontSize: '20px',
+                fontWeight: '500',
+                cursor: setupName.trim() ? 'pointer' : 'default',
+                opacity: setupName.trim() ? 1 : 0.5
+              }}
+            >
+              Continue
+            </button>
+          </div>
+        ) : (
+          <>
+            {/* Header - Simple */}
+            <div style={{
+              marginBottom: '40px',
+              textAlign: 'center'
+            }}>
+              {userPhoto && (
+                <div style={{
+                  width: '80px',
+                  height: '80px',
+                  margin: '0 auto 16px',
+                  borderRadius: '50%',
+                  overflow: 'hidden'
+                }}>
+                  <img src={userPhoto} alt="Profile" style={{width: '100%', height: '100%', objectFit: 'cover'}} />
+                </div>
+              )}
+              <h1 style={{
+                fontSize: 'clamp(24px, 6vw, 32px)',
+                fontWeight: '500',
+                marginBottom: '8px',
+                color: 'white'
+              }}>
+                {userName}
+              </h1>
+            </div>
+
+            {/* Create New Dash Button */}
         <button
           onClick={handleCreateMemorial}
           style={{
             width: '100%',
-            background: 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
+            background: 'rgba(102,126,234,0.2)',
             border: 'none',
-            borderRadius: '16px',
+            borderRadius: '12px',
             padding: '20px',
             color: 'white',
             fontSize: '18px',
-            fontWeight: '700',
+            fontWeight: '500',
             cursor: 'pointer',
             marginBottom: '32px',
-            boxShadow: '0 4px 20px rgba(102,126,234,0.4)'
+            transition: 'background 0.2s'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'rgba(102,126,234,0.3)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'rgba(102,126,234,0.2)';
           }}
         >
-          + Create New Dash
+          + Create a DASH
         </button>
 
         {/* My Dashes */}
         <div>
-          <h2 style={{
-            fontSize: '20px',
-            fontWeight: '600',
-            marginBottom: '20px',
-            color: 'rgba(255,255,255,0.9)'
-          }}>
-            My Dashes ({memorials.length})
-          </h2>
+          {memorials.length > 0 && (
+            <h2 style={{
+              fontSize: '18px',
+              fontWeight: '400',
+              marginBottom: '24px',
+              color: 'rgba(255,255,255,0.7)',
+              textAlign: 'center'
+            }}>
+              {memorials.length} {memorials.length === 1 ? 'Dash' : 'Dashes'}
+            </h2>
+          )}
 
           {isLoading ? (
             <div style={{
@@ -202,9 +397,8 @@ const AccountPage: React.FC = () => {
             <div style={{
               textAlign: 'center',
               padding: '60px 20px',
-              background: 'rgba(255,255,255,0.05)',
-              borderRadius: '16px',
-              border: '1px solid rgba(255,255,255,0.1)'
+              background: 'rgba(255,255,255,0.02)',
+              borderRadius: '12px'
             }}>
               <div style={{ fontSize: '48px', marginBottom: '16px' }}>📸</div>
                     <p style={{
@@ -232,23 +426,20 @@ const AccountPage: React.FC = () => {
                   key={memorial.id}
                   onClick={() => handleViewMemorial(memorial)}
                   style={{
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: '16px',
+                    background: 'rgba(255,255,255,0.03)',
+                    borderRadius: '12px',
                     padding: '20px',
                     cursor: 'pointer',
-                    transition: 'all 0.2s',
+                    transition: 'background 0.2s',
                     display: 'flex',
                     gap: '16px',
                     alignItems: 'center'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
-                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
-                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
                   }}
                 >
                   {/* Photo Preview */}
@@ -303,13 +494,20 @@ const AccountPage: React.FC = () => {
                       handleEditMemorial(memorial);
                     }}
                     style={{
-                      background: 'rgba(255,255,255,0.1)',
+                      background: 'transparent',
                       border: 'none',
                       borderRadius: '8px',
                       padding: '8px 12px',
-                      color: 'white',
+                      color: 'rgba(255,255,255,0.6)',
                       fontSize: '12px',
-                      cursor: 'pointer'
+                      cursor: 'pointer',
+                      transition: 'color 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = 'white';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = 'rgba(255,255,255,0.6)';
                     }}
                   >
                     Edit
@@ -319,6 +517,8 @@ const AccountPage: React.FC = () => {
             </div>
           )}
         </div>
+          </>
+        )}
       </div>
 
       {/* Top Navigation */}

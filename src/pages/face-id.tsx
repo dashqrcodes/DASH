@@ -20,7 +20,7 @@ const FaceIDPage: React.FC = () => {
         }
     }, [router.query]);
 
-    const buildTargetRoute = (fallback: string = '/profile') => {
+    const buildTargetRoute = (fallback: string = '/account') => {
         const { returnTo, order } = router.query;
         const targetPath = typeof returnTo === 'string' && returnTo.length > 0 ? returnTo : fallback;
         const query: Record<string, string> = {};
