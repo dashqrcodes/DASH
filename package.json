@@ -30,6 +30,7 @@
     "nodemailer": "^7.0.10",
     "pdf-lib": "^1.17.1",
     "qrcode": "^1.5.4",
+    "qrcode.react": "^4.2.0",
     "react": "latest",
     "react-dom": "latest",
     "react-xr": "^1.1.0",

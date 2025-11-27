@@ -4,7 +4,7 @@ import { useRouter } from 'next/router';
 import MuxPlayerWrapper from '../components/MuxPlayerWrapper';
 import CollaborationPanel from '../components/CollaborationPanel';
 import HamburgerMenu from '../components/HamburgerMenu';
-import BottomNav from '../components/BottomNav';
+import TopNav from '../components/TopNav';
 import SpotifyTrackSearch from '../components/SpotifyTrackSearch';
 import { initLazyLoading, preloadImages } from '../utils/lazy-loading';
 import { uploadSlideshowMedia, storeSlideshowMedia, getSlideshowMedia, supabase } from '../utils/supabase';
@@ -545,7 +545,7 @@ const SlideshowPage: React.FC = () => {
     };
   }, []);
 
-  // Listen for Heart icon clicks from BottomNav to open collaboration drawer
+  // Listen for Heart icon clicks from TopNav to open collaboration drawer
   useEffect(() => {
     const openCollab = () => {
       handleOpenCollaboration();
@@ -556,7 +556,7 @@ const SlideshowPage: React.FC = () => {
     };
   }, []);
 
-  // Listen for Plus icon clicks from BottomNav to open file picker
+  // Listen for Plus icon clicks from TopNav to open file picker
   useEffect(() => {
     const openFilePicker = () => {
       if (fileInputRef.current) {
@@ -585,7 +585,7 @@ const SlideshowPage: React.FC = () => {
     };
   }, []);
 
-  // Listen for music selector event from BottomNav
+  // Listen for music selector event from TopNav
   useEffect(() => {
     const handleOpenMusicSelector = () => {
       setShowMusicSelector(true);
@@ -2981,8 +2981,8 @@ const SlideshowPage: React.FC = () => {
         </div>
       )}
 
-      {/* Bottom Navigation */}
-      <BottomNav activeTab="music" />
+      {/* Top Navigation */}
+      <TopNav activeTab="music" />
 
       {isCollaborationOpen && (
         <div

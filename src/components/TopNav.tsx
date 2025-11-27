@@ -1,19 +1,20 @@
-// Reusable Bottom Navigation Component
-// Used across all pages: Home, Profile, HEAVEN (center), Music, Slideshow
+// Top Navigation Component
+// Used across all pages: Home, User Profile, HEAVEN, Plus, Music, Share
+// Positioned at top to avoid mobile browser UI conflicts
 
 import React from 'react';
 import { useRouter } from 'next/router';
 
-interface BottomNavProps {
-    activeTab?: 'home' | 'heaven' | 'music' | 'heart';
+interface TopNavProps {
+    activeTab?: 'home' | 'profile' | 'heaven' | 'plus' | 'music' | 'share';
 }
 
-const BottomNav: React.FC<BottomNavProps> = ({ activeTab }) => {
+const TopNav: React.FC<TopNavProps> = ({ activeTab }) => {
     const router = useRouter();
 
-    const handleHeavenCall = () => {
-        // Navigate to heaven page and trigger call
-        router.push('/heaven?call=true');
+    const handleHeaven = () => {
+        // Navigate to HEAVEN demo/fundraising page
+        router.push('/heaven');
     };
 
     return (
@@ -73,9 +74,47 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab }) => {
                 }}>Home</span>
             </button>
 
-            {/* HEAVEN (Video Call) */}
+            {/* User Profile */}
             <button
-                onClick={handleHeavenCall}
+                onClick={() => router.push('/account')}
+                style={{
+                    background: activeTab === 'profile' ? 'rgba(102,126,234,0.2)' : 'transparent',
+                    border: 'none',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '4px',
+                    cursor: 'pointer',
+                    minWidth: '44px',
+                    minHeight: '44px',
+                    padding: '8px',
+                    borderRadius: '8px',
+                    transition: 'all 0.2s',
+                    WebkitTapHighlightColor: 'transparent'
+                }}
+                onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                    e.currentTarget.style.opacity = '1';
+                }}
+                onMouseLeave={(e) => {
+                    e.currentTarget.style.background = activeTab === 'profile' ? 'rgba(102,126,234,0.2)' : 'transparent';
+                    e.currentTarget.style.opacity = '1';
+                }}
+            >
+                <svg width="clamp(20px, 5vw, 24px)" height="clamp(20px, 5vw, 24px)" viewBox="0 0 24 24" fill="none" stroke={activeTab === 'profile' ? 'white' : 'rgba(255,255,255,0.7)'} strokeWidth="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                </svg>
+                <span style={{
+                    fontSize: 'clamp(9px, 2.5vw, 10px)',
+                    fontWeight: '500',
+                    color: activeTab === 'profile' ? 'white' : 'rgba(255,255,255,0.7)'
+                }}>Profile</span>
+            </button>
+
+            {/* HEAVEN (Demo/Fundraising) */}
+            <button
+                onClick={handleHeaven}
                 style={{
                     background: 'transparent',
                     border: 'none',
@@ -109,7 +148,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab }) => {
                 }}>HEAVEN</span>
             </button>
 
-            {/* Plus Sign (Opens File Picker) */}
+            {/* Plus Sign (Add Content) */}
             <button
                 onClick={() => {
                     // Dispatch event to open file picker
@@ -201,7 +240,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab }) => {
                     window.dispatchEvent(event);
                 }}
                 style={{
-                    background: activeTab === 'heart' ? 'rgba(255,77,77,0.2)' : 'transparent',
+                    background: activeTab === 'share' ? 'rgba(255,77,77,0.2)' : 'transparent',
                     border: 'none',
                     display: 'flex',
                     flexDirection: 'column',
@@ -220,22 +259,22 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab }) => {
                     e.currentTarget.style.opacity = '1';
                 }}
                 onMouseLeave={(e) => {
-                    e.currentTarget.style.background = activeTab === 'heart' ? 'rgba(255,77,77,0.2)' : 'transparent';
+                    e.currentTarget.style.background = activeTab === 'share' ? 'rgba(255,77,77,0.2)' : 'transparent';
                     e.currentTarget.style.opacity = '1';
                 }}
             >
-                <svg width="clamp(20px, 5vw, 24px)" height="clamp(20px, 5vw, 24px)" viewBox="0 0 24 24" fill={activeTab === 'heart' ? '#ff4d4d' : 'none'} stroke={activeTab === 'heart' ? '#ff4d4d' : 'rgba(255,255,255,0.7)'} strokeWidth="2">
+                <svg width="clamp(20px, 5vw, 24px)" height="clamp(20px, 5vw, 24px)" viewBox="0 0 24 24" fill={activeTab === 'share' ? '#ff4d4d' : 'none'} stroke={activeTab === 'share' ? '#ff4d4d' : 'rgba(255,255,255,0.7)'} strokeWidth="2">
                     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                 </svg>
                 <span style={{
                     fontSize: 'clamp(9px, 2.5vw, 10px)',
                     fontWeight: '500',
-                    color: activeTab === 'heart' ? '#ff4d4d' : 'rgba(255,255,255,0.7)'
+                    color: activeTab === 'share' ? '#ff4d4d' : 'rgba(255,255,255,0.7)'
                 }}>Share</span>
             </button>
         </div>
     );
 };
 
-export default BottomNav;
+export default TopNav;
 

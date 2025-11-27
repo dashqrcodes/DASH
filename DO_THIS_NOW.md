@@ -1,36 +1,44 @@
-# 🎯 DO THIS RIGHT NOW (2 Steps!)
+# Do This Right Now - Step by Step
 
-## Step 1: Get Your Video URL
+## Step 1: Install GPG (2 minutes)
 
-**Where's your video?**
-- Google Drive? → Get share link
-- Already online? → Copy that URL
-
-## Step 2: Run This Command
-
-**Replace `YOUR_VIDEO_URL` with your actual URL:**
+Copy and paste this command:
 
 ```bash
-curl -X POST https://dashmemories.com/api/heaven/auto-setup-video \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "kobe-bryant",
-    "googleDriveUrl": "YOUR_VIDEO_URL",
-    "uploadToMux": true
-  }'
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
-**That's it!** The API will:
-- Upload to Mux automatically
-- Save to Supabase
-- Video works immediately
+If you already have Homebrew, skip to:
 
-**For Kelly Wong, change `"kobe-bryant"` to `"kelly-wong"`**
+```bash
+brew install gnupg
+```
+
+Wait for it to finish, then tell me "GPG installed" and I'll do the rest automatically!
 
 ---
 
-## Or Just Tell Me:
+## What I'll Do After You Install GPG:
 
-1. Where's your video? (Google Drive URL? Other?)
-2. I'll give you the exact command to run!
+1. ✅ Generate your GPG key
+2. ✅ Configure Git to auto-sign commits  
+3. ✅ Give you the key to paste into GitHub (one copy-paste)
+4. ✅ Test it
 
+Then you're done - all commits will be verified and Vercel will auto-deploy!
+
+---
+
+## Alternative (If Installation Takes Too Long):
+
+If Homebrew installation is slow, you can:
+
+**Option A:** Make repo private (30 seconds)
+- Go to GitHub → Settings → Change visibility → Make private
+- Then disable GPG verification in Vercel
+- Done!
+
+**Option B:** Keep using `vercel --prod` for now
+- Works fine, just manual step
+
+But GPG setup is the professional choice! 🚀

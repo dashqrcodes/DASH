@@ -2,7 +2,7 @@ import React from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import BottomNav from '../components/BottomNav';
+import TopNav from '../components/TopNav';
 
 const WhatWeBuild: React.FC = () => {
   const router = useRouter();
@@ -447,7 +447,7 @@ const WhatWeBuild: React.FC = () => {
           }
         }
       `}</style>
-      <BottomNav activeTab="home" />
+      <TopNav activeTab="home" />
     </>
   );
 };

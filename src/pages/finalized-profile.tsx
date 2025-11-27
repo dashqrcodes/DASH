@@ -13,7 +13,7 @@
 import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import BottomNav from '../components/BottomNav';
+import TopNav from '../components/TopNav';
 import MuxPlayerWrapper from '../components/MuxPlayerWrapper';
 import HamburgerMenu from '../components/HamburgerMenu';
 

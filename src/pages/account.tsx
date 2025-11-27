@@ -5,7 +5,7 @@
 import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import BottomNav from '../components/BottomNav';
+import TopNav from '../components/TopNav';
 
 interface Memorial {
   id: string;
@@ -321,8 +321,8 @@ const AccountPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Bottom Navigation */}
-      <BottomNav activeTab="home" />
+      {/* Top Navigation */}
+      <TopNav activeTab="home" />
     </>
   );
 };

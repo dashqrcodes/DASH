@@ -8,8 +8,6 @@ const ScreenPreview: React.FC = () => {
         { path: '/sign-up', name: 'Sign Up', description: 'User registration page' },
         { path: '/sign-in', name: 'Sign In', description: 'User login page' },
         { path: '/cards', name: 'Memorial Cards', description: 'Memorial card builder' },
-        { path: '/life-chapters', name: 'Life Chapters', description: 'Life chapters page' },
-        { path: '/life-chapters-slideshow', name: 'Life Chapters Slideshow', description: 'Slideshow version' },
         { path: '/design-carousel', name: 'Design Carousel', description: 'Design selection' },
         { path: '/enlargement', name: 'Enlargement', description: 'Enlargement builder' },
         { path: '/heaven', name: 'Heaven', description: 'Heaven page' },
