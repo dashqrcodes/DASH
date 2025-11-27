@@ -154,7 +154,7 @@ const AccountPage: React.FC = () => {
   };
 
   const handleCreateMemorial = () => {
-    router.push('/create-memorial');
+    router.push('/create-dash');
   };
 
   const handleViewMemorial = (memorial: Memorial) => {
@@ -163,7 +163,7 @@ const AccountPage: React.FC = () => {
 
   const handleEditMemorial = (memorial: Memorial) => {
     // Navigate to edit page or slideshow with edit mode
-    router.push(`/create-memorial?edit=${memorial.id}`);
+    router.push(`/create-dash?edit=${memorial.id}`);
   };
 
   const handleSetupPhotoUpload = () => {

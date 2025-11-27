@@ -1,6 +1,6 @@
 // Redirect /profile to /account for backward compatibility
 // User accounts are at /account
-// Deceased memorial creation is at /create-memorial
+// Deceased memorial creation is at /create-dash
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
