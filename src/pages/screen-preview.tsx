@@ -4,7 +4,7 @@ import Link from 'next/link';
 
 const ScreenPreview: React.FC = () => {
     const screens = [
-        { path: '/dashboard', name: 'Dashboard', description: 'Product hub - main entry point' },
+        { path: '/account', name: 'Account', description: 'User account dashboard - main entry point' },
         { path: '/sign-up', name: 'Sign Up', description: 'User registration page' },
         { path: '/sign-in', name: 'Sign In', description: 'User login page' },
         { path: '/cards', name: 'Memorial Cards', description: 'Memorial card builder' },
@@ -12,7 +12,7 @@ const ScreenPreview: React.FC = () => {
         { path: '/enlargement', name: 'Enlargement', description: 'Enlargement builder' },
         { path: '/heaven', name: 'Heaven', description: 'Heaven page' },
         { path: '/slideshow', name: 'Slideshow', description: 'Slideshow feature' },
-        { path: '/loading', name: 'Loading', description: 'Loading screen (redirects to dashboard)' },
+        { path: '/loading', name: 'Loading', description: 'Loading screen (redirects to account)' },
         { path: '/scanner', name: 'Scanner', description: 'QR code scanner' },
         { path: '/success', name: 'Success', description: 'Success page' },
         { path: '/spotify-callback', name: 'Spotify Callback', description: 'OAuth callback (needed for auth)' },

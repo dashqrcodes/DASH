@@ -10,7 +10,7 @@ const SignInForm: React.FC = () => {
         e.preventDefault();
         console.log('Phone Number:', phoneNumber);
         console.log('Password:', password);
-        router.push('/dashboard');
+        router.push('/account');
     };
 
     return (

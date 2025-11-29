@@ -40,7 +40,7 @@ const CheckoutPage: React.FC = () => {
     const handleSubmitOrder = async () => {
         if (!cardData) {
             alert('No designs found. Please create a card or poster first.');
-            router.push('/dashboard');
+            router.push('/account');
             return;
         }
 

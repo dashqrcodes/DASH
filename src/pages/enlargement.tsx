@@ -245,7 +245,7 @@ const EnlargementPage: React.FC = () => {
                 </div>
 
                 <div style={{ marginTop: '2rem', textAlign: 'center', paddingBottom: '2rem' }}>
-                    <Link href="/dashboard" style={{ color: '#667eea', textDecoration: 'none', fontWeight: '600' }}>
+                    <Link href="/account" style={{ color: '#667eea', textDecoration: 'none', fontWeight: '600' }}>
                         ← Back to Dashboard
                     </Link>
                 </div>

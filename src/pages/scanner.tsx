@@ -154,7 +154,7 @@ const ScannerPage: React.FC = () => {
                 </div>
 
                 <div style={{ marginTop: '2rem', textAlign: 'center' }}>
-                    <Link href="/dashboard" className="login-text" style={{ textDecoration: 'none' }}>
+                    <Link href="/account" className="login-text" style={{ textDecoration: 'none' }}>
                         ← Back to Dashboard
                     </Link>
                 </div>

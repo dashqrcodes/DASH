@@ -106,7 +106,7 @@ const SpotifyCallbackPage: React.FC = () => {
 
             // Redirect to dashboard after delay (matching HTML version timing)
             setTimeout(() => {
-                router.push('/dashboard');
+                router.push('/account');
             }, 2000);
 
         } catch (error: any) {

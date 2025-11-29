@@ -110,7 +110,7 @@ const SuccessPage: React.FC = () => {
                         View your order status and track production progress
                     </p>
                     <Link 
-                        href="/dashboard" 
+                        href="/account" 
                         className="signup-button"
                         style={{ 
                             textAlign: 'center', 
@@ -134,7 +134,7 @@ const SuccessPage: React.FC = () => {
                         View Profile
                     </Link>
                     <Link 
-                        href="/dashboard" 
+                        href="/account" 
                         className="social-button"
                         style={{ 
                             textAlign: 'center', 

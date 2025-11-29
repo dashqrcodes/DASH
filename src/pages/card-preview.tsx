@@ -344,7 +344,7 @@ const CardPreviewPage: React.FC = () => {
                     justifyContent: 'space-around',
                     zIndex: 100
                 }}>
-                    <Link href="/dashboard">
+                    <Link href="/account">
                         <button style={{
                             background: 'transparent',
                             border: 'none',

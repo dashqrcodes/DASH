@@ -64,7 +64,7 @@ const LoadingPage: React.FC = () => {
 
             // Redirect after delay
             setTimeout(() => {
-                router.push('/dashboard');
+                router.push('/account');
             }, 2000);
         }, loadingTime);
 
