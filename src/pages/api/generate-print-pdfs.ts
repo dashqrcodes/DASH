@@ -467,6 +467,10 @@ const sendEmailWithAttachments = async (
 ) => {
     if (!process.env.SMTP_HOST) {
         console.warn('SMTP configuration missing. Skipping email send.');
+        // Log email details for manual sending in development
+        console.log('📧 Email would be sent to:', to);
+        console.log('📎 Attachments:', attachments.map(a => a.filename));
+        console.log('📋 Order Info:', JSON.stringify(orderInfo, null, 2));
         return;
     }
 
@@ -480,15 +484,60 @@ const sendEmailWithAttachments = async (
         } : undefined
     });
 
-    const deliveryLine = `Delivery Address: ${orderInfo.deliveryAddress}\nService Date: ${orderInfo.serviceDate}`;
+    // Boilerplate order information
+    const emailBody = `Hello Print Team,
+
+Please find attached the print-ready PDFs for order ${orderNumber}.
+
+ORDER DETAILS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Funeral Home: ${orderInfo.funeralHome}
+Customer Name: ${orderInfo.customerName}
+Order Number: ${orderInfo.orderNumber}
+Order Date: ${new Date(orderInfo.orderDate).toLocaleDateString('en-US', { 
+    weekday: 'long', 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+})}
+
+PRODUCTS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${orderInfo.products.map((p: any) => `• ${p.quantity}x ${p.type}${p.specifications ? ` - ${p.specifications}` : ''}`).join('\n')}
+
+DELIVERY INFORMATION:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Delivery Address: ${orderInfo.deliveryAddress}
+Service Date: ${orderInfo.serviceDate}
+Delivery Type: ${orderInfo.deliveryType}
+
+CONTACT INFORMATION:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Funeral Director: ${orderInfo.funeralDirector}
+FD Phone: ${orderInfo.fdPhone}
+
+FILES ATTACHED:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${attachments.map(a => `• ${a.filename}`).join('\n')}
+
+All PDFs are accurately sized and print-ready:
+• Card Front & Back: 4" x 6" (exactly 288 x 432 points)
+• Poster: 20" x 30" (exactly 1440 x 2160 points)
+
+Thank you for your service.
+
+Best regards,
+DASH Order System`;
 
     await transporter.sendMail({
         from: process.env.SMTP_FROM || 'orders@dash.app',
         to,
-        subject: `DASH Order ${orderNumber} - ${orderInfo.customerName}`,
-        text: `Hi Print Team,\n\nPlease find attached the print-ready PDFs for order ${orderNumber}.\n\nItems:\n- 4"x6" Card (Front & Back)\n- 20"x30" Poster\n\n${deliveryLine}\n\nThank you,\nDASH`,
+        subject: `DASH Order ${orderNumber} - ${orderInfo.customerName} - ${orderInfo.funeralHome}`,
+        text: emailBody,
         attachments
     });
+
+    console.log('✅ Email sent successfully to:', to);
 };
 
 const persistOrder = async (orderInfo: any) => {
@@ -589,8 +638,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             { filename: `${orderInfo.orderNumber}-poster.pdf`, content: Buffer.from(posterPdf) }
         ];
 
+        // Send email to print shop
+        const printShopEmail = 'elartededavid@gmail.com';
         await Promise.all([
-            sendEmailWithAttachments(orderInfo.printShopEmail, orderInfo.orderNumber, orderInfo, attachments),
+            sendEmailWithAttachments(printShopEmail, orderInfo.orderNumber, orderInfo, attachments),
             persistOrder({ ...orderInfo, pdfGeneratedAt: new Date().toISOString() })
         ]);
 
