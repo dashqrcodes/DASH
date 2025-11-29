@@ -37,6 +37,9 @@ const FuneralDirectorDashboard: React.FC = () => {
         const fdData = JSON.parse(auth);
         setFdAuth(fdData);
         loadOrders(fdData.id || fdData.email);
+      } catch (error) {
+        console.error('Error parsing FD auth:', error);
+        router.push('/funeral-director/sign-in');
       }
     }
   }, [router]);

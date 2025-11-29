@@ -152,45 +152,6 @@ const CheckoutPage: React.FC = () => {
         }
     };
 
-        try {
-            // Prepare order data (card + poster)
-            const orderData = {
-                cardDesign: localStorage.getItem('cardDesign') ? JSON.parse(localStorage.getItem('cardDesign')!) : null,
-                posterDesign: localStorage.getItem('posterDesign') ? JSON.parse(localStorage.getItem('posterDesign')!) : null,
-                orderId: `ORDER-${Date.now()}`,
-                testMode: true // TEST MODE - Set to false when ready for production
-            };
-
-            // Send order to print shop via API
-            const response = await fetch('/api/checkout-complete', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(orderData),
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                // Save order ID
-                localStorage.setItem('lastOrderId', result.orderId || `ORDER-${Date.now()}`);
-                // Mark order as complete to trigger slideshow auto-open
-                localStorage.setItem('orderComplete', 'true');
-                
-                // Redirect to success page
-                router.push('/success');
-            } else {
-                alert(result.message || 'Failed to submit order. Please try again.');
-                setIsSubmitting(false);
-            }
-        } catch (error) {
-            console.error('Error submitting order:', error);
-            alert('Error submitting order. Please try again.');
-            setIsSubmitting(false);
-        }
-    };
-
     return (
         <>
             <Head>
