@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import twilio from 'twilio';
+import { storeOTPCode } from '../../utils/supabase';
 
 // SMS Provider Integration with Twilio
 interface SendOTPRequest {
@@ -51,16 +52,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         const authToken = process.env.TWILIO_AUTH_TOKEN;
         const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
 
-        if (!accountSid || !authToken || !twilioPhoneNumber) {
-            console.error('Twilio credentials not configured');
-            // Fallback: Store code for verification (development/testing)
+        // Store code in Supabase (or memory fallback)
+        const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes
+        const storeResult = await storeOTPCode(formattedPhone, code, expiresAt);
+        
+        if (!storeResult.success) {
+            console.warn('Failed to store OTP in Supabase, using memory fallback:', storeResult.error);
+            // Fallback to memory storage if Supabase fails
             if (typeof global !== 'undefined') {
                 (global as any).otpCodes = (global as any).otpCodes || {};
                 (global as any).otpCodes[formattedPhone] = {
                     code,
-                    expiresAt: Date.now() + 5 * 60 * 1000 // 5 minutes
+                    expiresAt
                 };
             }
+        }
+
+        if (!accountSid || !authToken || !twilioPhoneNumber) {
+            console.error('Twilio credentials not configured');
             
             console.log('📱 SMS (SIMULATED):', {
                 to: formattedPhone,
@@ -90,13 +99,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
                 status: message.status
             });
 
-            // Store code in memory (in production, use Redis or database)
-            if (typeof global !== 'undefined') {
-                (global as any).otpCodes = (global as any).otpCodes || {};
-                (global as any).otpCodes[formattedPhone] = {
-                    code,
-                    expiresAt: Date.now() + 5 * 60 * 1000 // 5 minutes
-                };
+            // Store code in Supabase
+            const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes
+            const storeResult = await storeOTPCode(formattedPhone, code, expiresAt);
+            
+            if (!storeResult.success) {
+                console.warn('Failed to store OTP in Supabase, falling back to memory:', storeResult.error);
+                // Fallback to memory storage if Supabase fails
+                if (typeof global !== 'undefined') {
+                    (global as any).otpCodes = (global as any).otpCodes || {};
+                    (global as any).otpCodes[formattedPhone] = {
+                        code,
+                        expiresAt
+                    };
+                }
             }
 
             return res.status(200).json({

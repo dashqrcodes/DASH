@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { verifyOTPCode } from '../../utils/supabase';
 
 interface VerifyOTPRequest {
     phoneNumber: string;
@@ -31,26 +32,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
             formattedPhone = `+${formattedPhone}`;
         }
 
-        // Get stored code
-        const storedData = (global as any).otpCodes?.[formattedPhone];
+        // Verify code using Supabase
+        const verifyResult = await verifyOTPCode(formattedPhone, code);
 
-        if (!storedData) {
-            return res.status(400).json({ success: false, error: 'Code not found. Please request a new code.' });
+        if (!verifyResult.success) {
+            // Fallback to memory storage if Supabase fails
+            const storedData = (global as any).otpCodes?.[formattedPhone];
+            
+            if (storedData) {
+                // Check expiration
+                if (Date.now() > storedData.expiresAt) {
+                    delete (global as any).otpCodes[formattedPhone];
+                    return res.status(400).json({ success: false, error: 'Code expired. Please request a new code.' });
+                }
+
+                // Verify code
+                if (storedData.code !== code) {
+                    return res.status(400).json({ success: false, error: 'Invalid verification code' });
+                }
+
+                // Code verified successfully
+                delete (global as any).otpCodes[formattedPhone];
+                return res.status(200).json({
+                    success: true,
+                    message: 'Code verified successfully'
+                });
+            }
+
+            // Return Supabase error or fallback error
+            return res.status(400).json({ 
+                success: false, 
+                error: verifyResult.error || 'Code not found. Please request a new code.' 
+            });
         }
-
-        // Check expiration
-        if (Date.now() > storedData.expiresAt) {
-            delete (global as any).otpCodes[formattedPhone];
-            return res.status(400).json({ success: false, error: 'Code expired. Please request a new code.' });
-        }
-
-        // Verify code
-        if (storedData.code !== code) {
-            return res.status(400).json({ success: false, error: 'Invalid verification code' });
-        }
-
-        // Code verified successfully
-        delete (global as any).otpCodes[formattedPhone];
 
         return res.status(200).json({
             success: true,

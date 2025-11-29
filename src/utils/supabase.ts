@@ -390,3 +390,125 @@ export async function getSlideshowMedia(userId: string, memorialId: string) {
   }
 }
 
+/**
+ * OTP Code Management Functions
+ * Store and verify OTP codes for phone number authentication
+ */
+
+/**
+ * Store OTP code in Supabase
+ * @param phoneNumber - Formatted phone number (e.g., +15551234567)
+ * @param code - 6-digit verification code
+ * @param expiresAt - Expiration timestamp (milliseconds since epoch)
+ */
+export async function storeOTPCode(phoneNumber: string, code: string, expiresAt: number) {
+  if (!supabase) return { success: false, error: 'Supabase not configured' };
+  
+  try {
+    // First, delete any existing codes for this phone number
+    await supabase
+      .from('otp_codes')
+      .delete()
+      .eq('phone_number', phoneNumber);
+
+    // Insert new code
+    const { data, error } = await supabase
+      .from('otp_codes')
+      .insert({
+        phone_number: phoneNumber,
+        code: code,
+        expires_at: new Date(expiresAt).toISOString(),
+        created_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error storing OTP code:', error);
+      return { success: false, error };
+    }
+
+    return { success: true, data };
+  } catch (error: any) {
+    console.error('Error storing OTP code:', error);
+    return { success: false, error };
+  }
+}
+
+/**
+ * Verify OTP code from Supabase
+ * @param phoneNumber - Formatted phone number
+ * @param code - Code to verify
+ * @returns Success status and error message if failed
+ */
+export async function verifyOTPCode(phoneNumber: string, code: string) {
+  if (!supabase) return { success: false, error: 'Supabase not configured' };
+
+  try {
+    // Get the most recent code for this phone number
+    const { data, error } = await supabase
+      .from('otp_codes')
+      .select('*')
+      .eq('phone_number', phoneNumber)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (error || !data) {
+      return { success: false, error: 'Code not found. Please request a new code.' };
+    }
+
+    // Check expiration
+    const expiresAt = new Date(data.expires_at).getTime();
+    if (Date.now() > expiresAt) {
+      // Delete expired code
+      await supabase
+        .from('otp_codes')
+        .delete()
+        .eq('id', data.id);
+      return { success: false, error: 'Code expired. Please request a new code.' };
+    }
+
+    // Verify code
+    if (data.code !== code) {
+      return { success: false, error: 'Invalid verification code' };
+    }
+
+    // Code verified - delete it (one-time use)
+    await supabase
+      .from('otp_codes')
+      .delete()
+      .eq('id', data.id);
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error verifying OTP code:', error);
+    return { success: false, error: error.message || 'Failed to verify code' };
+  }
+}
+
+/**
+ * Clean up expired OTP codes (can be called periodically)
+ */
+export async function cleanupExpiredOTPCodes() {
+  if (!supabase) return { success: false, error: 'Supabase not configured' };
+
+  try {
+    const now = new Date().toISOString();
+    const { error } = await supabase
+      .from('otp_codes')
+      .delete()
+      .lt('expires_at', now);
+
+    if (error) {
+      console.error('Error cleaning up expired OTP codes:', error);
+      return { success: false, error };
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error cleaning up expired OTP codes:', error);
+    return { success: false, error };
+  }
+}
+
