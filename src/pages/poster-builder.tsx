@@ -100,9 +100,9 @@ const PosterBuilderPage: React.FC = () => {
             analyzeImageBrightness(memorial.photo);
           }
           
-          // Generate QR code using the slug from URL
+          // Generate QR code using the slug from URL - MUST use same URL as card
           const memorialUrl = getMemorialUrl(memorialSlug);
-          generateQRCode();
+          generateQRCode(memorialUrl);
           return;
         } catch (e) {
           console.error('Error loading memorial:', e);
@@ -143,34 +143,37 @@ const PosterBuilderPage: React.FC = () => {
     analyzeImageBrightness(photo);
   }, [photo]);
 
-  // Generate QR code
-  const generateQRCode = async () => {
+  // Generate QR code - MUST use same URL as card builder for consistency
+  const generateQRCode = async (customUrl?: string) => {
     try {
-      // Generate memorial URL using slug system
-      let memorialUrl: string | null = null;
+      // Use provided URL first (ensures consistency with card builder)
+      let memorialUrl: string | null = customUrl || null;
       
-      // First, check if we have a memorialSlug from query param
-      const memorialSlug = router.query.memorialSlug as string | undefined;
-      if (memorialSlug) {
-        memorialUrl = getMemorialUrl(memorialSlug);
-      } else if (name) {
-        // Fallback: generate slug from name
-        const slug = generateSlug(name);
-        memorialUrl = getMemorialUrl(slug);
-      }
-      
-      // Final fallback: try to get from localStorage
+      // If no URL provided, generate from slug system
       if (!memorialUrl) {
-        const savedMemorials = typeof window !== 'undefined' ? localStorage.getItem('memorials') : null;
-        if (savedMemorials) {
-          try {
-            const memorials = JSON.parse(savedMemorials);
-            const memorial = memorials[memorials.length - 1]; // Get latest
-            if (memorial?.slug) {
-              memorialUrl = getMemorialUrl(memorial.slug);
+        // First, check if we have a memorialSlug from query param
+        const memorialSlug = router.query.memorialSlug as string | undefined;
+        if (memorialSlug) {
+          memorialUrl = getMemorialUrl(memorialSlug);
+        } else if (name) {
+          // Fallback: generate slug from name
+          const slug = generateSlug(name);
+          memorialUrl = getMemorialUrl(slug);
+        }
+        
+        // Final fallback: try to get from localStorage
+        if (!memorialUrl) {
+          const savedMemorials = typeof window !== 'undefined' ? localStorage.getItem('memorials') : null;
+          if (savedMemorials) {
+            try {
+              const memorials = JSON.parse(savedMemorials);
+              const memorial = memorials[memorials.length - 1]; // Get latest
+              if (memorial?.slug) {
+                memorialUrl = getMemorialUrl(memorial.slug);
+              }
+            } catch (e) {
+              console.error('Error loading memorial for QR:', e);
             }
-          } catch (e) {
-            console.error('Error loading memorial for QR:', e);
           }
         }
       }
