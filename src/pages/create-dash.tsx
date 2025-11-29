@@ -727,10 +727,10 @@ const CreateMemorialPage: React.FC = () => {
         // Also save as current memorial (for easy access)
         localStorage.setItem(`memorial_${slug}`, JSON.stringify(memorial));
         
-        // Navigate to design page (shows QR code and links to card/poster builders)
-        router.push(`/life-dash/${slug}/design`).catch((error) => {
+        // Navigate directly to 4x6 card builder with memorial slug
+        router.push(`/memorial-card-builder-4x6?memorialSlug=${slug}`).catch((error) => {
             console.error('Navigation error:', error);
-            alert('Error navigating to design page. Please try again.');
+            alert('Error navigating to card builder. Please try again.');
         });
     };
 
