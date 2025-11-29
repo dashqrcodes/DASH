@@ -315,6 +315,7 @@ const CreateMemorialPage: React.FC = () => {
     const [sunset, setSunset] = useState('');
     const [photo, setPhoto] = useState<string | null>(null);
     const [language, setLanguage] = useState<'en' | 'es'>('en');
+    const [showConfirmation, setShowConfirmation] = useState(false);
     const isDataLoaded = useRef(false);
 
     // Translations
@@ -669,22 +670,27 @@ const CreateMemorialPage: React.FC = () => {
     const handleNext = () => {
         // Validate form is complete
         if (!name.trim()) {
-            alert('Please enter a name');
+            alert(language === 'en' ? 'Please enter a name' : 'Por favor, ingrese un nombre');
             return;
         }
         if (!sunrise.trim()) {
-            alert('Please select a birth date (Sunrise)');
+            alert(language === 'en' ? 'Please select a birth date (Sunrise)' : 'Por favor, seleccione la fecha de nacimiento');
             return;
         }
         if (!sunset.trim()) {
-            alert('Please select a death date (Sunset)');
+            alert(language === 'en' ? 'Please select a death date (Sunset)' : 'Por favor, seleccione la fecha de fallecimiento');
             return;
         }
         if (!photo) {
-            alert('Please upload a photo');
+            alert(language === 'en' ? 'Please upload a photo' : 'Por favor, suba una foto');
             return;
         }
         
+        // Show confirmation popup
+        setShowConfirmation(true);
+    };
+
+    const handleConfirmYes = () => {
         // Generate slug from name
         const slug = generateSlug(name);
         const memorialId = `memorial-${Date.now()}`;
@@ -727,11 +733,17 @@ const CreateMemorialPage: React.FC = () => {
         // Also save as current memorial (for easy access)
         localStorage.setItem(`memorial_${slug}`, JSON.stringify(memorial));
         
-        // Navigate directly to 4x6 card builder with memorial slug
+        // Close confirmation and navigate
+        setShowConfirmation(false);
         router.push(`/memorial-card-builder-4x6?memorialSlug=${slug}`).catch((error) => {
             console.error('Navigation error:', error);
-            alert('Error navigating to card builder. Please try again.');
+            alert(language === 'en' ? 'Error navigating to card builder. Please try again.' : 'Error al navegar. Por favor, intente de nuevo.');
         });
+    };
+
+    const handleConfirmNo = () => {
+        // Close popup and return to form
+        setShowConfirmation(false);
     };
 
     return (
@@ -1080,6 +1092,162 @@ const CreateMemorialPage: React.FC = () => {
                             </div>
                         )}
                     </div>
+
+                    {/* Confirmation Popup */}
+                    {showConfirmation && (
+                        <div style={{
+                            position: 'fixed',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            background: 'rgba(0, 0, 0, 0.8)',
+                            backdropFilter: 'blur(10px)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 10000,
+                            padding: '20px'
+                        }}>
+                            <div style={{
+                                background: '#1a1a1a',
+                                borderRadius: '20px',
+                                padding: '32px',
+                                maxWidth: '400px',
+                                width: '100%',
+                                border: '1px solid rgba(255,255,255,0.1)',
+                                textAlign: 'center'
+                            }}>
+                                <h2 style={{
+                                    fontSize: '24px',
+                                    fontWeight: '600',
+                                    color: 'white',
+                                    marginBottom: '20px'
+                                }}>
+                                    {language === 'en' ? 'Is all information correct?' : '¿Es correcta toda la información?'}
+                                </h2>
+                                
+                                {/* Display preview of information */}
+                                <div style={{
+                                    background: 'rgba(255,255,255,0.05)',
+                                    borderRadius: '12px',
+                                    padding: '20px',
+                                    marginBottom: '24px',
+                                    textAlign: 'left'
+                                }}>
+                                    {name && (
+                                        <div style={{ marginBottom: '12px' }}>
+                                            <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '4px' }}>
+                                                {language === 'en' ? 'Name' : 'Nombre'}
+                                            </div>
+                                            <div style={{ fontSize: '16px', color: 'white', fontWeight: '500' }}>
+                                                {name}
+                                            </div>
+                                        </div>
+                                    )}
+                                    {sunrise && (
+                                        <div style={{ marginBottom: '12px' }}>
+                                            <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '4px' }}>
+                                                {language === 'en' ? 'Sunrise (Birth)' : 'Nacimiento'}
+                                            </div>
+                                            <div style={{ fontSize: '16px', color: 'white', fontWeight: '500' }}>
+                                                {new Date(sunrise).toLocaleDateString(language === 'en' ? 'en-US' : 'es-ES', { 
+                                                    year: 'numeric', 
+                                                    month: 'long', 
+                                                    day: 'numeric' 
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+                                    {sunset && (
+                                        <div style={{ marginBottom: '12px' }}>
+                                            <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '4px' }}>
+                                                {language === 'en' ? 'Sunset (Death)' : 'Fallecimiento'}
+                                            </div>
+                                            <div style={{ fontSize: '16px', color: 'white', fontWeight: '500' }}>
+                                                {new Date(sunset).toLocaleDateString(language === 'en' ? 'en-US' : 'es-ES', { 
+                                                    year: 'numeric', 
+                                                    month: 'long', 
+                                                    day: 'numeric' 
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+                                    {photo && (
+                                        <div>
+                                            <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '8px' }}>
+                                                {language === 'en' ? 'Photo' : 'Foto'}
+                                            </div>
+                                            <div style={{
+                                                width: '80px',
+                                                height: '80px',
+                                                borderRadius: '8px',
+                                                overflow: 'hidden',
+                                                background: `url(${photo}) center/cover`
+                                            }} />
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Buttons */}
+                                <div style={{
+                                    display: 'flex',
+                                    gap: '12px',
+                                    justifyContent: 'center'
+                                }}>
+                                    <button
+                                        onClick={handleConfirmNo}
+                                        style={{
+                                            flex: 1,
+                                            padding: '14px 24px',
+                                            background: 'rgba(255,255,255,0.1)',
+                                            border: '1px solid rgba(255,255,255,0.2)',
+                                            borderRadius: '12px',
+                                            color: 'white',
+                                            fontSize: '16px',
+                                            fontWeight: '600',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.background = 'rgba(255,255,255,0.15)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                                        }}
+                                    >
+                                        {language === 'en' ? 'No' : 'No'}
+                                    </button>
+                                    <button
+                                        onClick={handleConfirmYes}
+                                        style={{
+                                            flex: 1,
+                                            padding: '14px 24px',
+                                            background: 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
+                                            border: 'none',
+                                            borderRadius: '12px',
+                                            color: 'white',
+                                            fontSize: '16px',
+                                            fontWeight: '600',
+                                            cursor: 'pointer',
+                                            boxShadow: '0 4px 20px rgba(102,126,234,0.4)',
+                                            transition: 'all 0.2s'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.transform = 'translateY(-2px)';
+                                            e.currentTarget.style.boxShadow = '0 6px 25px rgba(102,126,234,0.5)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.transform = 'translateY(0)';
+                                            e.currentTarget.style.boxShadow = '0 4px 20px rgba(102,126,234,0.4)';
+                                        }}
+                                    >
+                                        {language === 'en' ? 'Yes' : 'Sí'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </>
