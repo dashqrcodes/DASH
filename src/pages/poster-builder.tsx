@@ -719,31 +719,23 @@ const PosterBuilderPage: React.FC = () => {
                 fontSize: '24px',
                 fontWeight: '700',
                 color: 'white',
-                marginBottom: '16px'
+                marginBottom: '24px'
               }}>
                 Order is Final
               </h2>
-              
-              <p style={{
-                fontSize: '16px',
-                color: 'rgba(255,255,255,0.9)',
-                lineHeight: '1.7',
-                marginBottom: '24px',
-                textAlign: 'left'
-              }}>
-                I have carefully reviewed the order and verified all spelling, photo, dates are all correct. I understand there are hard printing costs, and that I will be responsible for orders with misspellings, incorrect photos, and incorrect dates and will have to pay for additional reprints.
-              </p>
 
-              {/* Confirmation Checkbox */}
+              {/* Confirmation Checkbox with Full Legal Text */}
               <div style={{
                 display: 'flex',
                 alignItems: 'flex-start',
                 gap: '12px',
                 marginBottom: '24px',
-                padding: '16px',
+                padding: '20px',
                 background: 'rgba(255,255,255,0.05)',
                 borderRadius: '12px',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                border: hasConfirmedReview ? '2px solid rgba(255, 77, 77, 0.5)' : '2px solid rgba(255,255,255,0.1)',
+                transition: 'all 0.2s'
               }}
               onClick={() => setHasConfirmedReview(!hasConfirmedReview)}
               >
@@ -760,13 +752,13 @@ const PosterBuilderPage: React.FC = () => {
                   }}
                 />
                 <label style={{
-                  fontSize: '14px',
+                  fontSize: '16px',
                   color: 'rgba(255,255,255,0.9)',
-                  lineHeight: '1.6',
+                  lineHeight: '1.7',
                   cursor: 'pointer',
                   userSelect: 'none'
                 }}>
-                  I confirm that I have reviewed the order and understand my responsibility for any errors.
+                  I have carefully reviewed the order and verified all spelling, photo, dates are all correct. I understand there are hard printing costs, and that I will be responsible for orders with misspellings, incorrect photos, and incorrect dates and will have to pay for additional reprints.
                 </label>
               </div>
 
