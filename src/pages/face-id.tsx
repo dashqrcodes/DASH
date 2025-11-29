@@ -22,6 +22,18 @@ const FaceIDPage: React.FC = () => {
 
     const buildTargetRoute = (fallback: string = '/account') => {
         const { returnTo, order } = router.query;
+        
+        // Check for FD order ID - redirect to create-dash if present
+        if (typeof window !== 'undefined') {
+            const fdOrderId = localStorage.getItem('fdOrderId');
+            if (fdOrderId) {
+                return {
+                    pathname: '/create-dash',
+                    query: { orderId: fdOrderId }
+                };
+            }
+        }
+        
         const targetPath = typeof returnTo === 'string' && returnTo.length > 0 ? returnTo : fallback;
         const query: Record<string, string> = {};
         if (typeof order === 'string') {

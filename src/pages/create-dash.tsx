@@ -376,6 +376,56 @@ const CreateMemorialPage: React.FC = () => {
         // Mark data as loaded to prevent overwriting on initial render
         isDataLoaded.current = true;
     };
+
+    // Load FD order data if orderId is present
+    useEffect(() => {
+        const loadFDOrderData = async () => {
+            const { orderId } = router.query;
+            
+            if (orderId && typeof orderId === 'string' && router.isReady) {
+                try {
+                    const response = await fetch(`/api/funeral-director/get-order?orderId=${encodeURIComponent(orderId)}`);
+                    const data = await response.json();
+                    
+                    if (data.success && data.order) {
+                        const order = data.order;
+                        
+                        // Pre-fill form with order data
+                        if (order.deceasedName) {
+                            setName(order.deceasedName);
+                        }
+                        if (order.serviceDate) {
+                            // Service date can be used as death date (sunset)
+                            setSunset(order.serviceDate);
+                        }
+                        
+                        // Store FD info for later use
+                        if (typeof window !== 'undefined') {
+                            if (order.funeralDirectorName) {
+                                localStorage.setItem('fdName', order.funeralDirectorName);
+                            }
+                            if (order.funeralDirectorPhone) {
+                                localStorage.setItem('fdPhone', order.funeralDirectorPhone);
+                            }
+                            if (order.serviceDate) {
+                                localStorage.setItem('serviceDate', order.serviceDate);
+                            }
+                            // Store order ID for finalization
+                            localStorage.setItem('currentFDOrderId', orderId);
+                        }
+                        
+                        console.log('✅ Loaded FD order data:', order);
+                    }
+                } catch (error) {
+                    console.error('Error loading FD order:', error);
+                }
+            }
+        };
+
+        if (router.isReady) {
+            loadFDOrderData();
+        }
+    }, [router.isReady, router.query]);
  
     useEffect(() => {
         // Load data on mount

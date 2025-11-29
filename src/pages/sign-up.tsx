@@ -78,7 +78,14 @@ const SignUpPage: React.FC = () => {
         if (savedLanguage) {
             setLanguage(savedLanguage);
         }
-    }, []);
+
+        // Check if coming from funeral director order link
+        const { orderId } = router.query;
+        if (orderId && typeof orderId === 'string') {
+            localStorage.setItem('fdOrderId', orderId);
+            // Pre-fill phone number if available in order (will be handled after OTP)
+        }
+    }, [router.query]);
 
     return (
         <>
