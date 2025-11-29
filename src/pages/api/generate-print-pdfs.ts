@@ -540,22 +540,6 @@ DASH Order System`;
     console.log('✅ Email sent successfully to:', to);
 };
 
-const persistOrder = async (orderInfo: any) => {
-    if (!process.env.FASTAPI_URL) {
-        console.warn('FASTAPI_URL not configured. Skipping persistence.');
-        return;
-    }
-    try {
-        await fetch(`${process.env.FASTAPI_URL}/api/orders`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(orderInfo)
-        });
-    } catch (error) {
-        console.warn('Failed to persist order to backend', error);
-    }
-};
-
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
@@ -640,10 +624,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         // Send email to print shop
         const printShopEmail = 'elartededavid@gmail.com';
-        await Promise.all([
-            sendEmailWithAttachments(printShopEmail, orderInfo.orderNumber, orderInfo, attachments),
-            persistOrder({ ...orderInfo, pdfGeneratedAt: new Date().toISOString() })
-        ]);
+        await sendEmailWithAttachments(printShopEmail, orderInfo.orderNumber, orderInfo, attachments);
 
         return res.status(200).json({
             success: true,

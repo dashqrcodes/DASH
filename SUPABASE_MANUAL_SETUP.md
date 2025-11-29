@@ -126,18 +126,18 @@ DID_API_KEY=your_key_here
 
 ---
 
-### Step 7: Deploy Backend (Optional - for FastAPI) ⚠️
+### Step 7: Deployment Complete ✅
 
-**Action:** Only if you want separate FastAPI backend
+**Current Setup:** Using Next.js API routes for all backend functionality
 
-**Current Setup:** We're using Next.js API routes (no separate FastAPI needed)
+All backend logic is handled through Next.js API routes in `/src/pages/api/`:
+- Authentication (OTP via Twilio)
+- Payments (Stripe)
+- Delivery (Uber Direct)
+- Print shop order management
+- Funeral director workflows
 
-If you want FastAPI later:
-1. Create FastAPI app
-2. Deploy to Vercel/Railway/Render
-3. Update API endpoints in code
-
-**For now:** Next.js API routes handle everything ✅
+**Next.js API routes handle everything** - no separate backend server needed ✅
 
 ---
 
