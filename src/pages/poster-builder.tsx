@@ -80,6 +80,7 @@ const PosterBuilderPage: React.FC = () => {
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
   const [showFinalizationWarning, setShowFinalizationWarning] = useState(false);
   const [memorialSlugState, setMemorialSlugState] = useState<string | null>(null);
+  const [hasConfirmedReview, setHasConfirmedReview] = useState(false);
 
   // Load profile data on mount
   useEffect(() => {
@@ -330,13 +331,20 @@ const PosterBuilderPage: React.FC = () => {
 
   // Handle approve and send to print - show warning first
   const handleApproveAndPrint = () => {
-    // Show finalization warning popup
+    // Reset checkbox and show finalization warning popup
+    setHasConfirmedReview(false);
     setShowFinalizationWarning(true);
   };
 
   // Actually submit order after user confirms
   const handleConfirmFinalize = async () => {
+    // Double-check checkbox is confirmed
+    if (!hasConfirmedReview) {
+      return;
+    }
+    
     setShowFinalizationWarning(false);
+    setHasConfirmedReview(false); // Reset for next time
     setIsSubmitting(true);
     
     // Mark memorial as finalized (lock name and dates)
@@ -718,21 +726,49 @@ const PosterBuilderPage: React.FC = () => {
               
               <p style={{
                 fontSize: '16px',
-                color: 'rgba(255,255,255,0.8)',
-                lineHeight: '1.6',
-                marginBottom: '8px'
+                color: 'rgba(255,255,255,0.9)',
+                lineHeight: '1.7',
+                marginBottom: '24px',
+                textAlign: 'left'
               }}>
-                Due to hard costs of printing, you take full responsibility for any typos, misspellings, or errors in the name and dates.
+                I have carefully reviewed the order and verified all spelling, photo, dates are all correct. I understand there are hard printing costs, and that I will be responsible for orders with misspellings, incorrect photos, and incorrect dates and will have to pay for additional reprints.
               </p>
-              
-              <p style={{
-                fontSize: '14px',
-                color: 'rgba(255,255,255,0.6)',
-                lineHeight: '1.5',
-                marginBottom: '24px'
-              }}>
-                After approval, name and dates cannot be changed. You can still edit photos and slideshow content.
-              </p>
+
+              {/* Confirmation Checkbox */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '12px',
+                marginBottom: '24px',
+                padding: '16px',
+                background: 'rgba(255,255,255,0.05)',
+                borderRadius: '12px',
+                cursor: 'pointer'
+              }}
+              onClick={() => setHasConfirmedReview(!hasConfirmedReview)}
+              >
+                <input
+                  type="checkbox"
+                  checked={hasConfirmedReview}
+                  onChange={(e) => setHasConfirmedReview(e.target.checked)}
+                  style={{
+                    width: '20px',
+                    height: '20px',
+                    cursor: 'pointer',
+                    marginTop: '2px',
+                    flexShrink: 0
+                  }}
+                />
+                <label style={{
+                  fontSize: '14px',
+                  color: 'rgba(255,255,255,0.9)',
+                  lineHeight: '1.6',
+                  cursor: 'pointer',
+                  userSelect: 'none'
+                }}>
+                  I confirm that I have reviewed the order and understand my responsibility for any errors.
+                </label>
+              </div>
 
               {/* Buttons */}
               <div style={{
@@ -741,7 +777,10 @@ const PosterBuilderPage: React.FC = () => {
                 justifyContent: 'center'
               }}>
                 <button
-                  onClick={() => setShowFinalizationWarning(false)}
+                  onClick={() => {
+                    setShowFinalizationWarning(false);
+                    setHasConfirmedReview(false); // Reset checkbox when closing
+                  }}
                   style={{
                     flex: 1,
                     padding: '14px 24px',
@@ -765,29 +804,37 @@ const PosterBuilderPage: React.FC = () => {
                 </button>
                 <button
                   onClick={handleConfirmFinalize}
+                  disabled={!hasConfirmedReview}
                   style={{
                     flex: 1,
                     padding: '14px 24px',
-                    background: 'linear-gradient(135deg,#ff4d4d 0%,#cc0000 100%)',
+                    background: hasConfirmedReview 
+                      ? 'linear-gradient(135deg,#ff4d4d 0%,#cc0000 100%)'
+                      : 'rgba(255, 77, 77, 0.3)',
                     border: 'none',
                     borderRadius: '12px',
                     color: 'white',
                     fontSize: '16px',
                     fontWeight: '700',
-                    cursor: 'pointer',
-                    boxShadow: '0 4px 20px rgba(255, 77, 77, 0.4)',
-                    transition: 'all 0.2s'
+                    cursor: hasConfirmedReview ? 'pointer' : 'not-allowed',
+                    boxShadow: hasConfirmedReview ? '0 4px 20px rgba(255, 77, 77, 0.4)' : 'none',
+                    transition: 'all 0.2s',
+                    opacity: hasConfirmedReview ? 1 : 0.5
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 6px 25px rgba(255, 77, 77, 0.6)';
+                    if (hasConfirmedReview) {
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 6px 25px rgba(255, 77, 77, 0.6)';
+                    }
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 4px 20px rgba(255, 77, 77, 0.4)';
+                    if (hasConfirmedReview) {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 4px 20px rgba(255, 77, 77, 0.4)';
+                    }
                   }}
                 >
-                  I Understand, Approve Order
+                  Approve Order
                 </button>
               </div>
             </div>
