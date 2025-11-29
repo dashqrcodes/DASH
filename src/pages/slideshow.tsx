@@ -13,7 +13,7 @@ interface MediaItem {
   type: 'photo' | 'video';
 }
 
-const SlideshowSimplePage: React.FC = () => {
+const SlideshowPage: React.FC = () => {
   const router = useRouter();
   const [photos, setPhotos] = useState<MediaItem[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -283,5 +283,4 @@ const SlideshowSimplePage: React.FC = () => {
   );
 };
 
-export default SlideshowSimplePage;
-
+export default SlideshowPage;
