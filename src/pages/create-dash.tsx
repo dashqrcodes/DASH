@@ -1039,7 +1039,7 @@ const CreateMemorialPage: React.FC = () => {
                     </div>
 
                     {/* Next Button */}
-                    <div style={{ width: '100%', marginTop: '20px' }}>
+                    <div style={{ width: '100%', marginTop: '20px', display: 'flex', justifyContent: 'center' }}>
                         <button
                             type="button"
                             onClick={(e) => {
@@ -1049,11 +1049,12 @@ const CreateMemorialPage: React.FC = () => {
                             }}
                             disabled={!isProfileComplete}
                             style={{
-                                width: '100%',
+                                minWidth: '200px',
+                                width: 'auto',
+                                padding: '14px 40px',
                                 background: isProfileComplete ? 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)' : 'rgba(102,126,234,0.25)',
                                 border: 'none',
-                                borderRadius: '9999px',
-                                padding: '14px 20px',
+                                borderRadius: '50px',
                                 color: 'white',
                                 fontSize: '16px',
                                 fontWeight: '600',
