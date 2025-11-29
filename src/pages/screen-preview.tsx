@@ -13,7 +13,6 @@ const ScreenPreview: React.FC = () => {
         { path: '/heaven', name: 'Heaven', description: 'Heaven page' },
         { path: '/slideshow', name: 'Slideshow', description: 'Slideshow feature' },
         { path: '/loading', name: 'Loading', description: 'Loading screen (redirects to account)' },
-        { path: '/scanner', name: 'Scanner', description: 'QR code scanner' },
         { path: '/success', name: 'Success', description: 'Success page' },
         { path: '/spotify-callback', name: 'Spotify Callback', description: 'OAuth callback (needed for auth)' },
     ];
