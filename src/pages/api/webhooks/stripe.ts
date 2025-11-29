@@ -2,14 +2,16 @@
 // Receives events from Stripe about payment status changes
 import type { NextApiRequest, NextApiResponse } from 'next';
 import Stripe from 'stripe';
+import { buffer } from 'micro';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2024-11-20.acacia',
 });
 
+// Disable body parser, we need raw body for Stripe signature verification
 export const config = {
   api: {
-    bodyParser: false, // Stripe needs raw body for signature verification
+    bodyParser: false,
   },
 };
 
@@ -36,7 +38,7 @@ export default async function handler(
 
   try {
     // Get raw body for signature verification
-    const buf = await getRawBody(req);
+    const buf = await buffer(req);
     event = stripe.webhooks.constructEvent(
       buf,
       sig,
@@ -72,16 +74,6 @@ export default async function handler(
 
   // Return a response to acknowledge receipt of the event
   return res.status(200).json({ received: true });
-}
-
-// Helper to get raw body from request
-async function getRawBody(req: NextApiRequest): Promise<Buffer> {
-  return new Promise((resolve, reject) => {
-    const chunks: Buffer[] = [];
-    req.on('data', (chunk: Buffer) => chunks.push(chunk));
-    req.on('end', () => resolve(Buffer.concat(chunks)));
-    req.on('error', reject);
-  });
 }
 
 // Handle successful payment
