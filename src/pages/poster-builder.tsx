@@ -209,10 +209,17 @@ const PosterBuilderPage: React.FC = () => {
   };
   
   useEffect(() => {
-    if (name) {
-      generateQRCode();
+    if (name && router.isReady) {
+      // If we have memorialSlug, use it to ensure same URL as card
+      const memorialSlug = router.query.memorialSlug as string | undefined;
+      if (memorialSlug) {
+        const memorialUrl = getMemorialUrl(memorialSlug);
+        generateQRCode(memorialUrl);
+      } else {
+        generateQRCode();
+      }
     }
-  }, [name]);
+  }, [name, router.isReady, router.query.memorialSlug]);
 
   // Format date to show full month name
   const formatDateFullMonth = (dateStr: string) => {
