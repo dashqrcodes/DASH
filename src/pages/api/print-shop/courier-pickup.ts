@@ -1,6 +1,7 @@
 // API Route: Handle courier pickup and trigger Stripe payment
 import type { NextApiRequest, NextApiResponse } from 'next';
 import Stripe from 'stripe';
+import { isTestMode, getTestModeMessage, createMockPaymentIntent } from '../../../utils/testMode';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2024-11-20.acacia',
@@ -32,6 +33,31 @@ export default async function handler(
       });
     }
 
+    // Check test mode
+    const testMode = isTestMode();
+    
+    // In test mode, return mock payment intent
+    if (testMode) {
+      const mockPaymentIntent = createMockPaymentIntent(amount);
+      console.log('🧪 TEST MODE: Mock payment intent created:', {
+        paymentIntentId: mockPaymentIntent.id,
+        orderNumber,
+        amount,
+        testMode: true
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: `${getTestModeMessage()}Mock payment intent created (no real charge)`,
+        orderId,
+        paymentIntentId: mockPaymentIntent.id,
+        clientSecret: mockPaymentIntent.client_secret,
+        amount: amount,
+        paymentStatus: 'succeeded',
+        testMode: true
+      });
+    }
+
     // Validate Stripe is configured
     if (!process.env.STRIPE_SECRET_KEY) {
       console.warn('⚠️ Stripe not configured - skipping payment');
@@ -43,7 +69,7 @@ export default async function handler(
       });
     }
 
-    // Create Stripe payment intent
+    // Create Stripe payment intent (REAL MODE)
     try {
       const paymentIntent = await stripe.paymentIntents.create({
         amount: Math.round(amount * 100), // Convert to cents

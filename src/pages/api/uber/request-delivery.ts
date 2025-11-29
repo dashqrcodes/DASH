@@ -1,5 +1,6 @@
 // API Route: Request Uber Direct Delivery
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { isTestMode, getTestModeMessage, createMockDelivery } from '../../../utils/testMode';
 
 interface DeliveryRequest {
   orderId: string;
@@ -45,7 +46,21 @@ export default async function handler(
       });
     }
 
-    // Check if Uber Direct is configured
+    // Check test mode - always use mock in test mode
+    const testMode = isTestMode();
+    
+    if (testMode) {
+      const mockDelivery = createMockDelivery(orderId);
+      console.log('🧪 TEST MODE: Mock Uber delivery created:', {
+        deliveryId: mockDelivery.deliveryId,
+        orderNumber,
+        testMode: true
+      });
+      
+      return res.status(200).json(mockDelivery);
+    }
+
+    // Check if Uber Direct is configured (REAL MODE)
     const UBER_DIRECT_SERVER_TOKEN = process.env.UBER_DIRECT_SERVER_TOKEN;
     const UBER_ORGANIZATION_ID = process.env.UBER_ORGANIZATION_ID;
 

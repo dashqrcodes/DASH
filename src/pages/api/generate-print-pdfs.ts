@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { Buffer } from 'buffer';
 import nodemailer from 'nodemailer';
+import { isTestMode, getTestModeMessage } from '../../utils/testMode';
 
 const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 interface ImageEnhancementInput {
@@ -622,15 +623,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             { filename: `${orderInfo.orderNumber}-poster.pdf`, content: Buffer.from(posterPdf) }
         ];
 
-        // Send email to print shop
+        // Send email to print shop (skip in test mode)
+        const testMode = isTestMode();
         const printShopEmail = 'elartededavid@gmail.com';
-        await sendEmailWithAttachments(printShopEmail, orderInfo.orderNumber, orderInfo, attachments);
+        
+        if (testMode) {
+            console.log('🧪 TEST MODE: Skipping email send. Order details:', {
+                orderNumber: orderInfo.orderNumber,
+                customer: orderInfo.customerName,
+                funeralHome: orderInfo.funeralHome,
+                products: orderInfo.products.map(p => `${p.quantity}x ${p.type}`).join(', '),
+                pdfs: attachments.map(a => a.filename).join(', ')
+            });
+        } else {
+            await sendEmailWithAttachments(printShopEmail, orderInfo.orderNumber, orderInfo, attachments);
+        }
 
         return res.status(200).json({
             success: true,
-            message: 'Order sent to print shop',
+            message: testMode 
+                ? `${getTestModeMessage()}Order processed (test mode - no email sent)`
+                : 'Order sent to print shop',
             orderNumber: orderInfo.orderNumber,
-            orderDetails: orderInfo
+            orderDetails: orderInfo,
+            testMode: testMode
         });
 
     } catch (error: any) {
