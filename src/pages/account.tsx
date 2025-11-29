@@ -25,7 +25,6 @@ const AccountPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showSetup, setShowSetup] = useState(false);
   const [setupName, setSetupName] = useState('');
-  const [setupEmail, setSetupEmail] = useState('');
   const [setupPhoto, setSetupPhoto] = useState<string | null>(null);
 
   useEffect(() => {
@@ -64,13 +63,6 @@ const AccountPage: React.FC = () => {
     // DO NOT load profileData here - that's for deceased memorials only
     console.log('Showing account setup form - userAccountCreated:', userAccountCreated, 'userProfile exists:', !!userProfile);
     setShowSetup(true);
-    
-    // Load email from phone number or existing data (for pre-filling form)
-    const phoneNumber = localStorage.getItem('phoneNumber');
-    const savedEmail = localStorage.getItem('userEmail');
-    if (savedEmail) {
-      setSetupEmail(savedEmail);
-    }
   }, []);
 
   const loadUserMemorials = async () => {
@@ -195,16 +187,13 @@ const AccountPage: React.FC = () => {
     
     const userProfile = {
       name: setupName.trim(),
-      email: setupEmail.trim() || null,
+      email: null,
       photo: setupPhoto,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
     
     localStorage.setItem('userProfile', JSON.stringify(userProfile));
-    if (setupEmail.trim()) {
-      localStorage.setItem('userEmail', setupEmail.trim());
-    }
     
     // Mark user as fully set up (account created)
     localStorage.setItem('userAccountCreated', 'true');
@@ -302,27 +291,6 @@ const AccountPage: React.FC = () => {
                 fontWeight: '400',
                 outline: 'none',
                 marginBottom: '16px',
-                textAlign: 'center'
-              }}
-            />
-
-            {/* Email Input - Big, Optional */}
-            <input
-              type="email"
-              value={setupEmail}
-              onChange={(e) => setSetupEmail(e.target.value)}
-              placeholder="Email (Optional)"
-              style={{
-                width: '100%',
-                background: 'rgba(255,255,255,0.08)',
-                border: 'none',
-                borderRadius: '16px',
-                padding: '20px',
-                color: 'white',
-                fontSize: '18px',
-                fontWeight: '400',
-                outline: 'none',
-                marginBottom: '32px',
                 textAlign: 'center'
               }}
             />
