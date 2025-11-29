@@ -94,17 +94,84 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     if (status === 'ready') {
-      order.courier = {
-        vendor: 'Uber Direct',
-        status: 'requested',
-        trackingUrl: `https://courier.uber.com/track/${order.id}`,
-        etaMinutes: 18,
-      };
-      updateTimeline(order, {
-        status: 'courier_requested',
-        label: 'Uber Direct courier dispatched',
-        at: new Date().toISOString(),
-      });
+      // Request Uber Direct delivery
+      try {
+        const printShopAddress = process.env.PRINT_SHOP_ADDRESS || '123 Print Shop St, City, State 12345';
+        const printShopPhone = process.env.PRINT_SHOP_PHONE || '555-0000';
+        const printShopName = process.env.PRINT_SHOP_NAME || 'Print Shop';
+
+        const deliveryResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/uber/request-delivery`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderId: order.id,
+            orderNumber: order.orderNumber,
+            pickupAddress: printShopAddress,
+            pickupName: printShopName,
+            pickupPhone: printShopPhone,
+            dropoffAddress: order.deliveryAddress,
+            dropoffName: order.funeralHome || 'Funeral Home',
+            dropoffPhone: (order as any).fdPhone || '555-0000',
+            items: order.products.map(p => ({
+              title: p.type,
+              quantity: p.quantity,
+              size: 'medium' as const
+            }))
+          })
+        });
+
+        const deliveryData = await deliveryResponse.json();
+        
+        if (deliveryData.success) {
+          order.courier = {
+            vendor: 'Uber Direct',
+            status: deliveryData.status === 'completed' ? 'delivered' : 
+                   deliveryData.status === 'in_transit' ? 'picked_up' :
+                   deliveryData.status === 'picking_up' ? 'en_route' : 'requested',
+            trackingUrl: deliveryData.trackingUrl,
+            etaMinutes: deliveryData.etaMinutes || 18,
+          };
+          (order.courier as any).deliveryId = deliveryData.deliveryId;
+          (order.courier as any).isMock = deliveryData.isMock;
+
+          updateTimeline(order, {
+            status: 'courier_requested',
+            label: `Uber Direct courier ${deliveryData.isMock ? '(mock) ' : ''}dispatched - ETA ${deliveryData.etaMinutes || 18} min`,
+            at: new Date().toISOString(),
+          });
+        } else {
+          // Fallback to mock delivery
+          order.courier = {
+            vendor: 'Uber Direct',
+            status: 'requested',
+            trackingUrl: `https://courier.uber.com/track/${order.id}`,
+            etaMinutes: 18,
+          };
+          (order.courier as any).isMock = true;
+
+          updateTimeline(order, {
+            status: 'courier_requested',
+            label: 'Uber Direct courier requested (fallback)',
+            at: new Date().toISOString(),
+          });
+        }
+      } catch (deliveryError) {
+        console.error('Uber delivery request error:', deliveryError);
+        // Fallback to basic courier info
+        order.courier = {
+          vendor: 'Uber Direct',
+          status: 'requested',
+          trackingUrl: `https://courier.uber.com/track/${order.id}`,
+          etaMinutes: 18,
+        };
+        (order.courier as any).isMock = true;
+
+        updateTimeline(order, {
+          status: 'courier_requested',
+          label: 'Uber Direct courier requested (error)',
+          at: new Date().toISOString(),
+        });
+      }
     }
 
     if (status === 'picked_up') {

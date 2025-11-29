@@ -119,6 +119,46 @@ const Dashboard: React.FC = () => {
       if (!selectedOrderId && data.orders && data.orders.length > 0) {
         setSelectedOrderId(data.orders[0].id);
       }
+      
+      // Auto-refresh orders with active courier deliveries
+      const activeDeliveries = data.orders?.filter((o: PrintShopOrder) => 
+        o.courier && o.courier.status !== 'delivered' && (o.courier as any).deliveryId
+      ) || [];
+      
+      if (activeDeliveries.length > 0) {
+        // Poll for delivery status updates every 30 seconds
+        const pollInterval = setInterval(async () => {
+          for (const order of activeDeliveries) {
+            if ((order.courier as any)?.deliveryId) {
+              try {
+                const trackResponse = await fetch(`/api/uber/track-delivery?deliveryId=${(order.courier as any).deliveryId}`);
+                const trackData = await trackResponse.json();
+                
+                if (trackData.success && trackData.status) {
+                  // Update order status based on Uber delivery status
+                  const newCourierStatus = 
+                    trackData.status === 'completed' ? 'delivered' :
+                    trackData.status === 'in_transit' ? 'picked_up' :
+                    trackData.status === 'picking_up' ? 'en_route' : 'requested';
+                  
+                  if (order.courier && order.courier.status !== newCourierStatus) {
+                    order.courier.status = newCourierStatus as any;
+                    if (trackData.etaMinutes) {
+                      order.courier.etaMinutes = trackData.etaMinutes;
+                    }
+                    // Refresh orders list
+                    loadOrders();
+                  }
+                }
+              } catch (error) {
+                console.error('Error tracking delivery:', error);
+              }
+            }
+          }
+        }, 30000); // Poll every 30 seconds
+        
+        return () => clearInterval(pollInterval);
+      }
     } catch (error) {
       console.error('Failed to load orders', error);
     } finally {
