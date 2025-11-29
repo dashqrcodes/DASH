@@ -117,9 +117,7 @@ The SQL script automatically:
 NEXT_PUBLIC_SUPABASE_URL=https://ftgrrlkjavcumjkyyyva.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=paste_your_anon_key_here
 
-# Other variables...
-ELEVENLABS_API_KEY=your_key_here
-DID_API_KEY=your_key_here
+# Other variables as needed...
 ```
 
 3. Restart dev server: `npm run dev`
