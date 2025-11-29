@@ -557,11 +557,12 @@ const CheckoutPage: React.FC = () => {
                                 </label>
                             </div>
 
-                            {/* Buttons */}
+                            {/* Buttons - Standard Notification Layout */}
                             <div style={{
                                 display: 'flex',
-                                flexDirection: 'column',
-                                gap: '12px'
+                                gap: '12px',
+                                justifyContent: 'flex-end',
+                                marginTop: '8px'
                             }}>
                                 <button
                                     onClick={() => {
@@ -569,61 +570,59 @@ const CheckoutPage: React.FC = () => {
                                         setHasConfirmedReview(false); // Reset checkbox when closing
                                     }}
                                     style={{
-                                        width: '100%',
-                                        padding: '14px 24px',
-                                        background: 'rgba(255,255,255,0.1)',
-                                        border: '1px solid rgba(255,255,255,0.2)',
-                                        borderRadius: '12px',
-                                        color: 'white',
-                                        fontSize: '16px',
-                                        fontWeight: '600',
+                                        padding: '10px 20px',
+                                        background: 'transparent',
+                                        border: 'none',
+                                        borderRadius: '8px',
+                                        color: 'rgba(255,255,255,0.8)',
+                                        fontSize: '15px',
+                                        fontWeight: '500',
                                         cursor: 'pointer',
                                         transition: 'all 0.2s'
                                     }}
                                     onMouseEnter={(e) => {
-                                        e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
-                                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)';
+                                        e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                                        e.currentTarget.style.color = 'white';
                                     }}
                                     onMouseLeave={(e) => {
-                                        e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
-                                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)';
+                                        e.currentTarget.style.background = 'transparent';
+                                        e.currentTarget.style.color = 'rgba(255,255,255,0.8)';
                                     }}
                                 >
-                                    No, Make Edits
+                                    Cancel
                                 </button>
                                 <button
                                     onClick={handleConfirmFinalize}
                                     disabled={!hasConfirmedReview}
                                     style={{
-                                        width: '100%',
-                                        padding: '14px 24px',
+                                        padding: '10px 20px',
                                         background: hasConfirmedReview
                                             ? 'linear-gradient(135deg,#ff4d4d 0%,#cc0000 100%)'
                                             : 'rgba(255, 77, 77, 0.3)',
                                         border: 'none',
-                                        borderRadius: '12px',
+                                        borderRadius: '8px',
                                         color: 'white',
-                                        fontSize: '16px',
-                                        fontWeight: '700',
+                                        fontSize: '15px',
+                                        fontWeight: '600',
                                         cursor: hasConfirmedReview ? 'pointer' : 'not-allowed',
-                                        boxShadow: hasConfirmedReview ? '0 4px 20px rgba(255, 77, 77, 0.4)' : 'none',
+                                        boxShadow: hasConfirmedReview ? '0 2px 8px rgba(255, 77, 77, 0.3)' : 'none',
                                         transition: 'all 0.2s',
                                         opacity: hasConfirmedReview ? 1 : 0.5
                                     }}
                                     onMouseEnter={(e) => {
                                         if (hasConfirmedReview) {
-                                            e.currentTarget.style.transform = 'translateY(-2px)';
-                                            e.currentTarget.style.boxShadow = '0 6px 25px rgba(255, 77, 77, 0.6)';
+                                            e.currentTarget.style.transform = 'translateY(-1px)';
+                                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 77, 77, 0.4)';
                                         }
                                     }}
                                     onMouseLeave={(e) => {
                                         if (hasConfirmedReview) {
                                             e.currentTarget.style.transform = 'translateY(0)';
-                                            e.currentTarget.style.boxShadow = '0 4px 20px rgba(255, 77, 77, 0.4)';
+                                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(255, 77, 77, 0.3)';
                                         }
                                     }}
                                 >
-                                    Yes, Approve Order
+                                    Approve
                                 </button>
                             </div>
                         </div>
