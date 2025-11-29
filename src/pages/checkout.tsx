@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
+import { generateSlug } from '../utils/slug';
 
 const CheckoutPage: React.FC = () => {
     const router = useRouter();
     const [cardData, setCardData] = useState<any>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [showFinalizationWarning, setShowFinalizationWarning] = useState(false);
+    const [memorialSlugToFinalize, setMemorialSlugToFinalize] = useState<string | null>(null);
 
     useEffect(() => {
         // Load both card and poster designs from localStorage
@@ -18,6 +21,13 @@ const CheckoutPage: React.FC = () => {
             try {
                 const card = JSON.parse(cardStored);
                 designs.push(card);
+                
+                // Try to get memorial slug from card design or generate from name
+                if (card.name || card.lovedOneName) {
+                    const name = card.name || card.lovedOneName;
+                    const slug = generateSlug(name);
+                    setMemorialSlugToFinalize(slug);
+                }
             } catch (e) {
                 console.error('Error parsing card data:', e);
             }
@@ -27,6 +37,13 @@ const CheckoutPage: React.FC = () => {
             try {
                 const poster = JSON.parse(posterStored);
                 designs.push(poster);
+                
+                // If we don't have slug yet, try from poster
+                if (!memorialSlugToFinalize && (poster.name || poster.lovedOneName)) {
+                    const name = poster.name || poster.lovedOneName;
+                    const slug = generateSlug(name);
+                    setMemorialSlugToFinalize(slug);
+                }
             } catch (e) {
                 console.error('Error parsing poster data:', e);
             }
@@ -35,16 +52,97 @@ const CheckoutPage: React.FC = () => {
         if (designs.length > 0) {
             setCardData(designs.length === 1 ? designs[0] : { multiple: true, designs });
         }
+        
+        // Also try to get slug from memorialUrl in localStorage
+        const memorialUrl = localStorage.getItem('memorialUrl');
+        if (memorialUrl && !memorialSlugToFinalize) {
+            const match = memorialUrl.match(/\/life-dash\/([^/?]+)/);
+            if (match) {
+                setMemorialSlugToFinalize(match[1]);
+            }
+        }
     }, []);
 
-    const handleSubmitOrder = async () => {
+    const handleSubmitOrder = () => {
         if (!cardData) {
             alert('No designs found. Please create a card or poster first.');
             router.push('/account');
             return;
         }
 
+        // Show finalization warning popup first
+        setShowFinalizationWarning(true);
+    };
+
+    // Actually submit order after user confirms
+    const handleConfirmFinalize = async () => {
+        setShowFinalizationWarning(false);
         setIsSubmitting(true);
+
+        // Mark memorial as finalized (lock name and dates)
+        if (memorialSlugToFinalize) {
+            const savedMemorial = localStorage.getItem(`memorial_${memorialSlugToFinalize}`);
+            if (savedMemorial) {
+                try {
+                    const memorial = JSON.parse(savedMemorial);
+                    memorial.finalized = true;
+                    memorial.finalizedAt = new Date().toISOString();
+                    localStorage.setItem(`memorial_${memorialSlugToFinalize}`, JSON.stringify(memorial));
+                    
+                    // Also update in memorials list
+                    const savedMemorials = localStorage.getItem('memorials');
+                    if (savedMemorials) {
+                        const memorials = JSON.parse(savedMemorials);
+                        const index = memorials.findIndex((m: any) => m.slug === memorialSlugToFinalize);
+                        if (index !== -1) {
+                            memorials[index] = { ...memorials[index], finalized: true, finalizedAt: new Date().toISOString() };
+                            localStorage.setItem('memorials', JSON.stringify(memorials));
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error finalizing memorial:', e);
+                }
+            }
+        }
+
+        try {
+            // Prepare order data (card + poster)
+            const orderData = {
+                cardDesign: localStorage.getItem('cardDesign') ? JSON.parse(localStorage.getItem('cardDesign')!) : null,
+                posterDesign: localStorage.getItem('posterDesign') ? JSON.parse(localStorage.getItem('posterDesign')!) : null,
+                orderId: `ORDER-${Date.now()}`,
+                testMode: true // TEST MODE - Set to false when ready for production
+            };
+
+            // Send order to print shop via API
+            const response = await fetch('/api/checkout-complete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(orderData),
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                // Save order ID
+                localStorage.setItem('lastOrderId', result.orderId || `ORDER-${Date.now()}`);
+                // Mark order as complete to trigger slideshow auto-open
+                localStorage.setItem('orderComplete', 'true');
+                
+                // Redirect to success page
+                router.push('/success');
+            } else {
+                alert(result.message || 'Failed to submit order. Please try again.');
+                setIsSubmitting(false);
+            }
+        } catch (error) {
+            console.error('Error submitting order:', error);
+            alert('Error submitting order. Please try again.');
+            setIsSubmitting(false);
+        }
+    };
 
         try {
             // Prepare order data (card + poster)
@@ -373,6 +471,123 @@ const CheckoutPage: React.FC = () => {
                         {isSubmitting ? 'Sending to Print Shop...' : '✓ Approve & Send to Print Shop'}
                     </button>
                 </div>
+
+                {/* Finalization Warning Popup */}
+                {showFinalizationWarning && (
+                    <div style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'rgba(0, 0, 0, 0.9)',
+                        backdropFilter: 'blur(10px)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 10000,
+                        padding: '20px'
+                    }}>
+                        <div style={{
+                            background: '#1a1a1a',
+                            borderRadius: '20px',
+                            padding: '32px',
+                            maxWidth: '420px',
+                            width: '100%',
+                            border: '2px solid rgba(255, 77, 77, 0.3)',
+                            textAlign: 'center'
+                        }}>
+                            <div style={{
+                                fontSize: '48px',
+                                marginBottom: '20px'
+                            }}>⚠️</div>
+                            
+                            <h2 style={{
+                                fontSize: '24px',
+                                fontWeight: '700',
+                                color: 'white',
+                                marginBottom: '16px'
+                            }}>
+                                Order is Final
+                            </h2>
+                            
+                            <p style={{
+                                fontSize: '16px',
+                                color: 'rgba(255,255,255,0.8)',
+                                lineHeight: '1.6',
+                                marginBottom: '8px'
+                            }}>
+                                Due to hard costs of printing, you take full responsibility for any typos, misspellings, or errors in the name and dates.
+                            </p>
+                            
+                            <p style={{
+                                fontSize: '14px',
+                                color: 'rgba(255,255,255,0.6)',
+                                lineHeight: '1.5',
+                                marginBottom: '24px'
+                            }}>
+                                After approval, name and dates cannot be changed. You can still edit photos and slideshow content.
+                            </p>
+
+                            {/* Buttons */}
+                            <div style={{
+                                display: 'flex',
+                                gap: '12px',
+                                justifyContent: 'center'
+                            }}>
+                                <button
+                                    onClick={() => setShowFinalizationWarning(false)}
+                                    style={{
+                                        flex: 1,
+                                        padding: '14px 24px',
+                                        background: 'rgba(255,255,255,0.1)',
+                                        border: '1px solid rgba(255,255,255,0.2)',
+                                        borderRadius: '12px',
+                                        color: 'white',
+                                        fontSize: '16px',
+                                        fontWeight: '600',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.background = 'rgba(255,255,255,0.15)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                                    }}
+                                >
+                                    Go Back
+                                </button>
+                                <button
+                                    onClick={handleConfirmFinalize}
+                                    style={{
+                                        flex: 1,
+                                        padding: '14px 24px',
+                                        background: 'linear-gradient(135deg,#ff4d4d 0%,#cc0000 100%)',
+                                        border: 'none',
+                                        borderRadius: '12px',
+                                        color: 'white',
+                                        fontSize: '16px',
+                                        fontWeight: '700',
+                                        cursor: 'pointer',
+                                        boxShadow: '0 4px 20px rgba(255, 77, 77, 0.4)',
+                                        transition: 'all 0.2s'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.transform = 'translateY(-2px)';
+                                        e.currentTarget.style.boxShadow = '0 6px 25px rgba(255, 77, 77, 0.6)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.transform = 'translateY(0)';
+                                        e.currentTarget.style.boxShadow = '0 4px 20px rgba(255, 77, 77, 0.4)';
+                                    }}
+                                >
+                                    I Understand, Approve Order
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </>
     );

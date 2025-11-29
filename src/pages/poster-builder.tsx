@@ -78,6 +78,8 @@ const PosterBuilderPage: React.FC = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
+  const [showFinalizationWarning, setShowFinalizationWarning] = useState(false);
+  const [memorialSlugState, setMemorialSlugState] = useState<string | null>(null);
 
   // Load profile data on mount
   useEffect(() => {
@@ -87,6 +89,7 @@ const PosterBuilderPage: React.FC = () => {
     const memorialSlug = router.query.memorialSlug as string | undefined;
     
     if (memorialSlug) {
+      setMemorialSlugState(memorialSlug); // Store for finalization
       // Load memorial data from localStorage using slug
       const savedMemorial = localStorage.getItem(`memorial_${memorialSlug}`);
       if (savedMemorial) {
@@ -325,9 +328,44 @@ const PosterBuilderPage: React.FC = () => {
     });
   };
 
-  // Handle approve and send to print
-  const handleApproveAndPrint = async () => {
+  // Handle approve and send to print - show warning first
+  const handleApproveAndPrint = () => {
+    // Show finalization warning popup
+    setShowFinalizationWarning(true);
+  };
+
+  // Actually submit order after user confirms
+  const handleConfirmFinalize = async () => {
+    setShowFinalizationWarning(false);
     setIsSubmitting(true);
+    
+    // Mark memorial as finalized (lock name and dates)
+    const slugToFinalize = memorialSlugState || (name ? generateSlug(name) : null);
+    if (slugToFinalize) {
+      // Mark this memorial as finalized
+      const savedMemorial = localStorage.getItem(`memorial_${slugToFinalize}`);
+      if (savedMemorial) {
+        try {
+          const memorial = JSON.parse(savedMemorial);
+          memorial.finalized = true;
+          memorial.finalizedAt = new Date().toISOString();
+          localStorage.setItem(`memorial_${slugToFinalize}`, JSON.stringify(memorial));
+          
+          // Also update in memorials list
+          const savedMemorials = localStorage.getItem('memorials');
+          if (savedMemorials) {
+            const memorials = JSON.parse(savedMemorials);
+            const index = memorials.findIndex((m: any) => m.slug === slugToFinalize);
+            if (index !== -1) {
+              memorials[index] = { ...memorials[index], finalized: true, finalizedAt: new Date().toISOString() };
+              localStorage.setItem('memorials', JSON.stringify(memorials));
+            }
+          }
+        } catch (e) {
+          console.error('Error finalizing memorial:', e);
+        }
+      }
+    }
     
     try {
       const orderDetails = {
@@ -373,6 +411,7 @@ const PosterBuilderPage: React.FC = () => {
       const data = await response.json();
       
       if (data.success) {
+        // Order finalized and sent - navigate to next steps
         navigateToNextSteps(orderDetails);
       } else {
         alert('Printer is finishing uploads. Showing demo journey.');
@@ -637,6 +676,123 @@ const PosterBuilderPage: React.FC = () => {
             {isSubmitting ? 'Sending...' : 'Approve & Send to Print'}
           </button>
         </div>
+
+        {/* Finalization Warning Popup */}
+        {showFinalizationWarning && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.9)',
+            backdropFilter: 'blur(10px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10000,
+            padding: '20px'
+          }}>
+            <div style={{
+              background: '#1a1a1a',
+              borderRadius: '20px',
+              padding: '32px',
+              maxWidth: '420px',
+              width: '100%',
+              border: '2px solid rgba(255, 77, 77, 0.3)',
+              textAlign: 'center'
+            }}>
+              <div style={{
+                fontSize: '48px',
+                marginBottom: '20px'
+              }}>⚠️</div>
+              
+              <h2 style={{
+                fontSize: '24px',
+                fontWeight: '700',
+                color: 'white',
+                marginBottom: '16px'
+              }}>
+                Order is Final
+              </h2>
+              
+              <p style={{
+                fontSize: '16px',
+                color: 'rgba(255,255,255,0.8)',
+                lineHeight: '1.6',
+                marginBottom: '8px'
+              }}>
+                Due to hard costs of printing, you take full responsibility for any typos, misspellings, or errors in the name and dates.
+              </p>
+              
+              <p style={{
+                fontSize: '14px',
+                color: 'rgba(255,255,255,0.6)',
+                lineHeight: '1.5',
+                marginBottom: '24px'
+              }}>
+                After approval, name and dates cannot be changed. You can still edit photos and slideshow content.
+              </p>
+
+              {/* Buttons */}
+              <div style={{
+                display: 'flex',
+                gap: '12px',
+                justifyContent: 'center'
+              }}>
+                <button
+                  onClick={() => setShowFinalizationWarning(false)}
+                  style={{
+                    flex: 1,
+                    padding: '14px 24px',
+                    background: 'rgba(255,255,255,0.1)',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    borderRadius: '12px',
+                    color: 'white',
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.15)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                  }}
+                >
+                  Go Back
+                </button>
+                <button
+                  onClick={handleConfirmFinalize}
+                  style={{
+                    flex: 1,
+                    padding: '14px 24px',
+                    background: 'linear-gradient(135deg,#ff4d4d 0%,#cc0000 100%)',
+                    border: 'none',
+                    borderRadius: '12px',
+                    color: 'white',
+                    fontSize: '16px',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 20px rgba(255, 77, 77, 0.4)',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 6px 25px rgba(255, 77, 77, 0.6)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 4px 20px rgba(255, 77, 77, 0.4)';
+                  }}
+                >
+                  I Understand, Approve Order
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
