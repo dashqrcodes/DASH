@@ -67,8 +67,10 @@ function updateTimeline(order: PrintShopOrder, entry: TimelineEntry) {
   order.timeline = [...order.timeline, entry];
 }
 
-export default function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'GET') {
+    // TODO: Load orders from Supabase or from email received orders
+    // For now, merge with orders from generate-print-pdfs API
     return res.status(200).json({ orders });
   }
 
@@ -109,16 +111,63 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
       if (order.courier) {
         order.courier.status = 'picked_up';
       }
-      order.payout = {
-        amount: 70,
-        currency: 'USD',
-        status: 'pending',
-      };
-      updateTimeline(order, {
-        status: 'courier_requested',
-        label: 'Courier confirmed pickup',
-        at: new Date().toISOString(),
-      });
+      
+      // Trigger Stripe payment when courier picks up
+      try {
+        const paymentResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/print-shop/courier-pickup`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderId: order.id,
+            orderNumber: order.orderNumber,
+            amount: order.totalDue,
+            customerEmail: (order as any).customerEmail,
+            customerName: order.customerName
+          })
+        });
+
+        const paymentData = await paymentResponse.json();
+        
+        if (paymentData.success) {
+          order.payout = {
+            amount: paymentData.amount || order.totalDue,
+            currency: 'USD',
+            status: paymentData.paymentStatus === 'succeeded' ? 'sent' : 'pending',
+          };
+          (order as any).paymentIntentId = paymentData.paymentIntentId;
+          
+          updateTimeline(order, {
+            status: 'courier_requested',
+            label: `Courier confirmed pickup - Payment ${paymentData.paymentStatus === 'succeeded' ? 'processed' : 'initiated'}`,
+            at: new Date().toISOString(),
+          });
+        } else {
+          // Payment failed but courier pickup still recorded
+          order.payout = {
+            amount: order.totalDue,
+            currency: 'USD',
+            status: 'pending',
+          };
+          updateTimeline(order, {
+            status: 'courier_requested',
+            label: 'Courier confirmed pickup - Payment pending',
+            at: new Date().toISOString(),
+          });
+        }
+      } catch (paymentError) {
+        console.error('Payment trigger error:', paymentError);
+        // Continue without blocking courier pickup
+        order.payout = {
+          amount: order.totalDue,
+          currency: 'USD',
+          status: 'pending',
+        };
+        updateTimeline(order, {
+          status: 'courier_requested',
+          label: 'Courier confirmed pickup - Payment failed',
+          at: new Date().toISOString(),
+        });
+      }
     }
 
     if (status === 'delivered') {

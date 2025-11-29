@@ -12,19 +12,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             return res.status(400).json({ error: 'Email and password required' });
         }
 
-        // TODO: Verify credentials with Supabase
-        // TODO: Validate password with bcrypt
+        // TODO: Verify credentials with Supabase and validate password
+        // For now, simple email-based auth (accept any email/password)
         
-        // Mock successful sign in
-        const shopId = `SHOP-${Date.now()}`;
+        const shopId = email.toLowerCase().trim(); // Use email as ID
         const token = `TOKEN-${Date.now()}`;
 
         console.log('🖨️ Print shop sign in:', { email });
 
+        // TODO: Get shop name from database
+        // For now, use a default or extract from email
+        const shopName = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Print Shop';
+
         return res.status(200).json({
             success: true,
             shopId,
-            shopName: 'B O Printing', // TODO: Get from database
+            shopName,
+            email,
             token
         });
 

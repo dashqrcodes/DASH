@@ -23,12 +23,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             return res.status(400).json({ error: 'Missing required fields' });
         }
 
-        // TODO: Hash password with bcrypt
-        // TODO: Save to Supabase database
-        // TODO: Send welcome email
+        // TODO: Hash password with bcrypt and save to Supabase database
+        // For now, simple email-based auth
 
-        // Mock successful signup
-        const shopId = `SHOP-${Date.now()}`;
+        const shopId = email.toLowerCase().trim(); // Use email as ID for simplicity
         const token = `TOKEN-${Date.now()}`;
 
         console.log('🖨️ Print shop signup:', {
@@ -42,6 +40,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             success: true,
             shopId,
             shopName,
+            email,
             token,
             message: 'Account created successfully'
         });
