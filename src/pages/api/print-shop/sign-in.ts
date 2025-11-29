@@ -22,7 +22,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         // TODO: Get shop name from database
         // For now, use a default or extract from email
-        const shopName = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Print Shop';
+        const shopName = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) || 'Print Shop';
 
         return res.status(200).json({
             success: true,
