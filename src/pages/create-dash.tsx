@@ -1201,11 +1201,7 @@ const CreateMemorialPage: React.FC = () => {
                                                 {language === 'en' ? 'Sunrise (Birth)' : 'Nacimiento'}
                                             </div>
                                             <div style={{ fontSize: '16px', color: 'white', fontWeight: '500' }}>
-                                                {new Date(sunrise).toLocaleDateString(language === 'en' ? 'en-US' : 'es-ES', { 
-                                                    year: 'numeric', 
-                                                    month: 'long', 
-                                                    day: 'numeric' 
-                                                })}
+                                                {formatDateForPreview(sunrise, language)}
                                             </div>
                                         </div>
                                     )}
@@ -1215,11 +1211,7 @@ const CreateMemorialPage: React.FC = () => {
                                                 {language === 'en' ? 'Sunset (Death)' : 'Fallecimiento'}
                                             </div>
                                             <div style={{ fontSize: '16px', color: 'white', fontWeight: '500' }}>
-                                                {new Date(sunset).toLocaleDateString(language === 'en' ? 'en-US' : 'es-ES', { 
-                                                    year: 'numeric', 
-                                                    month: 'long', 
-                                                    day: 'numeric' 
-                                                })}
+                                                {formatDateForPreview(sunset, language)}
                                             </div>
                                         </div>
                                     )}
