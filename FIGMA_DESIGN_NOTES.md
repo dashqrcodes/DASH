@@ -3,7 +3,7 @@
 ## Key Elements from Screenshots:
 
 ### Screen 1: Product Selection
-- DASH logo + shopping cart (2 items) + LOGIN + hamburger menu
+- DASH log + shopping cart (2 items) + LOGIN + hamburger menu
 - Navigation: "Memorial Cards" (selected) + "Enlargement Poster Board"
 - Large card previews (front/back side-by-side)
 - "Buy 50" / "Buy 100" options with prices
