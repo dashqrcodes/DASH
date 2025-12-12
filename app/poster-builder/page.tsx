@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-function ProductHubContent() {
+function PosterBuilderContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [photo, setPhoto] = useState<string | null>(null);
@@ -12,6 +12,8 @@ function ProductHubContent() {
   const [sunset, setSunset] = useState('');
   const [textColor, setTextColor] = useState('#FFFFFF');
   const [language, setLanguage] = useState<'en' | 'es'>('en');
+  const [qrPattern, setQrPattern] = useState<boolean[]>([]);
+  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
   
   useEffect(() => {
     // Load language preference from localStorage
@@ -20,11 +22,6 @@ function ProductHubContent() {
       setLanguage(savedLanguage);
     }
   }, []);
-
-  const handleLanguageChange = (lang: 'en' | 'es') => {
-    setLanguage(lang);
-    localStorage.setItem('appLanguage', lang);
-  };
   
   // Translations
   const translations = {
@@ -62,16 +59,16 @@ function ProductHubContent() {
   
   // Date formatting helpers
   const formatDate = (value: string) => {
-    // English: "Jan 15, 2024" or "June 15, 2024"
-    // Spanish: "15 ene, 2024" or "15 junio, 2024"
+    // English: "January 15, 2024" or "June 15, 2024"
+    // Spanish: "15 enero, 2024" or "15 junio, 2024"
     const monthNames = {
       en: [
-        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'June',
-        'July', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
       ],
       es: [
-        'ene', 'feb', 'mar', 'abr', 'may', 'jun',
-        'jul', 'ago', 'sep', 'oct', 'nov', 'dic'
+        'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+        'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
       ]
     };
     
@@ -209,10 +206,8 @@ function ProductHubContent() {
     const nextIndex = (currentBgIndex + 1) % backgrounds.length;
     setCurrentBgIndex(nextIndex);
     // Analyze background brightness
-    if (backgrounds[nextIndex] && !backgrounds[nextIndex].startsWith('linear-gradient')) {
+    if (backgrounds[nextIndex]) {
       analyzeImageBrightness(backgrounds[nextIndex]);
-    } else if (backgrounds[nextIndex]) {
-      setTextColor('#0A2463');
     }
   };
   
@@ -220,13 +215,6 @@ function ProductHubContent() {
     setCurrentFontIndex((prev) => (prev + 1) % fonts.length);
   };
   
-  const handleFlipToBack = () => {
-    const params = new URLSearchParams();
-    if (name) params.append('name', name);
-    if (sunrise) params.append('sunrise', sunrise);
-    if (sunset) params.append('sunset', sunset);
-    router.push(`/memorial-card-back?${params.toString()}`);
-  };
   
   useEffect(() => {
     // Read URL parameters
@@ -252,12 +240,47 @@ function ProductHubContent() {
       }
     }
   }, [photo, currentBgIndex]);
+  
+  // Generate QR code
+  const generateQRCode = async () => {
+    try {
+      const url = 'http://localhost:3000/poster-builder';
+      const response = await fetch('/api/generate-qr', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url, lovedOneName: name }),
+      });
+      const data = await response.json();
+      if (data.success && data.qrCode) {
+        setQrCodeUrl(data.qrCode);
+      }
+    } catch (error) {
+      console.error('Error generating QR code:', error);
+      setQrPattern(Array.from({length:64}, ()=>Math.random()>0.3));
+    }
+  };
+  
+  useEffect(() => {
+    generateQRCode();
+  }, []);
+  
+  useEffect(() => {
+    if (name) {
+      generateQRCode();
+    }
+  }, [name]);
+  
+  useEffect(() => {
+    setQrPattern(Array.from({length:64}, ()=>Math.random()>0.3));
+  }, []);
 
   return (
     <div style={{minHeight:'100vh',background:'#000000',fontFamily:'-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',color:'white',padding:'10px',paddingBottom:'90px',display:'flex',flexDirection:'column',maxWidth:'100vw',overflow:'hidden'}}>
       <div style={{display:'flex',justifyContent:'space-between',padding:'8px 16px',marginBottom:'10px',fontSize:'14px',alignItems:'center'}}>
         <div style={{display:'flex',alignItems:'center',gap:'16px'}}>
-          <button onClick={()=>router.back()} style={{background:'transparent',border:'none',color:'white',fontSize:'20px',cursor:'pointer',padding:0}}>←</button>
+          <button onClick={()=>router.push('/product-hub')} style={{background:'transparent',border:'none',color:'white',fontSize:'20px',cursor:'pointer',padding:0}}>←</button>
           <div>9:41</div>
         </div>
         <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
@@ -272,17 +295,10 @@ function ProductHubContent() {
         </div>
       </div>
       
-      <div style={{textAlign:'center',marginBottom:'15px'}}>
-        <div style={{display:'inline-flex',background:'rgba(255,255,255,0.1)',borderRadius:'25px',padding:'4px',gap:'4px'}}>
-          <button onClick={()=>handleLanguageChange('en')} style={{padding:'8px 20px',background:language === 'en' ? 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)' : 'transparent',border:'none',borderRadius:'20px',color:language === 'en' ? 'white' : 'rgba(255,255,255,0.6)',fontSize:'14px',fontWeight:'600',cursor:'pointer',transition:'all 0.3s ease'}}>English</button>
-          <button onClick={()=>handleLanguageChange('es')} style={{padding:'8px 20px',background:language === 'es' ? 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)' : 'transparent',border:'none',borderRadius:'20px',color:language === 'es' ? 'white' : 'rgba(255,255,255,0.6)',fontSize:'14px',fontWeight:'600',cursor:'pointer',transition:'all 0.3s ease'}}>Español</button>
-        </div>
-      </div>
-      
       <div style={{marginBottom:'8px',overflowX:'auto',WebkitOverflowScrolling:'touch',paddingBottom:'8px'}}>
         <div style={{display:'flex',gap:'12px',paddingLeft:'10px',paddingRight:'10px'}}>
-          <button style={{background:'rgba(102,126,234,0.3)',border:'1px solid rgba(102,126,234,0.5)',borderRadius:'12px',padding:'12px 20px',color:'white',fontSize:'14px',fontWeight:'600',cursor:'pointer',whiteSpace:'nowrap'}}>{t.card}</button>
-          <button style={{background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.2)',borderRadius:'12px',padding:'12px 20px',color:'white',fontSize:'14px',fontWeight:'600',cursor:'pointer',whiteSpace:'nowrap'}}>{t.poster}</button>
+          <button style={{background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.2)',borderRadius:'12px',padding:'12px 20px',color:'white',fontSize:'14px',fontWeight:'600',cursor:'pointer',whiteSpace:'nowrap'}} onClick={()=>router.push('/product-hub')}>{t.card}</button>
+          <button style={{background:'rgba(102,126,234,0.3)',border:'1px solid rgba(102,126,234,0.5)',borderRadius:'12px',padding:'12px 20px',color:'white',fontSize:'14px',fontWeight:'600',cursor:'pointer',whiteSpace:'nowrap'}}>{t.poster}</button>
           <button style={{background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.2)',borderRadius:'12px',padding:'12px 20px',color:'white',fontSize:'14px',fontWeight:'600',cursor:'pointer',whiteSpace:'nowrap'}}>{t.program}</button>
           <button style={{background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.2)',borderRadius:'12px',padding:'12px 20px',color:'white',fontSize:'14px',fontWeight:'600',cursor:'pointer',whiteSpace:'nowrap'}}>{t.metalQR}</button>
           <button style={{background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.2)',borderRadius:'12px',padding:'12px 20px',color:'white',fontSize:'14px',fontWeight:'600',cursor:'pointer',whiteSpace:'nowrap'}}>{t.acrylic57}</button>
@@ -290,8 +306,8 @@ function ProductHubContent() {
         </div>
       </div>
       
-      <div style={{display:'flex',justifyContent:'center',alignItems:'center',gap:'16px',marginBottom:'10px',padding:'0 20px',position:'relative'}}>
-        <p onClick={handleFlipToBack} style={{fontSize:'14px',color:'rgba(255,255,255,0.5)',margin:'0',fontWeight:'700',cursor:'pointer',display:'inline-block',padding:'8px 20px',borderRadius:'20px',transition:'all 0.3s ease'}} onMouseEnter={(e)=>{e.currentTarget.style.background='rgba(255,255,255,0.1)';}} onMouseLeave={(e)=>{e.currentTarget.style.background='transparent';}}>{t.front}</p>
+      <div style={{marginBottom:'10px',padding:'0 20px',display:'flex',justifyContent:'center',alignItems:'center',gap:'16px'}}>
+        <p style={{fontSize:'18px',color:'rgba(255,255,255,0.5)',margin:'0',fontWeight:'700'}}>{t.poster}</p>
         <div style={{display:'flex',gap:'8px',alignItems:'center',position:'absolute',right:'20px'}}>
           <button onClick={handlePhotoClick} style={{position:'relative',background:'rgba(255,255,255,0.2)',border:'1px solid rgba(255,255,255,0.3)',borderRadius:'50%',width:'36px',height:'36px',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}} title="Upload photo">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
@@ -310,14 +326,14 @@ function ProductHubContent() {
       </div>
       
       <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',position:'relative',minHeight:0}}>
-        <div style={{position:'relative',width:'min(calc(100vw - 40px), 85vw)',maxWidth:'400px',aspectRatio:'4/6'}}>
-          <div onClick={handleBackgroundClick} style={{width:'100%',height:'100%',border:'6px solid white',display:'flex',flexDirection:'column',position:'relative',cursor:'pointer',overflow:'hidden',background:backgrounds[currentBgIndex].startsWith('linear-gradient') ? backgrounds[currentBgIndex] : 'transparent'}}>
+        <div style={{position:'relative',width:'min(calc(100vw - 60px), 90vw)',maxWidth:'600px',aspectRatio:'2/3'}}>
+          <div onClick={handleBackgroundClick} style={{width:'100%',height:'100%',display:'flex',flexDirection:'column',position:'relative',cursor:'pointer',overflow:'hidden',background:backgrounds[currentBgIndex].startsWith('linear-gradient') ? backgrounds[currentBgIndex] : 'transparent'}}>
             {!backgrounds[currentBgIndex].startsWith('linear-gradient') && (
               <img src={backgrounds[currentBgIndex]} alt="Person background" style={{width:'100%',height:'100%',objectFit:'cover',position:'absolute',top:0,left:0,zIndex:0,filter:backgrounds[currentBgIndex].includes('grayscale') ? 'grayscale(100%)' : 'none'}} />
             )}
             {/* Large profile icon CTA */}
             {!photo && (
-              <svg style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',width:'300px',height:'300px',zIndex:1,pointerEvents:'none'}} viewBox="0 0 24 24" fill="none" stroke={textColor === '#0A2463' ? 'rgba(10,36,99,0.3)' : 'rgba(255,255,255,0.3)'} strokeWidth="1">
+              <svg style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',width:'200px',height:'200px',zIndex:1,pointerEvents:'none'}} viewBox="0 0 24 24" fill="none" stroke={textColor === '#0A2463' ? 'rgba(10,36,99,0.3)' : 'rgba(255,255,255,0.3)'} strokeWidth="1">
                 <circle cx="12" cy="7" r="4"/>
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
               </svg>
@@ -326,18 +342,25 @@ function ProductHubContent() {
               <img src={photo} alt="Uploaded" style={{width:'100%',height:'100%',objectFit:'cover',position:'absolute',top:0,left:0,zIndex:2}} />
             )}
             
-            <div style={{position:'absolute',bottom:'130px',left:'30px',right:'30px',textAlign:'center',fontFamily:'cursive',fontSize:'16px',color:textColor,opacity:0.95,fontStyle:'italic',fontWeight:'700',zIndex:10}}>{t.inLovingMemory}</div>
-            <input onClick={(e)=>{e.stopPropagation(); handleNameClick();}} type="text" value={name} onChange={(e)=>{e.stopPropagation(); setName(e.target.value);}} placeholder={t.fullName} style={{position:'absolute',bottom:'80px',left:'30px',right:'30px',background:photo ? `rgba(${textColor === '#FFFFFF' ? '255,255,255' : '0,0,0'},0.2)`:'rgba(255,255,255,0.1)',border:`1px solid ${textColor}`,borderRadius:'4px',padding:'10px',color:textColor,fontSize:'16px',outline:'none',textAlign:'center',fontFamily:fonts[currentFontIndex],zIndex:10,minHeight:'44px',cursor:'pointer',transition:'all 0.3s ease'}} />
+            <input onClick={(e)=>{e.stopPropagation(); handleNameClick();}} type="text" value={name} onChange={(e)=>{e.stopPropagation(); setName(e.target.value);}} placeholder={t.fullName} style={{position:'absolute',bottom:'80px',left:'60px',right:'60px',background:photo ? `rgba(${textColor === '#FFFFFF' ? '255,255,255' : '0,0,0'},0.2)`:'rgba(255,255,255,0.1)',border:`1px solid ${textColor}`,borderRadius:'4px',padding:'8px',color:textColor,fontSize:'18px',outline:'none',textAlign:'center',fontFamily:fonts[currentFontIndex],zIndex:10,minHeight:'40px',cursor:'pointer',transition:'all 0.3s ease'}} />
             
-            <div style={{position:'absolute',bottom:'20px',left:'15px',right:'15px',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',zIndex:10}}>
+            <div style={{position:'absolute',bottom:'20px',left:'60px',right:'60px',display:'flex',alignItems:'center',justifyContent:'center',gap:'12px',zIndex:10}}>
               <div style={{display:'flex',flexDirection:'column',alignItems:'center'}}>
-                <input type="text" value={sunrise} onChange={(e)=>setSunrise(e.target.value)} onBlur={(e)=>setSunrise(formatDate(e.target.value))} placeholder={t.datePlaceholder} style={{background:photo ? `rgba(${textColor === '#FFFFFF' ? '255,255,255' : '0,0,0'},0.2)`:'rgba(255,255,255,0.1)',border:`1px solid ${textColor}`,borderRadius:'4px',padding:'8px',color:textColor,fontSize:'11px',outline:'none',width:'110px',textAlign:'center',marginBottom:'3px',fontFamily:'-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',minHeight:'36px'}} />
-                <span style={{color:textColor,opacity:0.6,fontSize:'9px'}}>{t.sunrise}</span>
+                <div style={{color:textColor,fontSize:'12px',textAlign:'center',marginBottom:'3px',fontFamily:'-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',fontWeight:'600'}}>{sunrise || 'Date'}</div>
+                <span style={{color:textColor,opacity:0.6,fontSize:'8px'}}>{t.sunrise}</span>
               </div>
-              <span style={{color:textColor,opacity:0.6,fontSize:'14px',alignSelf:'flex-start',marginTop:'8px'}}>-</span>
+              <div style={{width:'30px',height:'30px',borderRadius:'4px',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',position:'relative',overflow:'hidden'}}>
+                {qrCodeUrl ? (
+                  <img src={qrCodeUrl} alt="QR Code" style={{width:'100%',height:'100%',objectFit:'cover'}} />
+                ) : (
+                  <div style={{display:'grid',gridTemplateColumns:'repeat(8,1fr)',gap:'1px',width:'24px',height:'24px',background:'transparent',padding:'2px',borderRadius:'2px'}}>
+                    {qrPattern.map((isFilled,i)=>(<div key={i} style={{background:isFilled?'rgba(255,255,255,0.9)':'transparent'}} />))}
+                  </div>
+                )}
+              </div>
               <div style={{display:'flex',flexDirection:'column',alignItems:'center'}}>
-                <input type="text" value={sunset} onChange={(e)=>setSunset(e.target.value)} onBlur={(e)=>setSunset(formatDate(e.target.value))} placeholder={t.datePlaceholder} style={{background:photo ? `rgba(${textColor === '#FFFFFF' ? '255,255,255' : '0,0,0'},0.2)`:'rgba(255,255,255,0.1)',border:`1px solid ${textColor}`,borderRadius:'4px',padding:'8px',color:textColor,fontSize:'11px',outline:'none',width:'110px',textAlign:'center',marginBottom:'3px',fontFamily:'-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',minHeight:'36px'}} />
-                <span style={{color:textColor,opacity:0.6,fontSize:'9px'}}>{t.sunset}</span>
+                <div style={{color:textColor,fontSize:'12px',textAlign:'center',marginBottom:'3px',fontFamily:'-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',fontWeight:'600'}}>{sunset || 'Date'}</div>
+                <span style={{color:textColor,opacity:0.6,fontSize:'8px'}}>{t.sunset}</span>
               </div>
             </div>
           </div>
@@ -345,12 +368,12 @@ function ProductHubContent() {
       </div>
 
       <div style={{position:'fixed',bottom:0,left:0,right:0,background:'rgba(255,255,255,0.05)',backdropFilter:'blur(20px)',borderTop:'1px solid rgba(255,255,255,0.1)',padding:'12px 20px',display:'flex',justifyContent:'space-around',zIndex:100}}>
-        <button onClick={()=>router.push('/')} style={{background:'transparent',border:'none',color:'#667eea',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:'4px'}}>
+        <button onClick={()=>router.push('/')} style={{background:'transparent',border:'none',color:'white',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:'4px'}}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
             <polyline points="9 22 9 12 15 12 15 22"/>
           </svg>
-          <span style={{fontSize:'10px',fontWeight:'600'}}>Home</span>
+          <span style={{fontSize:'10px'}}>Home</span>
         </button>
         <button onClick={()=>router.push('/profile')} style={{background:'transparent',border:'none',color:'white',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:'4px'}}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -378,10 +401,10 @@ function ProductHubContent() {
   );
 }
 
-export default function ProductHub() {
+export default function PosterBuilder() {
   return (
     <Suspense fallback={<div>Loading...</div>}>
-      <ProductHubContent />
+      <PosterBuilderContent />
     </Suspense>
   );
 }

@@ -1,0 +1,112 @@
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+
+export default function MemorialCardBack() {
+  const router = useRouter();
+  const [skyPhoto, setSkyPhoto] = useState<string | null>('/sky-bg.jpg');
+  const [name, setName] = useState('');
+  const [sunrise, setSunrise] = useState('');
+  const [sunset, setSunset] = useState('');
+  const [generating, setGenerating] = useState(false);
+
+  const handleSkyPhotoClick = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e: any) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e: any) => setSkyPhoto(e.target.result);
+        reader.readAsDataURL(file);
+      }
+    };
+    input.click();
+  };
+
+  const handleAIGenerate = async () => {
+    setGenerating(true);
+    try {
+      const prompt = 'peaceful serene sky at sunset with clouds, warm orange and pink hues, beautiful memorial background, ethereal beauty';
+      const response = await fetch('/api/generate-ai-background', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt }),
+      });
+      const data = await response.json();
+      if (data.url) {
+        setSkyPhoto(data.url);
+      }
+    } catch (error) {
+      console.error('Failed to generate AI background:', error);
+    }
+    setGenerating(false);
+  };
+
+  return (
+    <div style={{minHeight:'100vh',background:'#000000',fontFamily:'-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',color:'white',padding:'10px',display:'flex',flexDirection:'column',maxWidth:'100vw',overflow:'hidden'}}>
+      <div style={{display:'flex',justifyContent:'space-between',padding:'8px 16px',marginBottom:'10px',fontSize:'14px'}}>
+        <div>9:41</div>
+        <div>●●●●● 📶 🔋</div>
+      </div>
+      
+      <div style={{textAlign:'center',marginBottom:'20px'}}>
+        <h1 style={{fontSize:'24px',fontWeight:'600',margin:'0',background:'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}}>Memorial Card (cont...)</h1>
+        <p style={{fontSize:'14px',color:'rgba(255,255,255,0.5)',margin:'4px 0 0 0'}}>Back</p>
+      </div>
+      
+      <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',position:'relative',minHeight:0}}>
+        <div style={{position:'relative',width:'min(calc(100vw - 40px), 85vw)',maxWidth:'400px',aspectRatio:'4/6'}}>
+          <div style={{width:'100%',height:'100%',border:'8px solid white',display:'flex',flexDirection:'column',position:'relative',overflow:'hidden',background:'linear-gradient(to bottom, #87CEEB, #E0F6FF)'}}>
+            {skyPhoto && (
+              <img src={skyPhoto} alt="Sky background" style={{width:'100%',height:'100%',objectFit:'cover',position:'absolute',top:0,left:0,zIndex:1}} />
+            )}
+            
+            <div style={{position:'absolute',top:'10px',right:'10px',display:'flex',gap:'5px',zIndex:10}}>
+              <button onClick={handleSkyPhotoClick} style={{background:'rgba(0,0,0,0.3)',border:'1px solid rgba(255,255,255,0.5)',borderRadius:'4px',padding:'6px 12px',color:'white',fontSize:'10px',outline:'none',cursor:'pointer'}}>Upload</button>
+              <button onClick={handleAIGenerate} disabled={generating} style={{background:'rgba(102,126,234,0.6)',border:'1px solid rgba(102,126,234,1)',borderRadius:'4px',padding:'6px 12px',color:'white',fontSize:'10px',outline:'none',cursor:'pointer',opacity:generating?0.5:1}}>
+                {generating ? 'AI...' : '🤖 AI'}
+              </button>
+            </div>
+            
+            <div style={{position:'absolute',top:'30px',left:'12px',right:'12px',textAlign:'center',zIndex:10}}>
+              <div style={{fontSize:'13px',color:'white',fontFamily:'Playfair Display, serif',fontStyle:'italic',marginBottom:'4px',textShadow:'0 0 8px rgba(0,0,0,0.7)'}}>Forever in Our Hearts</div>
+              <div style={{fontSize:'16px',color:'rgba(30,60,150,1)',fontFamily:'Playfair Display, serif',fontWeight:'bold',textShadow:'0 0 4px rgba(255,255,255,0.8)'}}>Psalm 23</div>
+            </div>
+            
+            <div style={{position:'absolute',top:'60px',left:'12px',right:'12px',bottom:'75px',background:'linear-gradient(to bottom, rgba(20,40,100,0.7) 0%, rgba(20,40,100,0.7) 100%)',border:'none',zIndex:5,display:'flex',alignItems:'center',justifyContent:'center'}}>
+              <textarea value="The Lord is my shepherd; I shall not want.\nHe maketh me to lie down in green pastures:\nhe leadeth me beside the still waters.\nHe restoreth my soul:\nhe leadeth me in the paths of righteousness\nfor his name's sake.\n\nYea, though I walk through the valley\nof the shadow of death, I will fear no evil:\nfor thou art with me;\nthy rod and thy staff they comfort me.\n\nThou preparest a table before me\nin the presence of mine enemies:\nthou anointest my head with oil;\nmy cup runneth over.\n\nSurely goodness and mercy shall follow me\nall the days of my life:\nand I will dwell in the house of the Lord forever." style={{width:'100%',height:'100%',background:'transparent',border:'none',color:'white',fontSize:'9px',outline:'none',textAlign:'center',fontFamily:'Playfair Display, serif',lineHeight:'1.4',resize:'none',padding:'8px',fontWeight:'500'}} readOnly />
+            </div>
+            
+            <div style={{position:'absolute',bottom:'12px',left:'12px',right:'12px',display:'flex',alignItems:'center',justifyContent:'space-between',zIndex:10,gap:'10px'}}>
+              <div style={{display:'flex',flexDirection:'column',alignItems:'center'}}>
+                <input type="text" value={sunrise} onChange={(e)=>setSunrise(e.target.value)} placeholder="Date" style={{background:'rgba(255,255,255,0.9)',border:'1px solid rgba(255,255,255,0.5)',borderRadius:'4px',padding:'6px',color:'#000',fontSize:'10px',outline:'none',width:'70px',textAlign:'center',marginBottom:'3px',fontFamily:'-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif'}} />
+                <span style={{color:'rgba(255,255,255,0.9)',fontSize:'8px',textShadow:'0 0 4px rgba(0,0,0,0.5)'}}>Sunrise</span>
+              </div>
+              
+              <div style={{width:'60px',height:'60px',borderRadius:'50%',background:'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',boxShadow:'0 0 10px rgba(102,126,234,0.5)'}}>
+                <span style={{fontSize:'10px',color:'white',fontWeight:'bold'}}>QR</span>
+              </div>
+              
+              <div style={{display:'flex',flexDirection:'column',alignItems:'center'}}>
+                <input type="text" value={sunset} onChange={(e)=>setSunset(e.target.value)} placeholder="Date" style={{background:'rgba(255,255,255,0.9)',border:'1px solid rgba(255,255,255,0.5)',borderRadius:'4px',padding:'6px',color:'#000',fontSize:'10px',outline:'none',width:'70px',textAlign:'center',marginBottom:'3px',fontFamily:'-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif'}} />
+                <span style={{color:'rgba(255,255,255,0.9)',fontSize:'8px',textShadow:'0 0 4px rgba(0,0,0,0.5)'}}>Sunset</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{display:'flex',gap:'10px',marginTop:'20px'}}>
+        <button style={{flex:1,padding:'16px',background:'transparent',border:'1px solid rgba(255,255,255,0.3)',borderRadius:'50px',color:'white',fontSize:'16px',fontWeight:'600',cursor:'pointer',minHeight:'48px'}} onClick={()=>router.back()}>
+          ← Back
+        </button>
+        <button style={{flex:1,padding:'16px',background:'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',border:'none',borderRadius:'50px',color:'white',fontSize:'16px',fontWeight:'600',cursor:'pointer',minHeight:'48px'}} onClick={()=>router.push('/checkout')}>
+          Continue →
+        </button>
+      </div>
+    </div>
+  );
+}
