@@ -78,23 +78,33 @@ function LifeChaptersContent() {
   const t = translations[language];
 
   useEffect(() => {
-    // Load FD data
+    // Load FD data from URL params first (highest priority)
     const urlName = searchParams.get('name');
     const urlSunrise = searchParams.get('sunrise');
     const urlSunset = searchParams.get('sunset');
     
-    if (urlName) setLovedOneName(urlName);
-    if (urlSunrise) setSunrise(urlSunrise);
-    if (urlSunset) setSunset(urlSunset);
+    // Set from URL params if available
+    if (urlName) {
+      setLovedOneName(urlName);
+    } else {
+      // Only fall back to localStorage if URL param doesn't exist
+      const savedName = localStorage.getItem('lovedOneName');
+      if (savedName) setLovedOneName(savedName);
+    }
     
-    // Load from localStorage
-    const savedName = localStorage.getItem('lovedOneName');
-    const savedSunrise = localStorage.getItem('sunrise');
-    const savedSunset = localStorage.getItem('sunset');
+    if (urlSunrise) {
+      setSunrise(urlSunrise);
+    } else {
+      const savedSunrise = localStorage.getItem('sunrise');
+      if (savedSunrise) setSunrise(savedSunrise);
+    }
     
-    if (!lovedOneName && savedName) setLovedOneName(savedName);
-    if (!sunrise && savedSunrise) setSunrise(savedSunrise);
-    if (!sunset && savedSunset) setSunset(savedSunset);
+    if (urlSunset) {
+      setSunset(urlSunset);
+    } else {
+      const savedSunset = localStorage.getItem('sunset');
+      if (savedSunset) setSunset(savedSunset);
+    }
   }, [searchParams]);
 
   const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
