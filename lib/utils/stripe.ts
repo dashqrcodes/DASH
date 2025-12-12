@@ -1,7 +1,7 @@
 import Stripe from 'stripe';
 
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-12-18.acacia',
+  apiVersion: '2025-10-29.clover',
   typescript: true,
 });
 
@@ -26,7 +26,6 @@ export async function createCheckoutSession(
   cancelUrl: string
 ) {
   const session = await stripe.checkout.sessions.create({
-    payment_method_types: ['card', 'apple_pay', 'google_pay'],
     line_items: lineItems,
     mode: 'payment',
     success_url: successUrl,

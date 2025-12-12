@@ -24,3 +24,102 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.9; }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+.avatar-pulse {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.typing-dot-1 {
+  animation: blink 1s infinite;
+}
+
+.typing-dot-2 {
+  animation: blink 1s infinite 0.2s;
+}
+
+.typing-dot-3 {
+  animation: blink 1s infinite 0.4s;
+}
+
+/* Ken Burns Effect - Photo Animations */
+@keyframes kenBurnsZoom {
+  0% {
+    transform: scale(1) translate(0, 0);
+  }
+  50% {
+    transform: scale(1.1) translate(-2%, -2%);
+  }
+  100% {
+    transform: scale(1.2) translate(-4%, -4%);
+  }
+}
+
+@keyframes kenBurnsPanLeft {
+  0% {
+    transform: scale(1.1) translate(0, 0);
+  }
+  100% {
+    transform: scale(1.1) translate(-10%, 0);
+  }
+}
+
+@keyframes kenBurnsPanRight {
+  0% {
+    transform: scale(1.1) translate(0, 0);
+  }
+  100% {
+    transform: scale(1.1) translate(10%, 0);
+  }
+}
+
+@keyframes kenBurnsPanUp {
+  0% {
+    transform: scale(1.1) translate(0, 0);
+  }
+  100% {
+    transform: scale(1.1) translate(0, -10%);
+  }
+}
+
+@keyframes kenBurnsPanDown {
+  0% {
+    transform: scale(1.1) translate(0, 0);
+  }
+  100% {
+    transform: scale(1.1) translate(0, 10%);
+  }
+}
+
+.ken-burns-zoom {
+  animation: kenBurnsZoom 8s ease-in-out infinite;
+}
+
+.ken-burns-pan-left {
+  animation: kenBurnsPanLeft 10s ease-in-out infinite;
+}
+
+.ken-burns-pan-right {
+  animation: kenBurnsPanRight 10s ease-in-out infinite;
+}
+
+.ken-burns-pan-up {
+  animation: kenBurnsPanUp 10s ease-in-out infinite;
+}
+
+.ken-burns-pan-down {
+  animation: kenBurnsPanDown 10s ease-in-out infinite;
+}

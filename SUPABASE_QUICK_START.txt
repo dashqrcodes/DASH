@@ -1,0 +1,31 @@
+═══════════════════════════════════════════════════════════════
+  SUPABASE QUICK START - 3 STEPS TO CONNECT
+═══════════════════════════════════════════════════════════════
+
+✅ STEP 1: Environment Variables (DONE!)
+   File: .env.local (already created)
+
+✅ STEP 2: Create Database Tables (DO THIS NOW!)
+   
+   1. Open: https://supabase.com/dashboard/project/urnkszyyabomkpujkzo/sql/new
+   
+   2. Open file: supabase-schema.sql
+   
+   3. Copy ALL the SQL code
+   
+   4. Paste into Supabase SQL Editor
+   
+   5. Click "Run" button
+   
+   6. Wait for ✅ Success message
+
+✅ STEP 3: Test Connection
+   
+   Visit: http://localhost:3000/api/test-supabase
+   
+   Should see: {"success":true,"connected":true,...}
+
+═══════════════════════════════════════════════════════════════
+  THAT'S IT! Your Supabase is connected! 🎉
+═══════════════════════════════════════════════════════════════
+
