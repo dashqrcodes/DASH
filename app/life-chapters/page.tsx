@@ -12,6 +12,9 @@ function LifeChaptersContent() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [language, setLanguage] = useState<'en' | 'es'>('en');
+  const [lovedOneName, setLovedOneName] = useState<string>('');
+  const [sunrise, setSunrise] = useState<string>('');
+  const [sunset, setSunset] = useState<string>('');
 
   useEffect(() => {
     // Load language preference from localStorage

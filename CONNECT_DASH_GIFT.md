@@ -29,3 +29,4 @@ Vercel will show you DNS records. Update your domain provider:
 
 ## Quick Check:
 After adding domain in Vercel, what DNS records does it show you?
+npx fix-react2sexthell-n
