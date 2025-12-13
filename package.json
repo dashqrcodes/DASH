@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "echo \"No tests configured\""
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.78.0",
@@ -14,7 +15,10 @@
     "@types/qrcode": "^1.5.6",
     "canvas": "^3.2.0",
     "cloudinary": "^2.8.0",
-    "next": "16.0.10",
+    "formidable": "^3.5.4",
+    "jszip": "^3.10.1",
+    "micro": "^10.0.1",
+    "next": "^14.2.5",
     "nodemailer": "^7.0.10",
     "qrcode": "^1.5.4",
     "react": "19.2.0",
@@ -23,12 +27,14 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/jszip": "^3.4.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.0.1",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^2.1.3"
   }
 }
