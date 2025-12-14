@@ -53,6 +53,12 @@ export async function POST(request: NextRequest) {
     const normalizedPhone = normalizePhoneNumber(phone);
     
     // Create Supabase client with anon key
+    if (!supabaseUrl || !supabaseAnonKey) {
+      return NextResponse.json(
+        { success: false, error: 'Server configuration error' },
+        { status: 500 }
+      );
+    }
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
     
     // Verify OTP via Supabase Auth

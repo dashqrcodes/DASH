@@ -58,6 +58,12 @@ export async function POST(request: NextRequest) {
     }
     
     // Create Supabase client with anon key (client-side safe)
+    if (!supabaseUrl || !supabaseAnonKey) {
+      return NextResponse.json(
+        { success: false, error: 'Server configuration error' },
+        { status: 500 }
+      );
+    }
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
     
     // Send OTP via Supabase Auth
