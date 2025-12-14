@@ -8,9 +8,9 @@ function MemorialCardPreviewContent() {
   const searchParams = useSearchParams();
   const [isFlipped, setIsFlipped] = useState(false);
 
-  const lovedOneName = searchParams.get('name') || '';
-  const sunrise = searchParams.get('sunrise') || '';
-  const sunset = searchParams.get('sunset') || '';
+  const lovedOneName = searchParams?.get('name') || '';
+  const sunrise = searchParams?.get('sunrise') || '';
+  const sunset = searchParams?.get('sunset') || '';
 
   return (
     <div style={{minHeight:'100vh',background:'#000000',fontFamily:'-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',color:'white',padding:'10px',paddingBottom:'160px',display:'flex',flexDirection:'column',maxWidth:'100vw',overflow:'hidden'}}>

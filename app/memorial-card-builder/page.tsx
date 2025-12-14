@@ -21,7 +21,7 @@ function MemorialCardBuilderContent() {
       
       <div style={{width:'min(calc(100vw - 40px), 85vw)',maxWidth:'400px',aspectRatio:'4/6',border:'6px solid white',background:'rgba(255,255,255,0.05)',marginBottom:'40px'}} />
       
-      <button style={{padding:'16px 50px',background:'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',border:'none',borderRadius:'50px',color:'white',fontSize:'16px',fontWeight:'600',cursor:'pointer',minHeight:'48px'}} onClick={()=>router.push(`/memorial-card-back?sunrise=${encodeURIComponent(searchParams.get('sunrise') || '')}&sunset=${encodeURIComponent(searchParams.get('sunset') || '')}`)}>
+      <button style={{padding:'16px 50px',background:'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',border:'none',borderRadius:'50px',color:'white',fontSize:'16px',fontWeight:'600',cursor:'pointer',minHeight:'48px'}} onClick={()=>router.push(`/memorial-card-back?sunrise=${encodeURIComponent(searchParams?.get('sunrise') || '')}&sunset=${encodeURIComponent(searchParams?.get('sunset') || '')}`)}>
         Continue →
       </button>
     </div>

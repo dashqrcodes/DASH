@@ -18,6 +18,7 @@ function ProfileContent() {
 
   useEffect(() => {
     // Load loved one's name from localStorage or URL params
+    if (!searchParams) return;
     const urlName = searchParams.get('name');
     const cardDesign = localStorage.getItem('cardDesign');
     const frontCardData = localStorage.getItem('frontCardData');

@@ -230,6 +230,7 @@ function ProductHubContent() {
   
   useEffect(() => {
     // Read URL parameters
+    if (!searchParams) return;
     const urlName = searchParams.get('name');
     const urlSunrise = searchParams.get('sunrise');
     const urlSunset = searchParams.get('sunset');

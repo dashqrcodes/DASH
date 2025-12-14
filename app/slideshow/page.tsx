@@ -65,6 +65,7 @@ function SlideshowContent() {
     // Priority: URL params > localStorage cardDesign > localStorage frontCardData > localStorage individual fields
     
     // Check URL params first (from FD)
+    if (!searchParams) return;
     const urlName = searchParams.get('name');
     const urlSunrise = searchParams.get('sunrise');
     const urlSunset = searchParams.get('sunset');

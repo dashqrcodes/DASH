@@ -55,6 +55,7 @@ function MemorialCardBackContent() {
   const [frontPhoto, setFrontPhoto] = useState<string | null>(null);
   
   useEffect(() => {
+    if (!searchParams) return;
     const urlName = searchParams.get('name');
     const urlSunrise = searchParams.get('sunrise');
     const urlSunset = searchParams.get('sunset');
