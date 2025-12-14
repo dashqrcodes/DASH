@@ -1,0 +1,111 @@
+# Query:  Terminal
+# Flags: WordMatch
+# Excluding: cd "/Users/davidgastelum/DASH Repository Web App/nextjs-auth-app"
+# ContextLines: 1
+
+28 results - 9 files
+
+VERCEL_ENV_SETUP.md:
+  75  
+  76: Run these commands in your terminal:
+  77  
+
+@types/node/console.d.ts:
+  95               * The specific operation of `console.clear()` can vary across operating systems
+  96:              * and terminal types. For most Linux operating systems, `console.clear()` operates similarly to the `clear` shell command. On Windows, `console.clear()` will clear only the output in the
+  97:              * current terminal viewport for the Node.js
+  98               * binary.
+
+@types/node/fs.d.ts:
+  3838          /**
+  3839:          * Constant for fs.open(). Flag indicating that if path identifies a terminal device,
+  3840:          * opening the path shall not cause that terminal to become the controlling terminal for the process
+  3841           * (if the process does not already have one).
+
+@types/node/readline.d.ts:
+   54      export class Interface extends EventEmitter implements Disposable {
+   55:         readonly terminal: boolean;
+   56          /**
+
+   92           * portion of the input string that will be modified as input is processed,
+   93:          * as well as the column where the terminal caret will be rendered.
+   94           * @since v0.1.98
+
+  108              completer?: Completer | AsyncCompleter,
+  109:             terminal?: boolean,
+  110          );
+
+  218           * by `key` to the `output`. The `key` argument is supported only if `output` is
+  219:          * a `TTY` text terminal. See `TTY keybindings` for a list of key
+  220           * combinations.
+
+  338           */
+  339:         terminal?: boolean | undefined;
+  340          /**
+
+  428          completer?: Completer | AsyncCompleter,
+  429:         terminal?: boolean,
+  430      ): Interface;
+
+  439       *
+  440:      * This is automatically called by any readline instance on its `input` if the `input` is a terminal. Closing the `readline` instance does not stop
+  441       * the `input` from emitting `'keypress'` events.
+
+@types/node/repl.d.ts:
+  31          /**
+  32:          * If `true`, specifies that the output should be treated as a TTY terminal, and have
+  33           * ANSI/VT100 escape codes written to it.
+
+  36           */
+  37:         terminal?: boolean | undefined;
+  38          /**
+
+@types/node/tty.d.ts:
+    8   *
+    9:  * When Node.js detects that it is being run with a text terminal ("TTY")
+   10   * attached, `process.stdin` will, by default, be initialized as an instance of `tty.ReadStream` and both `process.stdout` and `process.stderr` will, by
+
+   46           *
+   47:          * This flag is always `false` when a process starts, even if the terminal is
+   48           * operating in raw mode. Its value will change with subsequent calls to `setRawMode`.
+
+   56           * including modifiers. Additionally, all special processing of characters by the
+   57:          * terminal is disabled, including echoing input
+   58           * characters. Ctrl+C will no longer cause a `SIGINT` when
+
+  137           *
+  138:          * Use this to determine what colors the terminal supports. Due to the nature of
+  139           * colors in terminals it is possible to either have false positives or false
+  140           * negatives. It depends on process information and the environment variables that
+  141:          * may lie about what terminal is used.
+  142           * It is possible to pass in an `env` object to simulate the usage of a specific
+  143:          * terminal. This can be useful to check how specific environment settings behave.
+  144           *
+
+  153           * @since v9.9.0
+  154:          * @param [env=process.env] An object containing the environment variables to check. This enables simulating the usage of a specific terminal.
+  155           */
+
+  174           * @param [count=16] The number of colors that are requested (minimum 2).
+  175:          * @param [env=process.env] An object containing the environment variables to check. This enables simulating the usage of a specific terminal.
+  176           */
+
+@types/node/util.d.ts:
+   240       * // Returns 'See object { foo: 42 }', where `42` is colored as a number
+   241:      * // when printed to a terminal.
+   242       * ```
+
+  1207       * This function returns a formatted text considering the `format` passed
+  1208:      * for printing in a terminal. It is aware of the terminal's capabilities
+  1209       * and acts according to the configuration set via `NO_COLOR`,
+
+@types/node/assert/strict.d.ts:
+  41   * environment variables. This will also deactivate the colors in the REPL. For
+  42:  * more on color support in terminal environments, read the tty
+  43   * [`getColorDepth()`](https://nodejs.org/docs/latest-v24.x/api/tty.html#writestreamgetcolordepthenv) documentation.
+
+@types/node/readline/promises.d.ts:
+  154          completer?: Completer,
+  155:         terminal?: boolean,
+  156      ): Interface;
+cd "/Users/davidgastelum/DASH Repository Web App/nextjs-auth-app"
