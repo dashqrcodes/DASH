@@ -323,6 +323,10 @@ export default function GiftPage() {
             {videoPreview && !loading.video && (
               <button
                 onClick={() => {
+                  // Clean up object URL to prevent memory leaks
+                  if (videoPreview.startsWith('blob:')) {
+                    URL.revokeObjectURL(videoPreview);
+                  }
                   setVideoFile(null);
                   setVideoPreview(null);
                   setVideoUrl(null);
