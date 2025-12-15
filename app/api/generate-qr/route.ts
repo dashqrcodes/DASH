@@ -50,8 +50,10 @@ export async function POST(request: NextRequest) {
     ctx.textBaseline = 'middle';
     ctx.fillText('DASH', centerX, centerY);
     
-    // Convert to data URL with transparency
-    const finalQrDataUrl = canvas.toDataURL('image/png');
+    // Convert canvas to buffer then to base64 data URL
+    const buffer = canvas.toBuffer('image/png');
+    const base64 = buffer.toString('base64');
+    const finalQrDataUrl = `data:image/png;base64,${base64}`;
     
     return NextResponse.json({ 
       success: true, 
