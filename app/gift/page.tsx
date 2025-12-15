@@ -1,429 +1,291 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import QRCode from 'qrcode';
 
 export default function GiftPage() {
   const router = useRouter();
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [videoFile, setVideoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-  const [videoPreview, setVideoPreview] = useState<string | null>(null);
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
-  const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [qrPreview, setQrPreview] = useState<string | null>(null);
-  const [finalPreview, setFinalPreview] = useState<string | null>(null);
-  const [loading, setLoading] = useState({
-    photo: false,
-    video: false,
-    qr: false,
-    preview: false,
-  });
-  const [error, setError] = useState<string | null>(null);
+  const [qrValue, setQrValue] = useState('');
+  const [qrError, setQrError] = useState<string | null>(null);
+  const [isGeneratingQr, setIsGeneratingQr] = useState(false);
+  const [showSpotlight, setShowSpotlight] = useState(false);
 
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    const timeout = setTimeout(() => setShowSpotlight(true), 400);
+    return () => clearTimeout(timeout);
+  }, []);
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-
-    setPhotoFile(file);
-    setError(null);
-
-    // Local preview - INSTANT
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const result = e.target?.result as string;
-      setPhotoPreview(result);
-      setPhotoUrl(result);
-      
-      // Generate preview INSTANTLY (no server call)
-      await generateInstantPreview(result, videoUrl || '');
-    };
-    reader.readAsDataURL(file);
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        setPhotoPreview(result);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
-  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Check file size (max 500MB for Mux)
-    if (file.size > 500 * 1024 * 1024) {
-      setError('Video file is too large. Please use a video under 500MB.');
+  const handleGenerateQr = async () => {
+    const payload = qrValue.trim();
+    if (!payload) {
+      setQrError('Add a link or short message to encode.');
+      setQrPreview(null);
       return;
     }
 
-    setVideoFile(file);
-    setError(null);
-    setLoading((prev) => ({ ...prev, video: true }));
-
     try {
-      // Show local preview immediately
-      const objectUrl = URL.createObjectURL(file);
-      setVideoPreview(objectUrl);
-
-      // Upload to Mux for professional hosting
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const response = await fetch('/api/upload-video-mux', {
-        method: 'POST',
-        body: formData,
+      setIsGeneratingQr(true);
+      setQrError(null);
+      const dataUrl = await QRCode.toDataURL(payload, {
+        width: 512,
+        margin: 1,
+        color: { dark: '#111111', light: '#ffffffff' },
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to upload video');
-      }
-
-      const data = await response.json();
-      
-      // Use Mux playback URL (professional streaming)
-      const muxUrl = `https://stream.mux.com/${data.playbackId}.m3u8`;
-      setVideoUrl(muxUrl);
-      
-      // Regenerate preview if photo exists (use Mux URL for QR code)
-      if (photoUrl) {
-        await generateInstantPreview(photoUrl, muxUrl);
-      }
-    } catch (err: any) {
-      console.error('Video upload error:', err);
-      setError(err.message || 'Failed to upload video. Please try again.');
-      setVideoFile(null);
-      setVideoPreview(null);
-      setVideoUrl(null);
+      setQrPreview(dataUrl);
+    } catch (error) {
+      console.error('QR generation failed', error);
+      setQrError('Could not generate QR code. Please try again.');
     } finally {
-      setLoading((prev) => ({ ...prev, video: false }));
+      setIsGeneratingQr(false);
     }
   };
 
-  // INSTANT preview generation using optimized API call
-  const generateInstantPreview = async (photoDataUrl: string, videoUrl: string = '') => {
-    if (!photoDataUrl) return;
-
-    setLoading((prev) => ({ ...prev, qr: true }));
-    setError(null);
-
-    try {
-      // Create URL for QR code
-      const qrUrl = videoUrl || photoDataUrl || `${window.location.origin}/gift`;
-
-      // Generate QR code via API (fast, optimized endpoint)
-      const qrResponse = await fetch('/api/generate-qr', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: qrUrl }),
-      });
-
-      if (!qrResponse.ok) {
-        throw new Error('QR generation failed');
-      }
-
-      const qrData = await qrResponse.json();
-      const qrDataUrl = qrData.qrCode;
-
-      // Create canvas for QR with DASH logo
-      const qrCanvas = document.createElement('canvas');
-      qrCanvas.width = 225;
-      qrCanvas.height = 225;
-      const qrCtx = qrCanvas.getContext('2d')!;
-      
-      // Draw QR code
-      const qrImg = new Image();
-      qrImg.src = qrDataUrl;
-      await new Promise((resolve, reject) => {
-        qrImg.onload = resolve;
-        qrImg.onerror = reject;
-      });
-      qrCtx.drawImage(qrImg, 0, 0, 225, 225);
-
-      const qrCodeOnly = qrCanvas.toDataURL('image/png');
-      setQrPreview(qrCodeOnly);
-
-      // Create full 6"x6" template (1800x1800px at 300 DPI) - INSTANT
-      const templateCanvas = document.createElement('canvas');
-      templateCanvas.width = 1800;
-      templateCanvas.height = 1800;
-      const templateCtx = templateCanvas.getContext('2d')!;
-
-      // White background
-      templateCtx.fillStyle = '#FFFFFF';
-      templateCtx.fillRect(0, 0, 1800, 1800);
-
-      // Load and draw photo - INSTANT (already loaded)
-      const photoImg = new Image();
-      photoImg.src = photoDataUrl;
-      await new Promise((resolve, reject) => {
-        photoImg.onload = resolve;
-        photoImg.onerror = reject;
-      });
-
-      // Center photo, maintaining aspect ratio
-      const photoAspect = photoImg.width / photoImg.height;
-      let drawWidth = 1800;
-      let drawHeight = 1800;
-      let offsetX = 0;
-      let offsetY = 0;
-
-      if (photoAspect > 1) {
-        // Photo is wider
-        drawHeight = 1800 / photoAspect;
-        offsetY = (1800 - drawHeight) / 2;
-      } else {
-        // Photo is taller or square
-        drawWidth = 1800 * photoAspect;
-        offsetX = (1800 - drawWidth) / 2;
-      }
-
-      templateCtx.drawImage(photoImg, offsetX, offsetY, drawWidth, drawHeight);
-
-      // Draw QR code at bottom-left (0.75" margin = 30px at 300 DPI)
-      const qrMargin = 30;
-      templateCtx.drawImage(qrCanvas, qrMargin, 1800 - 225 - qrMargin);
-
-      // Set final preview INSTANTLY
-      setFinalPreview(templateCanvas.toDataURL('image/png'));
-    } catch (err: any) {
-      console.error('Preview generation error:', err);
-      setError(err.message || 'Failed to generate preview');
-    } finally {
-      setLoading((prev) => ({ ...prev, qr: false }));
-    }
-  };
-
-  const handleGeneratePreview = () => {
-    if (photoUrl) {
-      generateInstantPreview(photoUrl, videoUrl || '');
-    }
-  };
-
-  const handleCheckout = async () => {
-    if (!finalPreview) return;
-
-    setLoading((prev) => ({ ...prev, preview: true }));
-    setError(null);
-
-    try {
-      const response = await fetch('/api/checkout/create-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          slug: `temp-${Date.now()}`,
-          productType: 'acrylic',
-          amount: 199,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create checkout session');
-      }
-
-      const data = await response.json();
-      
-      // Redirect to Stripe Checkout
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        throw new Error('No checkout URL received');
-      }
-    } catch (err: any) {
-      setError(err.message || 'Failed to start checkout');
-      setLoading((prev) => ({ ...prev, preview: false }));
-    }
-  };
+  const previewCopy =
+    photoPreview && qrPreview
+      ? 'Your photo and QR code are mapped onto the acrylic block within the fireplace setting.'
+      : photoPreview
+        ? 'Photo ready — generate a QR code to preview the engraving on the block.'
+        : 'Preview the acrylic block display. Upload a photo and generate a QR to see them inside the glass.';
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <div className="container mx-auto px-4 py-6 sm:py-8 md:py-12 lg:py-16 max-w-4xl">
-        {/* Header */}
-        <div className="text-center mb-6 sm:mb-8 md:mb-12">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">Timeless Transparency Gift</h1>
-          <div className="flex items-center justify-center gap-3 sm:gap-4 text-xl sm:text-2xl mb-3 sm:mb-4">
-            <span className="text-gray-400 line-through">$399</span>
-            <span className="text-3xl sm:text-4xl font-bold">$199</span>
-          </div>
-          <div className="inline-block bg-green-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-semibold">
-            Save $200
+      {showSpotlight && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/80 backdrop-blur-sm px-4">
+          <div className="relative w-full max-w-3xl">
+            <button
+              onClick={() => setShowSpotlight(false)}
+              className="absolute -right-3 -top-3 z-10 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-black shadow-lg hover:bg-white"
+            >
+              Close
+            </button>
+            <div className="overflow-hidden rounded-2xl border border-white/20 shadow-2xl">
+              <Image
+                src="/timeless-christmas.png"
+                alt="Timeless transparency display on a holiday mantel"
+                width={1152}
+                height={768}
+                priority
+                className="h-full w-full object-cover"
+              />
+            </div>
+            <div className="mt-4 text-center text-sm text-gray-300">
+              This is the product on display. Upload your own photo and generate a QR code below to make it yours.
+            </div>
           </div>
         </div>
-
-        {/* Error Message */}
-        {error && (
-          <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-red-900/50 border border-red-500 rounded-lg text-sm sm:text-base text-red-200">
-            {error}
+      )}
+      <div className="container mx-auto px-4 py-16 max-w-4xl">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h1 className="text-5xl font-bold mb-4">Timeless Transparency Gift</h1>
+          <div className="flex items-center justify-center gap-4 text-2xl mb-4">
+            <span className="text-gray-400 line-through">$399</span>
+            <span className="text-4xl font-bold">$199</span>
           </div>
-        )}
+          <div className="inline-block bg-green-600 text-white px-4 py-2 rounded-full text-sm font-semibold">
+            Save $200
+          </div>
+          <button
+            onClick={() => setShowSpotlight(true)}
+            className="mt-6 text-sm uppercase tracking-wide text-gray-300 underline-offset-4 hover:text-white hover:underline"
+          >
+            View display sample
+          </button>
+        </div>
 
         {/* Upload Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 md:gap-8 mb-6 sm:mb-8 md:mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
           {/* Photo Upload */}
-          <div className="border-2 border-dashed border-gray-700 rounded-lg p-4 sm:p-6 md:p-8 text-center active:border-gray-500 md:hover:border-gray-500 transition-colors touch-manipulation">
+          <div className="border-2 border-dashed border-gray-700 rounded-lg p-8 text-center hover:border-gray-500 transition-colors">
             <label className="cursor-pointer block">
               <input
                 type="file"
                 accept="image/*"
                 onChange={handlePhotoUpload}
                 className="hidden"
-                disabled={loading.photo}
               />
               <div className="space-y-4">
-                {loading.photo ? (
-                  <div className="flex flex-col items-center justify-center py-6 sm:py-8">
-                    <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-white mb-3 sm:mb-4"></div>
-                    <div className="text-xs sm:text-sm text-gray-400">Uploading photo...</div>
-                  </div>
-                ) : photoPreview ? (
-                  <div className="relative w-full aspect-square rounded-lg overflow-hidden">
-                    <Image
+                {photoPreview ? (
+                  <div className="relative w-full aspect-square overflow-hidden rounded-lg">
+                    <img
                       src={photoPreview}
                       alt="Uploaded photo"
-                      fill
-                      className="object-cover"
+                      className="h-full w-full object-cover"
                     />
                   </div>
                 ) : (
                   <>
-                    <div className="text-5xl sm:text-6xl mb-3 sm:mb-4">📷</div>
-                    <div className="text-lg sm:text-xl font-semibold mb-1 sm:mb-2">Upload Photo</div>
-                    <div className="text-gray-400 text-xs sm:text-sm">Tap to select an image</div>
+                    <div className="text-6xl mb-4">📷</div>
+                    <div className="text-xl font-semibold mb-2">Upload Photo</div>
+                    <div className="text-gray-400 text-sm">Click to select an image</div>
                   </>
                 )}
               </div>
             </label>
-            {photoPreview && !loading.photo && (
+            {photoPreview && (
               <button
                 onClick={() => {
-                  setPhotoFile(null);
                   setPhotoPreview(null);
-                  setPhotoUrl(null);
-                  setQrPreview(null);
-                  setFinalPreview(null);
                 }}
-                className="mt-3 sm:mt-4 text-red-400 active:text-red-300 md:hover:text-red-300 text-xs sm:text-sm min-h-[44px] px-4 py-2"
+                className="mt-4 text-red-400 hover:text-red-300 text-sm"
               >
                 Remove Photo
               </button>
             )}
           </div>
 
-          {/* Video Upload */}
-          <div className="border-2 border-dashed border-gray-700 rounded-lg p-4 sm:p-6 md:p-8 text-center active:border-gray-500 md:hover:border-gray-500 transition-colors touch-manipulation">
-            <label className="cursor-pointer block">
-              <input
-                type="file"
-                accept="video/*"
-                onChange={handleVideoUpload}
-                className="hidden"
-                disabled={loading.video}
+          {/* QR Generator */}
+          <div className="border-2 border-dashed border-gray-700 rounded-lg p-8 text-left hover:border-gray-500 transition-colors">
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm uppercase tracking-wide text-gray-400">QR Code Content</p>
+                <p className="text-xs text-gray-500">
+                  Paste a video link, playlist, or message to engrave into the glass QR.
+                </p>
+              </div>
+              <textarea
+                value={qrValue}
+                onChange={(e) => setQrValue(e.target.value)}
+                rows={3}
+                placeholder="https://..."
+                className="w-full rounded-md border border-gray-700 bg-black/30 px-3 py-2 text-sm outline-none focus:border-purple-500"
               />
-              <div className="space-y-4">
-                {loading.video ? (
-                  <div className="flex flex-col items-center justify-center py-6 sm:py-8">
-                    <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-white mb-3 sm:mb-4"></div>
-                    <div className="text-xs sm:text-sm text-gray-400">Uploading video...</div>
-                  </div>
-                ) : videoPreview ? (
-                  <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-gray-900">
-                    <video
-                      src={videoPreview}
-                      controls
-                      className="w-full h-full object-contain"
-                    />
-                  </div>
-                ) : (
-                  <>
-                    <div className="text-5xl sm:text-6xl mb-3 sm:mb-4">🎥</div>
-                    <div className="text-lg sm:text-xl font-semibold mb-1 sm:mb-2">Upload Video</div>
-                    <div className="text-gray-400 text-xs sm:text-sm">Tap to select a video</div>
-                  </>
+              {qrError && <p className="text-xs text-red-400">{qrError}</p>}
+              <div className="flex flex-col items-center gap-4 sm:flex-row">
+                <button
+                  onClick={handleGenerateQr}
+                  disabled={isGeneratingQr}
+                  className="w-full sm:w-auto rounded-md bg-purple-600 px-5 py-2 text-sm font-semibold uppercase tracking-wide transition-colors hover:bg-purple-500 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isGeneratingQr ? 'Generating...' : 'Generate QR Code'}
+                </button>
+                {qrPreview && (
+                  <button
+                    onClick={() => {
+                      setQrPreview(null);
+                      setQrValue('');
+                    }}
+                    className="text-xs uppercase tracking-wide text-red-400 hover:text-red-300"
+                  >
+                    Clear QR
+                  </button>
                 )}
               </div>
-            </label>
-            {videoPreview && !loading.video && (
-              <button
-                onClick={() => {
-                  // Clean up object URL to prevent memory leaks
-                  if (videoPreview.startsWith('blob:')) {
-                    URL.revokeObjectURL(videoPreview);
-                  }
-                  setVideoFile(null);
-                  setVideoPreview(null);
-                  setVideoUrl(null);
-                  setQrPreview(null);
-                  setFinalPreview(null);
-                }}
-                className="mt-3 sm:mt-4 text-red-400 active:text-red-300 md:hover:text-red-300 text-xs sm:text-sm min-h-[44px] px-4 py-2"
-              >
-                Remove Video
-              </button>
-            )}
+              <div className="relative mx-auto h-40 w-40 overflow-hidden rounded-lg border border-white/10 bg-white/5 p-4">
+                {qrPreview ? (
+                  <img src={qrPreview} alt="QR code" className="h-full w-full object-contain" />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-center text-xs text-gray-500">
+                    Generate to preview QR engraving
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Preview auto-generates instantly - no button needed */}
-        {loading.qr && (
-          <div className="mb-6 sm:mb-8 text-center">
-            <div className="inline-flex items-center gap-2 text-sm text-gray-400">
-              <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
-              <span>Generating preview...</span>
+        {/* Mockup Preview */}
+        <div className="mb-12">
+          <div className="text-center mb-4">
+            <h2 className="text-2xl font-semibold">Holiday Display Preview</h2>
+            <p className="text-sm text-gray-400">{previewCopy}</p>
+          </div>
+          <div className="relative mx-auto h-[520px] w-full max-w-3xl overflow-hidden rounded-2xl border border-white/10 shadow-2xl">
+            <Image
+              src="/timeless-christmas.png"
+              alt="Holiday fireplace display"
+              fill
+              priority
+              className="object-cover"
+            />
+            <div
+              className="absolute"
+              style={{
+                top: '14%',
+                left: '36%',
+                width: '26%',
+                height: '64%',
+                boxShadow: '0 0 30px rgba(0,0,0,0.45)',
+                overflow: 'hidden',
+              }}
+            >
+              {photoPreview ? (
+                <img
+                  src={photoPreview}
+                  alt="Mockup overlay"
+                  className="h-full w-full object-cover mix-blend-screen opacity-90"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center bg-gradient-to-b from-white/40 via-white/15 to-black/40 text-center text-xs font-semibold uppercase tracking-wide text-white/70">
+                  Sample image appears here
+                </div>
+              )}
+              <div className="pointer-events-none absolute inset-0 border border-white/20 mix-blend-screen opacity-60" />
+            </div>
+            <div
+              className="absolute"
+              style={{
+                top: '40%',
+                left: '57%',
+                width: '9%',
+                height: '22%',
+              }}
+            >
+              {qrPreview ? (
+                <img
+                  src={qrPreview}
+                  alt="QR overlay"
+                  className="h-full w-full rounded-md border border-white/20 bg-black/40 object-contain p-1"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center rounded-md border border-dashed border-white/30 bg-black/20 text-[10px] font-semibold uppercase tracking-wide text-white/70">
+                  QR Code
+                </div>
+              )}
             </div>
           </div>
-        )}
-
-        {/* Preview Section */}
-        {finalPreview && (
-          <div className="mb-6 sm:mb-8 md:mb-12">
-            <h2 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 md:mb-8 text-center">✨ Your Preview</h2>
-            <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 flex justify-center border border-gray-700 shadow-xl sm:shadow-2xl">
-              <div className="relative w-full max-w-full sm:max-w-md">
-                <div className="bg-white rounded-lg p-2 sm:p-3 md:p-4 shadow-xl">
-                  <Image
-                    src={finalPreview}
-                    alt="Final product preview - 6x6 acrylic with QR code"
-                    width={600}
-                    height={600}
-                    className="w-full h-auto rounded-lg border-2 border-gray-200"
-                    priority
-                  />
-                </div>
-                <div className="mt-4 sm:mt-6 text-center space-y-1 sm:space-y-2">
-                  <div className="text-base sm:text-lg font-semibold text-white">
-                    6"×6" Acrylic Transparency Gift
-                  </div>
-                  <div className="text-xs sm:text-sm text-gray-400 px-2">
-                    QR code positioned at bottom-left • Colors matched to your photo
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <button
             onClick={() => router.push('/product-hub')}
-            className="w-full sm:w-auto min-h-[48px] px-6 sm:px-8 py-3 sm:py-4 bg-gray-800 active:bg-gray-700 md:hover:bg-gray-700 rounded-lg font-semibold text-sm sm:text-base transition-colors touch-manipulation"
+            className="px-8 py-4 bg-gray-800 hover:bg-gray-700 rounded-lg font-semibold transition-colors"
           >
             Back to Products
           </button>
           <button
-            onClick={handleCheckout}
-            disabled={!finalPreview || loading.preview}
-            className="w-full sm:w-auto min-h-[48px] px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-purple-600 to-indigo-600 active:from-purple-700 active:to-indigo-700 md:hover:from-purple-700 md:hover:to-indigo-700 rounded-lg font-semibold text-sm sm:text-base transition-all disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
+            disabled={!photoPreview || !qrPreview}
+            className="px-8 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading.preview ? 'Processing...' : 'Add to Cart - $199'}
+            Add to Cart - $199
           </button>
         </div>
 
         {/* Product Description */}
-        <div className="mt-8 sm:mt-12 md:mt-16 text-center text-gray-400 max-w-2xl mx-auto px-4">
-          <p className="text-sm sm:text-base md:text-lg mb-3 sm:mb-4">
-            Create a timeless transparency gift with your favorite photo or video. 
-            This premium product preserves your memories in a beautiful, transparent format.
+        <div className="mt-16 text-center text-gray-400 max-w-2xl mx-auto">
+          <p className="text-lg mb-4">
+            Create a timeless transparency gift with a cherished image and scannable QR link. 
+            We etch the QR code directly onto the acrylic so friends can revisit tribute videos or slideshows.
           </p>
-          <p className="text-xs sm:text-sm">
-            Perfect for memorials, anniversaries, or special occasions.
+          <p className="text-sm">
+            Perfect for memorials, anniversaries, or special occasions where you want a story behind the glass.
           </p>
         </div>
       </div>
