@@ -46,22 +46,35 @@ export default function GiftPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Check file size (max 100MB)
+    if (file.size > 100 * 1024 * 1024) {
+      setError('Video file is too large. Please use a video under 100MB.');
+      return;
+    }
+
     setVideoFile(file);
     setError(null);
+    setLoading((prev) => ({ ...prev, video: true }));
 
-    // Local preview
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const result = e.target?.result as string;
-      setVideoPreview(result);
-      setVideoUrl(result);
+    try {
+      // Use object URL for videos (works better for large files than data URLs)
+      const objectUrl = URL.createObjectURL(file);
+      setVideoPreview(objectUrl);
+      setVideoUrl(objectUrl);
       
       // Regenerate preview if photo exists
       if (photoUrl) {
-        await generateInstantPreview(photoUrl, result);
+        await generateInstantPreview(photoUrl, objectUrl);
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (err: any) {
+      console.error('Video upload error:', err);
+      setError(err.message || 'Failed to load video. Please try again.');
+      setVideoFile(null);
+      setVideoPreview(null);
+      setVideoUrl(null);
+    } finally {
+      setLoading((prev) => ({ ...prev, video: false }));
+    }
   };
 
   // INSTANT preview generation using optimized API call
