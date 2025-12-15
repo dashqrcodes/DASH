@@ -112,24 +112,3 @@ export async function createSlideshow(data: any) {
   
   return { slideshow, error };
 }
-
-// Life Chapters functions
-export async function createLifeChapter(data: any) {
-  const { data: chapter, error } = await supabase
-    .from('life_chapters')
-    .insert(data)
-    .select()
-    .single();
-  
-  return { chapter, error };
-}
-
-export async function getLifeChapters(memorialId: string) {
-  const { data: chapters, error } = await supabase
-    .from('life_chapters')
-    .select('*')
-    .eq('memorial_id', memorialId)
-    .order('chapter_order', { ascending: true });
-  
-  return { chapters, error };
-}

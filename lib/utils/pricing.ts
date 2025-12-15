@@ -34,7 +34,6 @@ export const pricingTiers: PricingTier[] = [
       'Everything in Basic',
       'AI-Powered Photo Slideshow',
       'Music integration',
-      'Life chapters organization',
       'Social memory wall',
       'Video call to HEAVEN (AI avatar)'
     ]

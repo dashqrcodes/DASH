@@ -46,9 +46,9 @@ export default function GiftPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Check file size (max 100MB)
-    if (file.size > 100 * 1024 * 1024) {
-      setError('Video file is too large. Please use a video under 100MB.');
+    // Check file size (max 500MB for Mux)
+    if (file.size > 500 * 1024 * 1024) {
+      setError('Video file is too large. Please use a video under 500MB.');
       return;
     }
 
@@ -57,18 +57,37 @@ export default function GiftPage() {
     setLoading((prev) => ({ ...prev, video: true }));
 
     try {
-      // Use object URL for videos (works better for large files than data URLs)
+      // Show local preview immediately
       const objectUrl = URL.createObjectURL(file);
       setVideoPreview(objectUrl);
-      setVideoUrl(objectUrl);
+
+      // Upload to Mux for professional hosting
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/upload-video-mux', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to upload video');
+      }
+
+      const data = await response.json();
       
-      // Regenerate preview if photo exists
+      // Use Mux playback URL (professional streaming)
+      const muxUrl = `https://stream.mux.com/${data.playbackId}.m3u8`;
+      setVideoUrl(muxUrl);
+      
+      // Regenerate preview if photo exists (use Mux URL for QR code)
       if (photoUrl) {
-        await generateInstantPreview(photoUrl, objectUrl);
+        await generateInstantPreview(photoUrl, muxUrl);
       }
     } catch (err: any) {
       console.error('Video upload error:', err);
-      setError(err.message || 'Failed to load video. Please try again.');
+      setError(err.message || 'Failed to upload video. Please try again.');
       setVideoFile(null);
       setVideoPreview(null);
       setVideoUrl(null);

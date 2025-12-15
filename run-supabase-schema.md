@@ -56,23 +56,11 @@ CREATE TABLE IF NOT EXISTS slideshows (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
--- Life Chapters table
-CREATE TABLE IF NOT EXISTS life_chapters (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  memorial_id UUID REFERENCES memorials(id),
-  title TEXT,
-  content TEXT,
-  photo_url TEXT,
-  chapter_order INTEGER,
-  created_at TIMESTAMP DEFAULT NOW()
-);
-
 -- Enable Row Level Security (RLS)
 ALTER TABLE memorials ENABLE ROW LEVEL SECURITY;
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE slideshows ENABLE ROW LEVEL SECURITY;
-ALTER TABLE life_chapters ENABLE ROW LEVEL SECURITY;
 
 -- Policies: Allow public access for now
 CREATE POLICY "Allow public insert on memorials" ON memorials
@@ -102,18 +90,11 @@ CREATE POLICY "Allow public insert on slideshows" ON slideshows
 CREATE POLICY "Allow public select on slideshows" ON slideshows
   FOR SELECT USING (true);
 
-CREATE POLICY "Allow public insert on life_chapters" ON life_chapters
-  FOR INSERT WITH CHECK (true);
-
-CREATE POLICY "Allow public select on life_chapters" ON life_chapters
-  FOR SELECT USING (true);
-
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_memorials_created_at ON memorials(created_at);
 CREATE INDEX IF NOT EXISTS idx_orders_memorial_id ON orders(memorial_id);
 CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id);
 CREATE INDEX IF NOT EXISTS idx_slideshows_memorial_id ON slideshows(memorial_id);
-CREATE INDEX IF NOT EXISTS idx_life_chapters_memorial_id ON life_chapters(memorial_id);
 ```
 
 ## Steps:

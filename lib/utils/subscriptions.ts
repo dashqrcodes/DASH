@@ -34,7 +34,6 @@ export const subscriptionTiers: SubscriptionTier[] = [
       'Unlimited photo storage',
       'Video uploads (up to 10 videos)',
       'Music integration (Spotify/Apple Music)',
-      'Life chapters organization',
       'Enhanced slideshow effects',
       'Priority support'
     ]
