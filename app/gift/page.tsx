@@ -3,7 +3,6 @@
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import QRCode from 'qrcode';
 
 export default function GiftPage() {
   const router = useRouter();
@@ -65,7 +64,7 @@ export default function GiftPage() {
     reader.readAsDataURL(file);
   };
 
-  // INSTANT client-side preview generation (no server calls!)
+  // INSTANT preview generation using optimized API call
   const generateInstantPreview = async (photoDataUrl: string, videoUrl: string = '') => {
     if (!photoDataUrl) return;
 
@@ -76,16 +75,19 @@ export default function GiftPage() {
       // Create URL for QR code
       const qrUrl = videoUrl || photoDataUrl || `${window.location.origin}/gift`;
 
-      // Generate QR code INSTANTLY client-side
-      const qrDataUrl = await QRCode.toDataURL(qrUrl, {
-        width: 225, // 0.75" at 300 DPI
-        margin: 1,
-        color: {
-          dark: '#0A2463', // Default dark blue (can enhance with color extraction later)
-          light: '#FFFFFF',
-        },
-        errorCorrectionLevel: 'H',
+      // Generate QR code via API (fast, optimized endpoint)
+      const qrResponse = await fetch('/api/generate-qr', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: qrUrl }),
       });
+
+      if (!qrResponse.ok) {
+        throw new Error('QR generation failed');
+      }
+
+      const qrData = await qrResponse.json();
+      const qrDataUrl = qrData.qrCode;
 
       // Create canvas for QR with DASH logo
       const qrCanvas = document.createElement('canvas');
@@ -96,34 +98,16 @@ export default function GiftPage() {
       // Draw QR code
       const qrImg = new Image();
       qrImg.src = qrDataUrl;
-      await new Promise((resolve) => {
+      await new Promise((resolve, reject) => {
         qrImg.onload = resolve;
+        qrImg.onerror = reject;
       });
-      qrCtx.drawImage(qrImg, 0, 0);
-
-      // Add DASH logo in center
-      const centerX = qrCanvas.width / 2;
-      const centerY = qrCanvas.height / 2;
-      const logoSize = 45;
-      const cornerRadius = 6;
-
-      // Draw rounded square background
-      qrCtx.fillStyle = '#0A2463';
-      qrCtx.beginPath();
-      qrCtx.roundRect(centerX - logoSize / 2, centerY - logoSize / 2, logoSize, logoSize, cornerRadius);
-      qrCtx.fill();
-
-      // Add "DASH" text
-      qrCtx.fillStyle = '#FFFFFF';
-      qrCtx.font = 'bold 16px Arial';
-      qrCtx.textAlign = 'center';
-      qrCtx.textBaseline = 'middle';
-      qrCtx.fillText('DASH', centerX, centerY);
+      qrCtx.drawImage(qrImg, 0, 0, 225, 225);
 
       const qrCodeOnly = qrCanvas.toDataURL('image/png');
       setQrPreview(qrCodeOnly);
 
-      // Create full 6"x6" template (1800x1800px at 300 DPI)
+      // Create full 6"x6" template (1800x1800px at 300 DPI) - INSTANT
       const templateCanvas = document.createElement('canvas');
       templateCanvas.width = 1800;
       templateCanvas.height = 1800;
@@ -133,27 +117,27 @@ export default function GiftPage() {
       templateCtx.fillStyle = '#FFFFFF';
       templateCtx.fillRect(0, 0, 1800, 1800);
 
-      // Load and draw photo
+      // Load and draw photo - INSTANT (already loaded)
       const photoImg = new Image();
       photoImg.src = photoDataUrl;
-      await new Promise((resolve) => {
+      await new Promise((resolve, reject) => {
         photoImg.onload = resolve;
+        photoImg.onerror = reject;
       });
 
       // Center photo, maintaining aspect ratio
       const photoAspect = photoImg.width / photoImg.height;
-      const templateAspect = 1;
       let drawWidth = 1800;
       let drawHeight = 1800;
       let offsetX = 0;
       let offsetY = 0;
 
-      if (photoAspect > templateAspect) {
+      if (photoAspect > 1) {
         // Photo is wider
         drawHeight = 1800 / photoAspect;
         offsetY = (1800 - drawHeight) / 2;
       } else {
-        // Photo is taller
+        // Photo is taller or square
         drawWidth = 1800 * photoAspect;
         offsetX = (1800 - drawWidth) / 2;
       }
@@ -167,6 +151,7 @@ export default function GiftPage() {
       // Set final preview INSTANTLY
       setFinalPreview(templateCanvas.toDataURL('image/png'));
     } catch (err: any) {
+      console.error('Preview generation error:', err);
       setError(err.message || 'Failed to generate preview');
     } finally {
       setLoading((prev) => ({ ...prev, qr: false }));
