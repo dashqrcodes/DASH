@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import QRCode from 'qrcode';
 
 export default function GiftPage() {
   const router = useRouter();
@@ -29,24 +30,17 @@ export default function GiftPage() {
     setPhotoFile(file);
     setError(null);
 
-    // Local preview
+    // Local preview - INSTANT
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       const result = e.target?.result as string;
       setPhotoPreview(result);
-      setPhotoUrl(result); // Use local URL for now
+      setPhotoUrl(result);
+      
+      // Generate preview INSTANTLY (no server call)
+      await generateInstantPreview(result, videoUrl || '');
     };
     reader.readAsDataURL(file);
-
-    // Generate QR code after photo upload (with or without video)
-    if (photoPreview || file) {
-      const photoDataUrl = photoPreview || await new Promise<string>((resolve) => {
-        const r = new FileReader();
-        r.onload = (e) => resolve(e.target?.result as string);
-        r.readAsDataURL(file);
-      });
-      generateQRCode(photoDataUrl, videoUrl || '');
-    }
   };
 
   const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -58,60 +52,130 @@ export default function GiftPage() {
 
     // Local preview
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       const result = e.target?.result as string;
       setVideoPreview(result);
-      setVideoUrl(result); // Use local URL for now
+      setVideoUrl(result);
+      
+      // Regenerate preview if photo exists
+      if (photoUrl) {
+        await generateInstantPreview(photoUrl, result);
+      }
     };
     reader.readAsDataURL(file);
-
-    // Generate QR code after video upload
-    if (photoUrl) {
-      generateQRCode(photoUrl, videoUrl || '');
-    }
   };
 
-  const generateQRCode = async (photoUrl: string, videoUrl: string) => {
-    if (!photoFile) return;
+  // INSTANT client-side preview generation (no server calls!)
+  const generateInstantPreview = async (photoDataUrl: string, videoUrl: string = '') => {
+    if (!photoDataUrl) return;
 
     setLoading((prev) => ({ ...prev, qr: true }));
     setError(null);
 
     try {
-      // Create custom URL for QR code (link to a demo page or user's content)
-      const customUrl = videoUrl || photoUrl || `${window.location.origin}/gift`;
+      // Create URL for QR code
+      const qrUrl = videoUrl || photoDataUrl || `${window.location.origin}/gift`;
 
-      const formData = new FormData();
-      formData.append('url', customUrl);
-      formData.append('photo', photoFile);
-      formData.append('photoUrl', photoUrl);
-
-      const response = await fetch('/api/generate-qr-with-colors', {
-        method: 'POST',
-        body: formData,
+      // Generate QR code INSTANTLY client-side
+      const qrDataUrl = await QRCode.toDataURL(qrUrl, {
+        width: 225, // 0.75" at 300 DPI
+        margin: 1,
+        color: {
+          dark: '#0A2463', // Default dark blue (can enhance with color extraction later)
+          light: '#FFFFFF',
+        },
+        errorCorrectionLevel: 'H',
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'QR generation failed');
+      // Create canvas for QR with DASH logo
+      const qrCanvas = document.createElement('canvas');
+      qrCanvas.width = 225;
+      qrCanvas.height = 225;
+      const qrCtx = qrCanvas.getContext('2d')!;
+      
+      // Draw QR code
+      const qrImg = new Image();
+      qrImg.src = qrDataUrl;
+      await new Promise((resolve) => {
+        qrImg.onload = resolve;
+      });
+      qrCtx.drawImage(qrImg, 0, 0);
+
+      // Add DASH logo in center
+      const centerX = qrCanvas.width / 2;
+      const centerY = qrCanvas.height / 2;
+      const logoSize = 45;
+      const cornerRadius = 6;
+
+      // Draw rounded square background
+      qrCtx.fillStyle = '#0A2463';
+      qrCtx.beginPath();
+      qrCtx.roundRect(centerX - logoSize / 2, centerY - logoSize / 2, logoSize, logoSize, cornerRadius);
+      qrCtx.fill();
+
+      // Add "DASH" text
+      qrCtx.fillStyle = '#FFFFFF';
+      qrCtx.font = 'bold 16px Arial';
+      qrCtx.textAlign = 'center';
+      qrCtx.textBaseline = 'middle';
+      qrCtx.fillText('DASH', centerX, centerY);
+
+      const qrCodeOnly = qrCanvas.toDataURL('image/png');
+      setQrPreview(qrCodeOnly);
+
+      // Create full 6"x6" template (1800x1800px at 300 DPI)
+      const templateCanvas = document.createElement('canvas');
+      templateCanvas.width = 1800;
+      templateCanvas.height = 1800;
+      const templateCtx = templateCanvas.getContext('2d')!;
+
+      // White background
+      templateCtx.fillStyle = '#FFFFFF';
+      templateCtx.fillRect(0, 0, 1800, 1800);
+
+      // Load and draw photo
+      const photoImg = new Image();
+      photoImg.src = photoDataUrl;
+      await new Promise((resolve) => {
+        photoImg.onload = resolve;
+      });
+
+      // Center photo, maintaining aspect ratio
+      const photoAspect = photoImg.width / photoImg.height;
+      const templateAspect = 1;
+      let drawWidth = 1800;
+      let drawHeight = 1800;
+      let offsetX = 0;
+      let offsetY = 0;
+
+      if (photoAspect > templateAspect) {
+        // Photo is wider
+        drawHeight = 1800 / photoAspect;
+        offsetY = (1800 - drawHeight) / 2;
+      } else {
+        // Photo is taller
+        drawWidth = 1800 * photoAspect;
+        offsetX = (1800 - drawWidth) / 2;
       }
 
-      const data = await response.json();
-      setQrPreview(data.qrCodeOnly);
-      setFinalPreview(data.qrCode); // Full 6"x6" template with photo + QR
+      templateCtx.drawImage(photoImg, offsetX, offsetY, drawWidth, drawHeight);
+
+      // Draw QR code at bottom-left (0.75" margin = 30px at 300 DPI)
+      const qrMargin = 30;
+      templateCtx.drawImage(qrCanvas, qrMargin, 1800 - 225 - qrMargin);
+
+      // Set final preview INSTANTLY
+      setFinalPreview(templateCanvas.toDataURL('image/png'));
     } catch (err: any) {
-      setError(err.message || 'Failed to generate QR code');
+      setError(err.message || 'Failed to generate preview');
     } finally {
       setLoading((prev) => ({ ...prev, qr: false }));
     }
   };
 
   const handleGeneratePreview = () => {
-    if (photoUrl && videoUrl) {
-      generateQRCode(photoUrl, videoUrl);
-    } else if (photoUrl) {
-      // Generate QR even without video (will link to photo page)
-      generateQRCode(photoUrl, '');
+    if (photoUrl) {
+      generateInstantPreview(photoUrl, videoUrl || '');
     }
   };
 
@@ -275,23 +339,13 @@ export default function GiftPage() {
           </div>
         </div>
 
-        {/* Generate Preview Button */}
-        {photoUrl && !finalPreview && (
+        {/* Preview auto-generates instantly - no button needed */}
+        {loading.qr && (
           <div className="mb-6 sm:mb-8 text-center">
-            <button
-              onClick={handleGeneratePreview}
-              disabled={loading.qr || !photoUrl}
-              className="w-full sm:w-auto min-h-[48px] px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-purple-600 to-indigo-600 active:from-purple-700 active:to-indigo-700 md:hover:from-purple-700 md:hover:to-indigo-700 rounded-lg font-semibold text-sm sm:text-base transition-all disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
-            >
-              {loading.qr ? (
-                <span className="flex items-center justify-center gap-2">
-                  <span className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-white"></span>
-                  <span className="text-xs sm:text-sm md:text-base">Generating Preview...</span>
-                </span>
-              ) : (
-                'Generate Preview'
-              )}
-            </button>
+            <div className="inline-flex items-center gap-2 text-sm text-gray-400">
+              <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
+              <span>Generating preview...</span>
+            </div>
           </div>
         )}
 
