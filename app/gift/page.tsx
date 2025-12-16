@@ -96,7 +96,8 @@ export default function GiftPage() {
         }),
       });
       if (!createRes.ok) {
-        setUploadStatus('Failed to start upload. Please try again.');
+        const msg = await createRes.text();
+        setUploadStatus(`Failed to start upload: ${msg || createRes.status}`);
         return;
       }
       const { uploadUrl, uploadId } = await createRes.json();
@@ -114,7 +115,8 @@ export default function GiftPage() {
         body: file,
       });
       if (!uploadRes.ok) {
-        setUploadStatus('Upload failed. Please try again.');
+        const msg = await uploadRes.text();
+        setUploadStatus(`Upload failed: ${msg || uploadRes.status}`);
         return;
       }
 
@@ -126,7 +128,8 @@ export default function GiftPage() {
       });
 
       if (!completeRes.ok) {
-        setUploadStatus('Processing failed. Please try again.');
+        const msg = await completeRes.text();
+        setUploadStatus(`Processing failed: ${msg || completeRes.status}`);
         return;
       }
 
