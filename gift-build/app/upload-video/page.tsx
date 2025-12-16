@@ -37,7 +37,16 @@ export default function UploadVideoPage() {
 
     try {
       setStatus('Requesting upload slot…');
-      const createRes = await fetch('/api/create-mux-upload', { method: 'POST' });
+      const createRes = await fetch('/api/create-mux-upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          slug,
+          fileName: file.name,
+          fileSizeBytes: file.size,
+          mimeType: file.type || null,
+        }),
+      });
       if (!createRes.ok) {
         setStatus('Failed to start upload. Please try again.');
         return;

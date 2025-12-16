@@ -26,8 +26,34 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to save playback id' }, { status: 500 });
     }
 
+    // Update mux_uploads row if present
+    const { error: muxUpdateError } = await supabaseAdmin
+      .from('mux_uploads')
+      .update({
+        asset_id: assetId,
+        playback_id: playbackId,
+        status: 'ready',
+      })
+      .eq('upload_id', uploadId);
+
+    if (muxUpdateError) {
+      console.error('mux_uploads update failed', muxUpdateError);
+    }
+
     return NextResponse.json({ assetId, playbackId });
   } catch (error: any) {
+    try {
+      const { uploadId } = await req.json();
+      if (uploadId) {
+        await supabaseAdmin
+          .from('mux_uploads')
+          .update({ status: 'failed', error: error?.message || 'unknown' })
+          .eq('upload_id', uploadId);
+      }
+    } catch (_err) {
+      // ignore logging error
+    }
+
     console.error('complete-mux-upload error', error);
     return NextResponse.json(
       { error: error?.message || 'Failed to finalize Mux upload' },
