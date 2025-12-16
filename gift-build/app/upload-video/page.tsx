@@ -12,23 +12,54 @@ export default function UploadVideoPage() {
     const file = e.target.files?.[0];
     if (!file || !slug) return;
 
-    setStatus('Uploading…');
+    try {
+      setStatus('Requesting upload slot…');
+      const createRes = await fetch('/api/create-mux-upload', { method: 'POST' });
+      if (!createRes.ok) {
+        setStatus('Failed to start upload. Please try again.');
+        return;
+      }
+      const { uploadUrl, uploadId } = await createRes.json();
+      if (!uploadUrl || !uploadId) {
+        setStatus('Upload setup incomplete. Please try again.');
+        return;
+      }
 
-    const form = new FormData();
-    form.append('file', file);
-    form.append('slug', slug);
+      setStatus('Uploading video…');
+      const uploadRes = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': file.type || 'application/octet-stream',
+        },
+        body: file,
+      });
+      if (!uploadRes.ok) {
+        setStatus('Upload failed. Please try again.');
+        return;
+      }
 
-    const res = await fetch('/api/upload-video', {
-      method: 'POST',
-      body: form,
-    });
+      setStatus('Processing video…');
+      const completeRes = await fetch('/api/complete-mux-upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug, uploadId }),
+      });
 
-    if (!res.ok) {
+      if (!completeRes.ok) {
+        setStatus('Processing failed. Please try again.');
+        return;
+      }
+
+      const { playbackId } = await completeRes.json();
+      setStatus(
+        playbackId
+          ? 'Done! Your tribute is live.'
+          : 'Done! Video received, processing playback…'
+      );
+    } catch (err) {
+      console.error('Video upload error', err);
       setStatus('Upload failed. Please try again.');
-      return;
     }
-
-    setStatus('Done! Your tribute is live.');
   }
 
   if (!slug) {
