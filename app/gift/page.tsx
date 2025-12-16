@@ -9,12 +9,30 @@ const DEFAULT_QR_TARGET = 'https://www.dash.gift/gift';
 
 export default function GiftPage() {
   const router = useRouter();
+  const [slug, setSlug] = useState<string | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [qrPreview, setQrPreview] = useState<string | null>(null);
   const qrValue = DEFAULT_QR_TARGET;
   const [qrError, setQrError] = useState<string | null>(null);
   const [isGeneratingQr, setIsGeneratingQr] = useState(false);
   const [showSpotlight, setShowSpotlight] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState('');
+
+  // Ensure a draft exists for video upload
+  useEffect(() => {
+    async function ensureSlug() {
+      if (slug) return;
+      try {
+        const res = await fetch('/api/drafts/create', { method: 'POST' });
+        if (!res.ok) return;
+        const data = await res.json();
+        setSlug(data.slug);
+      } catch (err) {
+        console.error('Draft creation failed', err);
+      }
+    }
+    ensureSlug();
+  }, [slug]);
 
   useEffect(() => {
     const timeout = setTimeout(() => setShowSpotlight(true), 400);
@@ -56,6 +74,69 @@ export default function GiftPage() {
       setQrError('Could not generate QR code. Please try again.');
     } finally {
       setIsGeneratingQr(false);
+    }
+  };
+
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !slug) {
+      setUploadStatus('Missing upload context. Please try again.');
+      return;
+    }
+    try {
+      setUploadStatus('Requesting upload slot…');
+      const createRes = await fetch('/api/create-mux-upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          slug,
+          fileName: file.name,
+          fileSizeBytes: file.size,
+          mimeType: file.type || null,
+        }),
+      });
+      if (!createRes.ok) {
+        setUploadStatus('Failed to start upload. Please try again.');
+        return;
+      }
+      const { uploadUrl, uploadId } = await createRes.json();
+      if (!uploadUrl || !uploadId) {
+        setUploadStatus('Upload setup incomplete. Please try again.');
+        return;
+      }
+
+      setUploadStatus('Uploading video…');
+      const uploadRes = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': file.type || 'application/octet-stream',
+        },
+        body: file,
+      });
+      if (!uploadRes.ok) {
+        setUploadStatus('Upload failed. Please try again.');
+        return;
+      }
+
+      setUploadStatus('Processing video…');
+      const completeRes = await fetch('/api/complete-mux-upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug, uploadId }),
+      });
+
+      if (!completeRes.ok) {
+        setUploadStatus('Processing failed. Please try again.');
+        return;
+      }
+
+      const { playbackId } = await completeRes.json();
+      setUploadStatus(
+        playbackId ? 'Done! Your tribute is live.' : 'Done! Video received, processing playback…',
+      );
+    } catch (err) {
+      console.error('Video upload error', err);
+      setUploadStatus('Upload failed. Please try again.');
     }
   };
 
@@ -273,6 +354,13 @@ export default function GiftPage() {
           >
             Add to Cart - $199
           </button>
+        </div>
+
+        {/* Video Upload */}
+        <div className="mt-12 max-w-xl mx-auto space-y-3 border border-white/10 rounded-xl p-4 bg-white/5">
+          <h3 className="text-lg font-semibold">Upload Video</h3>
+          <input type="file" accept="video/*" onChange={handleVideoUpload} />
+          {uploadStatus && <p className="text-sm text-gray-300">{uploadStatus}</p>}
         </div>
 
         {/* Product Description */}
