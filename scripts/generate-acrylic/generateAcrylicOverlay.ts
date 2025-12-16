@@ -25,7 +25,7 @@ async function generateOverlay(resolution: number, outputName: string) {
   const blockY = (resolution - blockSize) / 2;
 
   ctx.globalAlpha = SHADOW_OPACITY;
-  ctx.filter = `blur(${SHADOW_BLUR}px)`;
+  (ctx as any).filter = `blur(${SHADOW_BLUR}px)`;
   ctx.fillStyle = "rgba(0,0,0,1)";
   ctx.beginPath();
   ctx.ellipse(
@@ -40,7 +40,7 @@ async function generateOverlay(resolution: number, outputName: string) {
   ctx.fill();
 
   ctx.globalAlpha = 1;
-  ctx.filter = "none";
+  (ctx as any).filter = "none";
 
   ctx.drawImage(baseImg, blockX, blockY, blockSize, blockSize);
 

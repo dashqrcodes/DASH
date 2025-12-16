@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateQrDataUrl } from '@/lib/qr';
+import { generateQrDataUrl } from '@/gift-build/lib/qr';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);

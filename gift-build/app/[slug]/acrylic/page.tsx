@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
-import { getMuxPlaybackId } from '@/lib/mux';
+import { getMuxPlaybackId } from '@/lib/utils/mux';
 
 export default async function AcrylicDraftPage({ params }: { params: { slug: string } }) {
   const { slug } = params;

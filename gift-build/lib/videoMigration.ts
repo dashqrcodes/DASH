@@ -1,6 +1,6 @@
 import { Buffer } from 'node:buffer';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
-import { createMuxUpload, waitForMuxAssetId, waitForMuxPlaybackId } from '@/lib/mux';
+import { supabaseAdmin } from '@/gift-build/lib/supabaseAdmin';
+import { createMuxUpload, waitForMuxAssetId, waitForMuxPlaybackId } from '@/gift-build/lib/mux';
 
 export const TEMP_BUCKET = 'temp-videos';
 export const ONE_DAY_MS = 24 * 60 * 60 * 1000;

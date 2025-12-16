@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getSupabaseAdmin, Story, StoryMoment } from '@/lib/supabaseClient';
-import { getMuxPlaybackId } from '@/lib/mux';
+import { getSupabaseAdmin, Story, StoryMoment } from '@/gift-build/lib/supabaseClient';
+import { getMuxPlaybackId } from '@/gift-build/lib/mux';
 
 // Zero cache - always fetch fresh from Supabase
 export const revalidate = 0;

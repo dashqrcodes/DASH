@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getSupabaseAdmin, StoryMoment, Story } from '@/lib/supabaseClient';
-import { getMuxPlaybackId } from '@/lib/muxClient';
+import { getSupabaseAdmin, StoryMoment, Story } from '@/gift-build/lib/supabaseClient';
+import { getMuxPlaybackId } from '@/gift-build/lib/mux';
 
 export const revalidate = 60;
 

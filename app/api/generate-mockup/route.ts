@@ -23,7 +23,8 @@ export async function POST(req: NextRequest) {
     });
 
     // Cache the composed mockup into Supabase storage (optional but helpful for emails)
-    const imgBuffer = Buffer.from(await fetch(liveUrl).then((r) => r.arrayBuffer()));
+    const arrayBuf = await fetch(liveUrl).then((r) => r.arrayBuffer());
+    const imgBuffer = Buffer.from(new Uint8Array(arrayBuf));
     const path = `mockups/${slug}.png`;
 
     const { error: uploadError } = await supabaseAdmin.storage

@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
 
     const doc = new PDFDocument({ size: [IN(6), IN(6)], margin: 0 });
     const chunks: Buffer[] = [];
-    doc.on('data', (c) => chunks.push(c));
+    doc.on('data', (c: Buffer) => chunks.push(c));
     const done = new Promise<Buffer>((resolve) => doc.on('end', () => resolve(Buffer.concat(chunks))));
 
     // Full-bleed photo
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
 
     await supabaseAdmin.from('drafts').update({ print_pdf_url: printUrl }).eq('slug', slug);
 
-    return new NextResponse(pdfBuffer, {
+    return new NextResponse(pdfBuffer as unknown as BodyInit, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',

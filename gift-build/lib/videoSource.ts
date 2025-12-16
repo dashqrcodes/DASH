@@ -1,4 +1,4 @@
-import type { DraftVideos } from '@/lib/videoMigration';
+import type { DraftVideos } from '@/gift-build/lib/videoMigration';
 
 export type VideoSource =
   | { type: 'mux'; playbackId: string }

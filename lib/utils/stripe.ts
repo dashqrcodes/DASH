@@ -1,12 +1,21 @@
 import Stripe from 'stripe';
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-11-17.clover',
-  typescript: true,
-});
+let stripeClient: Stripe | null = null;
+
+function getStripe() {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) {
+    throw new Error('Stripe secret key not configured');
+  }
+  if (!stripeClient) {
+    stripeClient = new Stripe(key, { typescript: true });
+  }
+  return stripeClient;
+}
 
 // Create payment intent for memorial products
 export async function createPaymentIntent(amount: number, currency: string = 'usd') {
+  const stripe = getStripe();
   const paymentIntent = await stripe.paymentIntents.create({
     amount: amount * 100, // Convert to cents
     currency,
@@ -25,6 +34,7 @@ export async function createCheckoutSession(
   successUrl: string,
   cancelUrl: string
 ) {
+  const stripe = getStripe();
   const session = await stripe.checkout.sessions.create({
     line_items: lineItems,
     mode: 'payment',
@@ -37,6 +47,7 @@ export async function createCheckoutSession(
 
 // Handle webhook events
 export function handleStripeWebhook(rawBody: string, signature: string) {
+  const stripe = getStripe();
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
   
   return stripe.webhooks.constructEvent(

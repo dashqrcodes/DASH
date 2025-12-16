@@ -5,7 +5,7 @@ import { ChangeEvent, useEffect, useState } from 'react';
 
 export default function UploadVideoPage() {
   const params = useSearchParams();
-  const slugFromQuery = params.get('slug');
+  const slugFromQuery = params?.get('slug') ?? null;
   const [slug, setSlug] = useState<string | null>(slugFromQuery);
   const [status, setStatus] = useState('');
 

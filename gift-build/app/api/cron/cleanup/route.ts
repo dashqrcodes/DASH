@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
-import { DraftVideos, ONE_DAY_MS, TEMP_BUCKET, extractTempPath } from '@/lib/videoMigration';
+import { DraftVideos, ONE_DAY_MS, TEMP_BUCKET, extractTempPath } from '@/lib/utils/videoMigration';
 
 export const runtime = 'nodejs';
 

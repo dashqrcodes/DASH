@@ -1,9 +1,9 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
-import { getMuxPlaybackId } from '@/lib/mux';
-import type { DraftVideos } from '@/lib/videoMigration';
-import { resolveVideoSource } from '@/lib/videoSource';
+import { supabaseAdmin } from '@/gift-build/lib/supabaseAdmin';
+import { getMuxPlaybackId } from '@/gift-build/lib/mux';
+import type { DraftVideos } from '@/gift-build/lib/videoMigration';
+import { resolveVideoSource } from '@/gift-build/lib/videoSource';
 
 // Zero cache - always fetch fresh from Supabase
 export const revalidate = 0;

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabaseClient';
-import { getBaseUrl } from '@/lib/baseUrl';
-import { getPreviewTtlHours } from '@/lib/env';
+import { getSupabaseAdmin } from '@/gift-build/lib/supabaseClient';
+import { getBaseUrl } from '@/gift-build/lib/baseUrl';
+import { getPreviewTtlHours } from '@/gift-build/lib/env';
 
 const PREVIEW_TTL_MS = getPreviewTtlHours() * 60 * 60 * 1000;
 

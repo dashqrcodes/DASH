@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
-import { generatePermanentSlug } from '@/lib/slug';
-import { getBaseUrl } from '@/lib/baseUrl';
+import { generatePermanentSlug } from '@/gift-build/lib/slug';
+import { getBaseUrl } from '@/gift-build/lib/baseUrl';
 
 export async function POST() {
   try {
