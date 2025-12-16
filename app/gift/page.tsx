@@ -10,6 +10,7 @@ const DEFAULT_QR_TARGET = 'https://www.dash.gift/gift';
 export default function GiftPage() {
   const router = useRouter();
   const [slug, setSlug] = useState<string | null>(null);
+  const [isSlugReady, setIsSlugReady] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [qrPreview, setQrPreview] = useState<string | null>(null);
   const qrValue = DEFAULT_QR_TARGET;
@@ -17,22 +18,28 @@ export default function GiftPage() {
   const [isGeneratingQr, setIsGeneratingQr] = useState(false);
   const [showSpotlight, setShowSpotlight] = useState(false);
   const [uploadStatus, setUploadStatus] = useState('');
+  const [isCreatingSlug, setIsCreatingSlug] = useState(false);
 
   // Ensure a draft exists for video upload
   useEffect(() => {
     async function ensureSlug() {
-      if (slug) return;
+      if (slug || isCreatingSlug) return;
+      setIsCreatingSlug(true);
       try {
         const res = await fetch('/api/drafts/create', { method: 'POST' });
-        if (!res.ok) return;
+        if (!res.ok) throw new Error(`Create draft failed: ${res.status}`);
         const data = await res.json();
         setSlug(data.slug);
+        setIsSlugReady(true);
       } catch (err) {
         console.error('Draft creation failed', err);
+        setUploadStatus('Unable to start upload. Please refresh.');
+      } finally {
+        setIsCreatingSlug(false);
       }
     }
     ensureSlug();
-  }, [slug]);
+  }, [slug, isCreatingSlug]);
 
   useEffect(() => {
     const timeout = setTimeout(() => setShowSpotlight(true), 400);
@@ -79,8 +86,26 @@ export default function GiftPage() {
 
   const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !slug) {
-      setUploadStatus('Missing upload context. Please try again.');
+    if (!file) {
+      setUploadStatus('Please choose a video file.');
+      return;
+    }
+    // Ensure slug exists before upload
+    if (!slug && !isCreatingSlug) {
+      setUploadStatus('Preparing upload…');
+      try {
+        const res = await fetch('/api/drafts/create', { method: 'POST' });
+        if (res.ok) {
+          const data = await res.json();
+          setSlug(data.slug);
+          setIsSlugReady(true);
+        }
+      } catch (err) {
+        console.error('Draft creation failed', err);
+      }
+    }
+    if (!slug) {
+      setUploadStatus('Still preparing upload. Please try again.');
       return;
     }
     try {
