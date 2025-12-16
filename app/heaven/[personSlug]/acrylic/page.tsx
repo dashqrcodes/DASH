@@ -33,8 +33,8 @@ async function getDraft(slug: string) {
     | null;
 }
 
-export default async function AcrylicDraftPage({ params }: { params: { slug: string } }) {
-  const draft = await getDraft(params.slug);
+export default async function AcrylicDraftPage({ params }: { params: { personSlug: string } }) {
+  const draft = await getDraft(params.personSlug);
   if (!draft) notFound();
 
   const videos = (draft.videos as DraftVideos) || {};
@@ -108,7 +108,7 @@ export default async function AcrylicDraftPage({ params }: { params: { slug: str
 
         <div className="w-full max-w-sm space-y-4 rounded-3xl border border-white/10 bg-white/5 p-6">
           <h2 className="text-xl font-semibold">Dash Info</h2>
-          <p className="text-sm text-gray-300">Slug: {params.slug}</p>
+          <p className="text-sm text-gray-300">Slug: {params.personSlug}</p>
           <p className="text-sm text-gray-300">Status: {draft.status}</p>
           {draft.qr_url && (
             <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
