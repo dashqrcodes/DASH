@@ -50,6 +50,34 @@ CREATE TABLE IF NOT EXISTS slideshows (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
+-- Drafts table (stores per-visitor page state and assets)
+CREATE TABLE IF NOT EXISTS drafts (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  slug TEXT UNIQUE NOT NULL,
+  status TEXT NOT NULL DEFAULT 'draft', -- draft | paid | expired
+  photo_url TEXT,
+  qr_url TEXT,
+  qr_target TEXT,
+  mockup_url TEXT,
+  print_pdf_url TEXT,
+  videos JSONB, -- { tempUrl, finalMuxPlaybackId }
+  accent_color TEXT,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Numeric slug sequencing and default (padded)
+CREATE SEQUENCE IF NOT EXISTS draft_number_seq START 1;
+
+CREATE OR REPLACE FUNCTION next_draft_slug()
+RETURNS TEXT
+LANGUAGE SQL
+AS $$
+  SELECT lpad(nextval('draft_number_seq')::text, 7, '0');
+$$;
+
+ALTER TABLE drafts ALTER COLUMN slug SET DEFAULT next_draft_slug();
+
 -- Enable Row Level Security (RLS)
 ALTER TABLE memorials ENABLE ROW LEVEL SECURITY;
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;

@@ -5,11 +5,13 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import QRCode from 'qrcode';
 
+const DEFAULT_QR_TARGET = 'https://www.dash.gift/gift';
+
 export default function GiftPage() {
   const router = useRouter();
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [qrPreview, setQrPreview] = useState<string | null>(null);
-  const [qrValue, setQrValue] = useState('');
+  const qrValue = DEFAULT_QR_TARGET;
   const [qrError, setQrError] = useState<string | null>(null);
   const [isGeneratingQr, setIsGeneratingQr] = useState(false);
   const [showSpotlight, setShowSpotlight] = useState(false);
@@ -45,7 +47,8 @@ export default function GiftPage() {
       const dataUrl = await QRCode.toDataURL(payload, {
         width: 512,
         margin: 1,
-        color: { dark: '#111111', light: '#ffffffff' },
+        // qrcode expects RGBA hex; use 8-char format for both dark and light
+        color: { dark: '#111111ff', light: '#ffffffff' },
       });
       setQrPreview(dataUrl);
     } catch (error) {
@@ -55,6 +58,11 @@ export default function GiftPage() {
       setIsGeneratingQr(false);
     }
   };
+
+  useEffect(() => {
+    handleGenerateQr();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const previewCopy =
     photoPreview && qrPreview
@@ -154,16 +162,16 @@ export default function GiftPage() {
           <div className="border-2 border-dashed border-gray-700 rounded-lg p-8 text-left hover:border-gray-500 transition-colors">
             <div className="space-y-4">
               <div>
-                <p className="text-sm uppercase tracking-wide text-gray-400">QR Code Content</p>
+                <p className="text-sm uppercase tracking-wide text-gray-400">QR Code Destination</p>
                 <p className="text-xs text-gray-500">
-                  Paste a video link, playlist, or message to engrave into the glass QR.
+                  Locked to your gift landing page so the QR always points to the product.
                 </p>
               </div>
               <textarea
                 value={qrValue}
-                onChange={(e) => setQrValue(e.target.value)}
+                readOnly
                 rows={3}
-                placeholder="https://..."
+                placeholder={DEFAULT_QR_TARGET}
                 className="w-full rounded-md border border-gray-700 bg-black/30 px-3 py-2 text-sm outline-none focus:border-purple-500"
               />
               {qrError && <p className="text-xs text-red-400">{qrError}</p>}
@@ -175,17 +183,6 @@ export default function GiftPage() {
                 >
                   {isGeneratingQr ? 'Generating...' : 'Generate QR Code'}
                 </button>
-                {qrPreview && (
-                  <button
-                    onClick={() => {
-                      setQrPreview(null);
-                      setQrValue('');
-                    }}
-                    className="text-xs uppercase tracking-wide text-red-400 hover:text-red-300"
-                  >
-                    Clear QR
-                  </button>
-                )}
               </div>
               <div className="relative mx-auto h-40 w-40 overflow-hidden rounded-lg border border-white/10 bg-white/5 p-4">
                 {qrPreview ? (

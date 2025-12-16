@@ -1,71 +1,123 @@
-// API route to generate QR code
 import { NextRequest, NextResponse } from 'next/server';
-import QRCode from 'qrcode';
-import { createCanvas, loadImage } from 'canvas';
+import Vibrant from 'node-vibrant';
+import QRCodeStyling from 'qr-code-styling';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
-export async function POST(request: NextRequest) {
+export const runtime = 'nodejs';
+
+type Palette = {
+  Vibrant?: { hex: string };
+  DarkVibrant?: { hex: string };
+};
+
+function pickColors(photoBuffer: Buffer) {
   try {
-    const { url, lovedOneName } = await request.json();
-    
-    if (!url) {
-      return NextResponse.json({ 
-        success: false, 
-        message: 'URL is required' 
-      }, { status: 400 });
-    }
-    
-    // Generate QR code as data URL with transparent background
-    const qrDataUrl = await QRCode.toDataURL(url, {
-      width: 300,
-      margin: 1,
-      color: {
-        dark: '#0A2463', // Dark blue modules
-        light: '#00000000' // Transparent background
-      },
-      errorCorrectionLevel: 'M'
-    });
-    
-    // Load QR code into canvas
-    const canvas = createCanvas(300, 300);
-    const ctx = canvas.getContext('2d');
-    const img = await loadImage(qrDataUrl);
-    ctx.drawImage(img, 0, 0);
-    
-    // Add rounded square with "DASH" in center
-    const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2;
-    const squareSize = 60;
-    const cornerRadius = 8;
-    
-    // Draw rounded square with gradient (transparent center)
-    ctx.fillStyle = '#0A2463';
-    ctx.beginPath();
-    ctx.roundRect(centerX - squareSize/2, centerY - squareSize/2, squareSize, squareSize, cornerRadius);
-    ctx.fill();
-    
-    // Add "DASH" text in white
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 20px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('DASH', centerX, centerY);
-    
-    // Convert canvas to buffer then to base64 data URL
-    const buffer = canvas.toBuffer('image/png');
-    const base64 = buffer.toString('base64');
-    const finalQrDataUrl = `data:image/png;base64,${base64}`;
-    
-    return NextResponse.json({ 
-      success: true, 
-      qrCode: finalQrDataUrl 
-    });
-    
-  } catch (error: any) {
-    console.error('Error generating QR code:', error);
-    return NextResponse.json({ 
-      success: false, 
-      message: error.message || 'Error generating QR code' 
-    }, { status: 500 });
+    const palette = Vibrant.from(photoBuffer).getPalette() as Palette;
+    const accent = palette.Vibrant?.hex || palette.DarkVibrant?.hex || '#222222';
+    const bg = '#ffffffcc'; // soft backdrop for scan-ability
+    return { accent, bg };
+  } catch (_err) {
+    return { accent: '#222222', bg: '#ffffffcc' };
   }
 }
 
+function toBuffer(raw: ArrayBuffer | Uint8Array | Buffer) {
+  if (Buffer.isBuffer(raw)) return raw;
+  if (raw instanceof Uint8Array) return Buffer.from(raw);
+  return Buffer.from(raw);
+}
+
+function resolveBaseUrl(req: NextRequest) {
+  const headerHost = req.headers.get('host');
+  const vercel = process.env.NEXT_PUBLIC_VERCEL_URL;
+  const app = process.env.NEXT_PUBLIC_APP_URL;
+  const site = process.env.NEXT_PUBLIC_SITE_URL;
+  const base =
+    site ||
+    app ||
+    (vercel ? (vercel.startsWith('http') ? vercel : `https://${vercel}`) : undefined) ||
+    (headerHost ? `https://${headerHost}` : undefined) ||
+    'http://localhost:3000';
+  return base.replace(/\/$/, '');
+}
+
+function buildCanonicalTarget(req: NextRequest, slug: string) {
+  const base = resolveBaseUrl(req);
+  return `${base}/heaven/${slug}/acrylic`;
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const { slug, targetUrl, photoUrl } = await req.json();
+    if (!slug || !photoUrl) {
+      return NextResponse.json({ error: 'Missing slug or photoUrl' }, { status: 400 });
+    }
+
+    // Fetch draft to reuse existing qr_target (immutable once set)
+    const { data: draft } = await supabaseAdmin
+      .from('drafts')
+      .select('qr_target')
+      .eq('slug', slug)
+      .maybeSingle();
+
+    const canonicalTarget =
+      draft?.qr_target ||
+      targetUrl ||
+      buildCanonicalTarget(req, slug);
+
+    const photoBuffer = Buffer.from(await fetch(photoUrl).then((r) => r.arrayBuffer()));
+    const { accent, bg } = pickColors(photoBuffer);
+
+    // Center logo with inline SVG that says DASH
+    const centerSvg = encodeURIComponent(
+      `<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'>
+        <rect width='200' height='200' rx='32' ry='32' fill='${bg.replace(/cc$/, 'ee')}'/>
+        <text x='50%' y='56%' font-family='Inter,Arial,sans-serif' font-size='72' font-weight='700' fill='${accent}' text-anchor='middle' dominant-baseline='middle'>DASH</text>
+      </svg>`
+    );
+    const centerImage = `data:image/svg+xml,${centerSvg}`;
+
+    const qr = new QRCodeStyling({
+      width: 512,
+      height: 512,
+      type: 'png',
+      data: canonicalTarget,
+      margin: 24,
+      qrOptions: { errorCorrectionLevel: 'Q' },
+      dotsOptions: { type: 'rounded', color: accent },
+      cornersSquareOptions: { type: 'extra-rounded', color: accent },
+      backgroundOptions: { color: bg },
+      image: centerImage,
+      imageOptions: { crossOrigin: 'anonymous', imageSize: 0.28, margin: 4 },
+    });
+
+    const raw = await qr.getRawData('png');
+    const pngBuffer = toBuffer(raw as ArrayBuffer);
+
+    const path = `qr/${slug}.png`;
+    const { error: uploadError } = await supabaseAdmin.storage
+      .from('qr')
+      .upload(path, pngBuffer, { upsert: true, contentType: 'image/png' });
+
+    if (uploadError) {
+      console.error('QR upload failed', uploadError);
+      return NextResponse.json({ error: 'Failed to store QR' }, { status: 500 });
+    }
+
+    const { data: urlData } = supabaseAdmin.storage.from('qr').getPublicUrl(path);
+    const qrUrl = urlData.publicUrl;
+
+    await supabaseAdmin
+      .from('drafts')
+      .update({ qr_url: qrUrl, accent_color: accent, qr_target: canonicalTarget })
+      .eq('slug', slug);
+
+    return NextResponse.json({ qrUrl, accentColor: accent, qrTarget: canonicalTarget });
+  } catch (error: any) {
+    console.error('generate-qr error', error);
+    return NextResponse.json(
+      { error: error?.message || 'Failed to generate QR' },
+      { status: 500 },
+    );
+  }
+}
