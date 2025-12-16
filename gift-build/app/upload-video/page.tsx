@@ -1,12 +1,35 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
-import { ChangeEvent, useState } from 'react';
+import { ChangeEvent, useEffect, useState } from 'react';
 
 export default function UploadVideoPage() {
   const params = useSearchParams();
-  const slug = params.get('slug');
+  const slugFromQuery = params.get('slug');
+  const [slug, setSlug] = useState<string | null>(slugFromQuery);
   const [status, setStatus] = useState('');
+
+  // If no slug is provided, create a draft automatically so the user doesn't need to know it
+  useEffect(() => {
+    async function ensureSlug() {
+      if (slug) return;
+      setStatus('Preparing upload…');
+      try {
+        const res = await fetch('/api/drafts/create', { method: 'POST' });
+        if (!res.ok) {
+          setStatus('Unable to start upload. Please refresh.');
+          return;
+        }
+        const data = await res.json();
+        setSlug(data.slug);
+        setStatus('');
+      } catch (err) {
+        console.error('Draft creation failed', err);
+        setStatus('Unable to start upload. Please refresh.');
+      }
+    }
+    ensureSlug();
+  }, [slug]);
 
   async function handleUpload(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
