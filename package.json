@@ -10,8 +10,10 @@
     "test": "echo \"No tests configured\""
   },
   "dependencies": {
+    "@stripe/stripe-js": "^8.5.3",
     "@supabase/supabase-js": "^2.78.0",
     "@types/nodemailer": "^7.0.3",
+    "@types/pdfkit": "^0.17.4",
     "@types/qrcode": "^1.5.6",
     "@vibrant/color": "^4.0.0",
     "canvas": "^3.2.0",
@@ -22,7 +24,7 @@
     "next": "^14.2.35",
     "node-vibrant": "^4.0.3",
     "nodemailer": "^7.0.10",
-    "pdfkit": "^0.15.0",
+    "pdfkit": "^0.17.2",
     "qrcode": "^1.5.4",
     "qr-code-styling": "^1.9.1",
     "react": "^18.2.0",

@@ -236,10 +236,10 @@ function MemorialCardBackContent() {
   return (
     <div style={{minHeight:'100vh',background:'#000000',fontFamily:'-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',color:'white',padding:'10px',paddingBottom:'90px',display:'flex',flexDirection:'column',maxWidth:'100vw',overflow:'hidden'}}>
       <div style={{display:'flex',justifyContent:'space-between',padding:'8px 16px',marginBottom:'10px',fontSize:'14px'}}>
-        <button onClick={()=>router.back()} style={{background:'transparent',border:'none',color:'white',fontSize:'20px',cursor:'pointer',padding:0}}>←</button>
+        <button onClick={()=>router.back()} aria-label="Go back" title="Go back" style={{background:'transparent',border:'none',color:'white',fontSize:'20px',cursor:'pointer',padding:0}}>←</button>
         <div>9:41</div>
         <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
-          <button onClick={()=>router.push(`/memorial-card-preview?name=${encodeURIComponent('')}&sunrise=${encodeURIComponent(sunrise)}&sunset=${encodeURIComponent(sunset)}`)} style={{background:'transparent',border:'none',color:'white',cursor:'pointer',padding:0}}>
+          <button onClick={()=>router.push(`/memorial-card-preview?name=${encodeURIComponent('')}&sunrise=${encodeURIComponent(sunrise)}&sunset=${encodeURIComponent(sunset)}`)} aria-label="View preview" title="View preview" style={{background:'transparent',border:'none',color:'white',cursor:'pointer',padding:0}}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="9" cy="21" r="1"/>
             <circle cx="20" cy="21" r="1"/>
@@ -309,7 +309,7 @@ function MemorialCardBackContent() {
                   <circle cx="12" cy="13" r="4"/>
                 </svg>
               </button>
-              <button onClick={handleScriptureCycle} style={{width:'35px',height:'25px',background:'rgba(102,126,234,0.6)',border:'1px solid rgba(102,126,234,1)',borderRadius:'2px',color:'white',outline:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
+              <button onClick={handleScriptureCycle} aria-label="Cycle scripture" title="Cycle scripture" style={{width:'35px',height:'25px',background:'rgba(102,126,234,0.6)',border:'1px solid rgba(102,126,234,1)',borderRadius:'2px',color:'white',outline:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18"/><path d="M9 9h6v6H9z"/></svg>
               </button>
             </div>
@@ -359,14 +359,14 @@ function MemorialCardBackContent() {
           </svg>
           <span style={{fontSize:'10px'}}>Home</span>
         </button>
-        <button onClick={()=>router.push('/profile')} style={{background:'transparent',border:'none',color:'white',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:'4px'}}>
+        <button onClick={()=>router.push('/profile')} aria-label="Profile" title="Profile" style={{background:'transparent',border:'none',color:'white',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:'4px'}}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <polygon points="23 7 16 12 23 17 23 7"/>
             <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
           </svg>
           <span style={{fontSize:'10px'}}>HEAVEN</span>
         </button>
-        <button onClick={()=>router.push('/spotify')} style={{background:'transparent',border:'none',color:'white',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:'4px'}}>
+        <button onClick={()=>router.push('/spotify')} aria-label="Spotify" title="Spotify" style={{background:'transparent',border:'none',color:'white',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:'4px'}}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M9 18V5l12-2v13"/>
             <circle cx="6" cy="18" r="3"/>
@@ -374,7 +374,7 @@ function MemorialCardBackContent() {
           </svg>
           <span style={{fontSize:'10px'}}>Music</span>
         </button>
-        <button onClick={()=>router.push('/slideshow')} style={{background:'transparent',border:'none',color:'white',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:'4px'}}>
+        <button onClick={()=>router.push('/slideshow')} aria-label="Slideshow" title="Slideshow" style={{background:'transparent',border:'none',color:'white',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:'4px'}}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M8 5V19L19 12L8 5Z"/>
           </svg>

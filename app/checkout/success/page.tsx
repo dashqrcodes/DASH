@@ -7,7 +7,7 @@ import Link from 'next/link';
 function SuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const slug = searchParams?.get('slug') ?? null;
+  const slug = searchParams?.get('slug') || null;
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

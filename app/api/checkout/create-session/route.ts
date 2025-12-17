@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createCheckoutSession } from '@/lib/utils/stripe';
 import { getBaseUrl } from '@/lib/utils/baseUrl';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,9 +14,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Store checkout session metadata in draft
     const baseUrl = getBaseUrl();
     const successUrl = `${baseUrl}/checkout/success?slug=${slug}`;
-    const cancelUrl = `${baseUrl}/gift?slug=${slug}`;
+    const cancelUrl = `${baseUrl}/checkout?slug=${slug}`;
 
     // Get Stripe Price ID from environment variable
     // Should be set in .env.local or Vercel environment variables
@@ -33,6 +35,15 @@ export async function POST(req: NextRequest) {
       successUrl,
       cancelUrl
     );
+
+    // Store checkout session ID in draft for webhook processing
+    await supabaseAdmin
+      .from('drafts')
+      .update({ 
+        stripe_checkout_session_id: session.id,
+        status: 'checkout_pending'
+      })
+      .eq('slug', slug);
 
     return NextResponse.json({
       sessionId: session.id,
