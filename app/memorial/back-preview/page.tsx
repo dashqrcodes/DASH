@@ -73,7 +73,7 @@ export default function MemorialBackPreviewPage() {
     try {
       supabase = getSupabaseClient();
     } catch {
-      // local demo only: Supabase not configured, skip save but continue flow
+      setError("Supabase is not configured. Continuing without saving.");
       router.push(`/memorial/hero-preview${buildQueryString()}`);
       return;
     }
@@ -96,7 +96,6 @@ export default function MemorialBackPreviewPage() {
       );
 
     if (supabaseError) {
-      // Keep UX flowing; in production add print-lock/error telemetry here.
       setError("Unable to save to Supabase right now. Continuing in review mode.");
     }
 
