@@ -2,7 +2,7 @@
 export const dynamic = "force-dynamic";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 const primaryButtonClass =
   "h-12 w-full rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-500 text-base font-semibold text-white shadow-[0_12px_32px_rgba(99,102,241,0.35)] transition duration-200 hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-purple-300/60";
@@ -16,6 +16,7 @@ export default function MemorialProfilePage() {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [slug, setSlug] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const slugify = (value: string) =>
     value
@@ -90,8 +91,20 @@ export default function MemorialProfilePage() {
 
         <div className="flex-1 w-full max-w-[420px] space-y-8">
           <div className="flex flex-col items-center space-y-2">
-            <label className="flex h-36 w-36 cursor-pointer items-center justify-center rounded-full bg-[#111111] ring-2 ring-purple-500/40 shadow-[0_0_24px_rgba(109,40,217,0.28)] relative overflow-hidden">
+            <label
+              className="flex h-36 w-36 cursor-pointer items-center justify-center rounded-full bg-[#111111] ring-2 ring-purple-500/40 shadow-[0_0_24px_rgba(109,40,217,0.28)] relative overflow-hidden"
+              style={
+                photoUrl
+                  ? {
+                      backgroundImage: `url(${photoUrl})`,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                    }
+                  : undefined
+              }
+            >
               <input
+                ref={fileInputRef}
                 type="file"
                 accept="image/*"
                 className="absolute inset-0 opacity-0 cursor-pointer"
@@ -103,9 +116,11 @@ export default function MemorialProfilePage() {
                   }
                 }}
               />
-              <div className="flex flex-col items-center text-gray-400 pointer-events-none">
-                <span className="text-xs">{strings.addPhoto}</span>
-              </div>
+              {!photoUrl && (
+                <div className="flex flex-col items-center text-gray-400 pointer-events-none">
+                  <span className="text-xs">{strings.addPhoto}</span>
+                </div>
+              )}
             </label>
           </div>
 
