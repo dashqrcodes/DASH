@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 type Lang = "en" | "es";
 
@@ -12,11 +13,17 @@ export default function CounselorLanguageToggle() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const currentLang: Lang = searchParams?.get("lang") === "es" ? "es" : "en";
+  const [currentLang, setCurrentLang] = useState<Lang>("en");
+
+  useEffect(() => {
+    const lang = searchParams?.get("lang") === "es" ? "es" : "en";
+    setCurrentLang(lang);
+  }, [searchParams]);
 
   const setLang = (lang: Lang) => {
     const params = new URLSearchParams(searchParams ? searchParams.toString() : "");
     params.set("lang", lang);
+    setCurrentLang(lang);
     router.replace(`${pathname}?${params.toString()}`);
   };
 
