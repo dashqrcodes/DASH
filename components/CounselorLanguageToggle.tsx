@@ -12,10 +12,10 @@ export default function CounselorLanguageToggle() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const currentLang: Lang = searchParams.get("lang") === "es" ? "es" : "en";
+  const currentLang: Lang = searchParams?.get("lang") === "es" ? "es" : "en";
 
   const setLang = (lang: Lang) => {
-    const params = new URLSearchParams(Array.from(searchParams.entries()));
+    const params = new URLSearchParams(searchParams ? searchParams.toString() : "");
     params.set("lang", lang);
     router.replace(`${pathname}?${params.toString()}`);
   };

@@ -1,4 +1,5 @@
 "use client";
+export const dynamic = "force-dynamic";
 
 import CounselorLanguageToggle from "../../../components/CounselorLanguageToggle";
 import { useRouter } from "next/navigation";

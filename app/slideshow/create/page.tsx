@@ -1,4 +1,5 @@
 "use client";
+export const dynamic = "force-dynamic";
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useRef } from "react";
@@ -9,7 +10,7 @@ const primaryButtonClass =
 export default function SlideshowCreatePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const memorialName = searchParams.get("name") || "Enter full name";
+  const memorialName = searchParams?.get("name") || "";
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   return (

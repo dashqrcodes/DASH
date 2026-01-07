@@ -7,6 +7,8 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "DASH - Beautiful Memorial Products",
   description: "Create beautiful memorial cards, posters, and digital tributes with QR codes. Professional tools for funeral homes and families.",

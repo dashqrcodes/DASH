@@ -1,4 +1,5 @@
 "use client";
+export const dynamic = "force-dynamic";
 
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -11,10 +12,10 @@ const changeButtonClass =
 export default function FinalApprovalPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const name = searchParams.get("name");
-  const birth = searchParams.get("birth");
-  const death = searchParams.get("death");
-  const slug = searchParams.get("slug");
+  const name = searchParams?.get("name");
+  const birth = searchParams?.get("birth");
+  const death = searchParams?.get("death");
+  const slug = searchParams?.get("slug");
 
   const buildParams = () => {
     const parts = [

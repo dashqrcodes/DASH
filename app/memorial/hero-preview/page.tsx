@@ -1,4 +1,5 @@
 "use client";
+export const dynamic = "force-dynamic";
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -22,11 +23,11 @@ export default function HeroPreviewPage() {
   useEffect(() => {
     let next = { ...cardData };
     let nextSlug = "";
-    const pName = searchParams.get("name");
-    const pBirth = searchParams.get("birth");
-    const pDeath = searchParams.get("death");
-    const pSlug = searchParams.get("slug");
-    const pPhoto = searchParams.get("photo");
+    const pName = searchParams?.get("name");
+    const pBirth = searchParams?.get("birth");
+    const pDeath = searchParams?.get("death");
+    const pSlug = searchParams?.get("slug");
+    const pPhoto = searchParams?.get("photo");
     if (pName) next.fullName = pName;
     if (pBirth) next.birthDate = pBirth;
     if (pDeath) next.deathDate = pDeath;
@@ -41,6 +42,10 @@ export default function HeroPreviewPage() {
     setSlug(nextSlug);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
+
+  const memorialName = cardData.fullName;
+  const birthDate = cardData.birthDate;
+  const deathDate = cardData.deathDate;
 
   return (
     <main className="relative min-h-screen bg-[#0b0b0d] text-white">

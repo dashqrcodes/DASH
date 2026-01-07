@@ -1,4 +1,5 @@
 "use client";
+export const dynamic = "force-dynamic";
 
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -8,7 +9,7 @@ const primaryButtonClass =
 export default function CounselorFaceIdPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const currentLang = searchParams.get("lang") === "es" ? "es" : "en";
+  const currentLang = searchParams?.get("lang") === "es" ? "es" : "en";
 
   return (
     <main className="relative min-h-screen bg-white text-gray-900">

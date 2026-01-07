@@ -1,4 +1,5 @@
 "use client";
+export const dynamic = "force-dynamic";
 
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -9,11 +10,11 @@ export default function MemorialPreviewPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const fullName = searchParams.get("name")?.trim() || "";
-  const birthDate = searchParams.get("birth")?.trim() || "";
-  const deathDate = searchParams.get("death")?.trim() || "";
-  const photoUrl = searchParams.get("photo") || "";
-  const slug = searchParams.get("slug") || "";
+  const fullName = searchParams?.get("name")?.trim() || "";
+  const birthDate = searchParams?.get("birth")?.trim() || "";
+  const deathDate = searchParams?.get("death")?.trim() || "";
+  const photoUrl = searchParams?.get("photo") || "";
+  const slug = searchParams?.get("slug") || "";
 
   return (
     <main className="relative min-h-screen bg-[#0b0b0d] text-white">

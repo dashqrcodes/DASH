@@ -56,3 +56,6 @@ export function handleStripeWebhook(rawBody: string, signature: string) {
     webhookSecret
   );
 }
+
+// Expose a shared Stripe client for server-side callers.
+export const stripe = getStripe();
