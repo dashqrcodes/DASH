@@ -47,3 +47,4 @@ node_modules
 **/.next
 dist
 **/dist
+.env*.local
