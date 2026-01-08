@@ -1,6 +1,6 @@
 // API route to save memorial to Supabase
 import { NextRequest, NextResponse } from 'next/server';
-import { createMemorial } from '@/lib/utils/supabase';
+import { createMemorial } from '@/lib/supabase';
 
 export async function POST(request: NextRequest) {
   try {

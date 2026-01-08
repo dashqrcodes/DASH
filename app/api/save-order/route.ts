@@ -1,6 +1,6 @@
 // API route to save order to Supabase
 import { NextRequest, NextResponse } from 'next/server';
-import { createOrder } from '@/lib/utils/supabase';
+import { createOrder } from '@/lib/supabase';
 
 export async function POST(request: NextRequest) {
   try {
