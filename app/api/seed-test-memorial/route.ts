@@ -3,7 +3,7 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 
-export async function POST() {
+async function seed() {
   const { data, error } = await supabase
     .from("memorials")
     .insert({
@@ -23,5 +23,13 @@ export async function POST() {
   }
 
   return NextResponse.json({ success: true, memorial: data });
+}
+
+export async function POST() {
+  return seed();
+}
+
+export async function GET() {
+  return seed();
 }
 
