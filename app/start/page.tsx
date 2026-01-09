@@ -2,7 +2,7 @@
 export const dynamic = "force-dynamic";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type Step = "phone" | "otp" | "welcome";
 
@@ -38,7 +38,12 @@ export default function StartPage() {
   const [otp, setOtp] = useState("");
   const [language, setLanguage] = useState<"en" | "es">("en");
   const [counselorName, setCounselorName] = useState("Counselor");
+  const [mounted, setMounted] = useState(false);
   const isSpanish = language === "es";
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const phoneDigits = normalizePhone(phone);
   const canContinue = phoneDigits.length > 0;
@@ -102,7 +107,11 @@ export default function StartPage() {
         };
 
   return (
-    <main className="min-h-screen bg-white text-gray-900">
+    <main
+      className={`min-h-screen bg-white text-gray-900 transition-all duration-300 ease-out motion-reduce:transition-none motion-reduce:transform-none ${
+        mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
+      }`}
+    >
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-6 py-8">
         <header className="mb-10 flex items-center justify-between">
           <div className="flex items-center gap-3">
