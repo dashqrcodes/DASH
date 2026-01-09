@@ -2,7 +2,6 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import PhotoScanner from '@/components/PhotoScanner';
 
 function SlideshowContent() {
   const router = useRouter();
@@ -29,7 +28,6 @@ function SlideshowContent() {
   const [dragStartY, setDragStartY] = useState(0);
   const [dragStartHeight, setDragStartHeight] = useState(0.65);
   const [photos, setPhotos] = useState<Array<{id: string, url: string, file: File | null, date?: string, preview?: string}>>([]);
-  const [showScanner, setShowScanner] = useState(false);
   const [language, setLanguage] = useState<'en' | 'es'>('en');
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -271,32 +269,6 @@ function SlideshowContent() {
 
     setPhotos(allPhotos);
     setIsProcessing(false);
-    
-    const mediaItems = allPhotos.map(p => ({ type: 'photo' as const, url: p.url }));
-    localStorage.setItem('slideshowMedia', JSON.stringify(mediaItems));
-  };
-
-  const handleScannedPhoto = async (scannedFile: File) => {
-    const id = `${Date.now()}-scanned`;
-    const preview = URL.createObjectURL(scannedFile);
-    
-    const newPhoto = {
-      id,
-      url: preview,
-      file: scannedFile,
-      date: undefined,
-      preview
-    };
-
-    const allPhotos = [...photos, newPhoto].sort((a, b) => {
-      if (!a.date && !b.date) return 0;
-      if (!a.date) return 1;
-      if (!b.date) return -1;
-      return new Date(a.date).getTime() - new Date(b.date).getTime();
-    });
-
-    setPhotos(allPhotos);
-    setShowScanner(false);
     
     const mediaItems = allPhotos.map(p => ({ type: 'photo' as const, url: p.url }));
     localStorage.setItem('slideshowMedia', JSON.stringify(mediaItems));
@@ -907,7 +879,7 @@ function SlideshowContent() {
             {/* Photo Upload Buttons */}
             <div style={{padding:'0 16px 12px',display:'flex',flexDirection:'column',gap:'10px'}}>
               <button 
-                onClick={() => setShowScanner(true)}
+                onClick={() => setShowPhotoBottomSheet(true)}
                 style={{padding:'14px',background:'rgba(102,126,234,0.2)',border:'2px solid rgba(102,126,234,0.5)',borderRadius:'12px',textAlign:'center',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px'}}
               >
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1021,15 +993,6 @@ function SlideshowContent() {
             )}
           </div>
         </>
-      )}
-
-      {/* Photo Scanner Modal */}
-      {showScanner && (
-        <PhotoScanner 
-          onScanComplete={handleScannedPhoto}
-          onClose={() => setShowScanner(false)}
-          language={language}
-        />
       )}
 
       {/* Bottom Navigation - Home, HEAVEN, Music, Slideshow */}
