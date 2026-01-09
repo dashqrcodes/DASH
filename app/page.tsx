@@ -15,7 +15,7 @@ const images: string[] = [
 ];
 
 const fadeDuration = 800;
-const intervalMs = 3000;
+const intervalMs = 2000;
 const audioSrc = "https://cdn.pixabay.com/audio/2022/10/03/audio_8e0c6c6b35.mp3";
 const initialVolume = 0.15;
 
@@ -24,6 +24,7 @@ export default function HomePage() {
   const [index, setIndex] = useState(0);
   const [muted, setMuted] = useState(true);
   const [mode, setMode] = useState<"consumer" | "business">("consumer");
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const slides = useMemo(
@@ -77,22 +78,6 @@ export default function HomePage() {
     };
   }, [muted]);
 
-  const primaryCta =
-    mode === "consumer"
-      ? {
-          label: "For Families",
-          action: () => router.push("/memorial/start"),
-        }
-      : {
-          label: "For Funeral Homes",
-          action: () => router.push("/start"),
-        };
-
-  const secondaryCta =
-    mode === "consumer"
-      ? { label: "For Funeral Homes", action: () => router.push("/start") }
-      : { label: "For Families", action: () => router.push("/memorial/start") };
-
   return (
     <main className="relative min-h-screen overflow-hidden bg-black text-white">
       {/* Background carousel */}
@@ -144,7 +129,12 @@ export default function HomePage() {
             />
             <Link
               href="/start"
-              onClick={() => setMode("business")}
+              onClick={(e) => {
+                e.preventDefault();
+                setMode("business");
+                setIsTransitioning(true);
+                setTimeout(() => router.push("/start"), 200);
+              }}
               className={`relative z-10 flex-1 rounded-full px-5 py-2 text-center text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 ${
                 mode === "business" ? "text-gray-900" : "text-white/80 hover:text-white"
               }`}
@@ -153,7 +143,12 @@ export default function HomePage() {
             </Link>
             <Link
               href="/memorial/start"
-              onClick={() => setMode("consumer")}
+              onClick={(e) => {
+                e.preventDefault();
+                setMode("consumer");
+                setIsTransitioning(true);
+                setTimeout(() => router.push("/memorial/start"), 200);
+              }}
               className={`relative z-10 flex-1 rounded-full px-5 py-2 text-center text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 ${
                 mode === "consumer" ? "text-gray-900" : "text-white/80 hover:text-white"
               }`}
@@ -174,6 +169,13 @@ export default function HomePage() {
       >
         {muted ? "🔇" : "🔊"}
       </button>
+
+      {/* Crossfade overlay for page transitions */}
+      <div
+        className={`pointer-events-none fixed inset-0 z-30 bg-black transition-opacity duration-300 ${
+          isTransitioning ? "opacity-80" : "opacity-0"
+        }`}
+      />
     </main>
   );
 }

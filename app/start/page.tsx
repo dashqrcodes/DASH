@@ -151,7 +151,7 @@ export default function StartPage() {
                   value={phone}
                   onChange={(event) => setPhone(formatPhone(event.target.value))}
                   placeholder={strings.phonePlaceholder}
-                  className="h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-base text-gray-900 placeholder:text-gray-400 shadow-inner shadow-gray-100 focus:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-200"
+                  className="h-12 w-full rounded-full border border-gray-200 bg-white px-5 text-base text-gray-900 placeholder:text-gray-400 shadow-inner shadow-gray-100 transition focus:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-200"
                 />
               </div>
 
