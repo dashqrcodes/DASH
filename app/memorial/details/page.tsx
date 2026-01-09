@@ -13,6 +13,14 @@ const inputBase =
 export default function MemorialDetailsPage() {
   const router = useRouter();
   const [language, setLanguage] = useState<"en" | "es">("en");
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+
+  const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    setPhotoUrl(url);
+  };
 
   return (
     <main className="relative min-h-screen bg-gradient-to-b from-[#0b0b0d] via-[#0c0d13] to-[#0b0b0d] text-white">
@@ -48,14 +56,36 @@ export default function MemorialDetailsPage() {
         <div className="space-y-8">
           {/* Photo upload placeholder */}
           <div className="flex justify-center">
-            <div className="flex h-32 w-32 items-center justify-center rounded-full bg-white/5 ring-1 ring-white/10 backdrop-blur-2xl shadow-inner shadow-black/40">
-              <div className="flex flex-col items-center gap-2 text-xs font-semibold text-white/75">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white text-lg font-semibold">
-                  +
+            <label
+              htmlFor="memorial-photo"
+              className="group relative flex h-32 w-32 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-white/5 ring-1 ring-white/10 backdrop-blur-2xl shadow-inner shadow-black/40 transition hover:ring-white/30"
+            >
+              {photoUrl ? (
+                <div className="absolute inset-0">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={photoUrl}
+                    alt="Uploaded memorial"
+                    className="h-full w-full object-cover"
+                  />
                 </div>
-                <span>Add Photo</span>
-              </div>
-            </div>
+              ) : (
+                <div className="flex flex-col items-center gap-2 text-xs font-semibold text-white/75 transition group-hover:text-white">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white text-lg font-semibold">
+                    +
+                  </div>
+                  <span>Add Photo</span>
+                </div>
+              )}
+              <input
+                id="memorial-photo"
+                name="memorial-photo"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handlePhotoChange}
+              />
+            </label>
           </div>
 
           {/* Name */}
