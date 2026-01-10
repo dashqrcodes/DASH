@@ -3,9 +3,7 @@ export const dynamic = "force-dynamic";
 
 import CounselorLanguageToggle from "../../../components/CounselorLanguageToggle";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-
-console.log("COUNSELOR PAYMENTS PAGE LOADED");
+import { useEffect, useState } from "react";
 
 const primaryButtonClass =
   "h-12 w-full rounded-full bg-gray-900 text-base font-semibold text-white shadow-lg shadow-gray-200/80 transition hover:-translate-y-0.5 hover:shadow-xl hover:shadow-gray-200/90 focus:outline-none focus:ring-2 focus:ring-gray-300";
@@ -30,11 +28,20 @@ export default function CounselorPaymentsPage() {
   const [phone, setPhone] = useState("");
   const [routing, setRouting] = useState("");
   const [account, setAccount] = useState("");
+  const [mounted, setMounted] = useState(false);
 
   const isComplete = legalName && email && phone && routing && account;
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   return (
-    <main className="relative min-h-screen bg-white text-gray-900">
+    <main
+      className={`relative min-h-screen bg-white text-gray-900 transition-all duration-300 ease-out motion-reduce:transition-none motion-reduce:transform-none ${
+        mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
+      }`}
+    >
       <button
         type="button"
         aria-label="Back"
