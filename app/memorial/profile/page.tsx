@@ -2,7 +2,7 @@
 export const dynamic = "force-dynamic";
 
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const primaryButtonClass =
   "h-12 w-full rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-500 text-base font-semibold text-white shadow-[0_12px_32px_rgba(99,102,241,0.35)] transition duration-200 hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-purple-300/60";
@@ -17,6 +17,11 @@ export default function MemorialProfilePage() {
   const [slug, setSlug] = useState("");
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const slugify = (value: string) =>
     value
@@ -53,7 +58,11 @@ export default function MemorialProfilePage() {
         };
 
   return (
-    <main className="relative min-h-screen bg-black text-white">
+    <main
+      className={`relative min-h-screen bg-black text-white transition-all duration-300 ease-out motion-reduce:transition-none motion-reduce:transform-none ${
+        mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
+      }`}
+    >
       <div className="pointer-events-none absolute inset-0 opacity-30">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.08),_transparent_45%)]" />
       </div>
@@ -91,7 +100,22 @@ export default function MemorialProfilePage() {
 
         <div className="flex-1 w-full max-w-[420px] space-y-8">
           <div className="flex flex-col items-center space-y-2">
+            <input
+              ref={fileInputRef}
+              id="memorial-photo"
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  const url = URL.createObjectURL(file);
+                  setPhotoUrl(url);
+                }
+              }}
+            />
             <label
+              htmlFor="memorial-photo"
               className="flex h-36 w-36 cursor-pointer items-center justify-center rounded-full bg-[#111111] ring-2 ring-purple-500/40 shadow-[0_0_24px_rgba(109,40,217,0.28)] relative overflow-hidden"
               style={
                 photoUrl
