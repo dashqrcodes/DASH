@@ -1,7 +1,7 @@
 "use client";
 export const dynamic = "force-dynamic";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const primaryButtonClass =
   "h-12 w-full rounded-full bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 text-base font-semibold text-white shadow-[0_12px_32px_rgba(16,185,129,0.35)] transition duration-200 hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-green-300/60";
@@ -11,6 +11,35 @@ const cardClass =
 
 export default function MemorialCheckoutPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const handleCheckout = async () => {
+    const memorialId =
+      searchParams?.get("memorialId") ||
+      searchParams?.get("id") ||
+      searchParams?.get("slug") ||
+      "memorial-id-missing";
+
+    try {
+      const response = await fetch("/api/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ memorial_id: memorialId }),
+      });
+
+      if (!response.ok) return;
+
+      const data = await response.json();
+      if (data?.url) {
+        window.location.href = data.url;
+      }
+    } catch (error) {
+      // Intentionally silent; keep UX minimal for now.
+      console.error("Checkout failed", error);
+    }
+  };
 
   return (
     <main className="min-h-screen bg-white text-gray-900">
@@ -58,7 +87,7 @@ export default function MemorialCheckoutPage() {
           <button
             type="button"
             className={primaryButtonClass}
-            onClick={() => router.push("/memorial/experience")}
+            onClick={handleCheckout}
           >
             Pay now
           </button>

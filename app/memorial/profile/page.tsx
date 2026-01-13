@@ -18,6 +18,7 @@ export default function MemorialProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -102,21 +103,54 @@ export default function MemorialProfilePage() {
           <div className="flex flex-col items-center space-y-2">
             <input
               ref={fileInputRef}
-              id="memorial-photo"
               type="file"
               accept="image/*"
               className="hidden"
-              onChange={(e) => {
+              onChange={async (e) => {
                 const file = e.target.files?.[0];
-                if (file) {
-                  const url = URL.createObjectURL(file);
-                  setPhotoUrl(url);
+                const targetSlug = slug || slugify(fullName);
+                if (!file) return;
+                if (!targetSlug) {
+                  setError(language === "es" ? "Agrega un nombre antes de subir la foto." : "Add the name before uploading a photo.");
+                  return;
+                }
+
+                // Local preview immediately
+                const localUrl = URL.createObjectURL(file);
+                setPhotoUrl(localUrl);
+                setError(null);
+                setUploadingPhoto(true);
+
+                const formData = new FormData();
+                formData.append("file", file);
+                formData.append("slug", targetSlug);
+
+                try {
+                  const res = await fetch("/api/upload-photo", {
+                    method: "POST",
+                    body: formData,
+                  });
+
+                  if (!res.ok) {
+                    throw new Error("Upload failed");
+                  }
+
+                  const json = await res.json();
+                  if (json?.photoUrl) {
+                    setPhotoUrl(json.photoUrl);
+                    setSlug(targetSlug);
+                  }
+                } catch (uploadError) {
+                  setError(language === "es" ? "No se pudo subir la foto. Intenta de nuevo." : "Could not upload the photo. Please try again.");
+                } finally {
+                  setUploadingPhoto(false);
                 }
               }}
             />
-            <label
-              htmlFor="memorial-photo"
-              className="flex h-36 w-36 cursor-pointer items-center justify-center rounded-full bg-[#111111] ring-2 ring-purple-500/40 shadow-[0_0_24px_rgba(109,40,217,0.28)] relative overflow-hidden"
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="flex h-36 w-36 items-center justify-center rounded-full bg-[#111111] ring-2 ring-purple-500/40 shadow-[0_0_24px_rgba(109,40,217,0.28)] relative overflow-hidden transition hover:ring-purple-400"
               style={
                 photoUrl
                   ? {
@@ -127,25 +161,17 @@ export default function MemorialProfilePage() {
                   : undefined
               }
             >
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="absolute inset-0 opacity-0 cursor-pointer"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    const url = URL.createObjectURL(file);
-                    setPhotoUrl(url);
-                  }
-                }}
-              />
               {!photoUrl && (
                 <div className="flex flex-col items-center text-gray-400 pointer-events-none">
                   <span className="text-xs">{strings.addPhoto}</span>
                 </div>
               )}
-            </label>
+              {uploadingPhoto && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/60 text-xs text-white">
+                  {language === "es" ? "Subiendo..." : "Uploading..."}
+                </div>
+              )}
+            </button>
           </div>
 
           <div className="space-y-2">
