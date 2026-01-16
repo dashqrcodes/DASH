@@ -2,7 +2,8 @@
 export const dynamic = "force-dynamic";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 const normalizePhone = (value: string) => value.replace(/\D/g, "");
 const formatPhone = (value: string) => {
@@ -12,21 +13,137 @@ const formatPhone = (value: string) => {
   const part3 = digits.slice(6, 10);
   return [part1, part2, part3].filter(Boolean).join("-");
 };
+const toE164 = (digits: string) => {
+  if (digits.length === 10) return `+1${digits}`;
+  if (digits.length === 11 && digits.startsWith("1")) return `+${digits}`;
+  return null;
+};
 
 export default function MemorialAcceptPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const counselorName = searchParams?.get("counselor") || "Your counselor";
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
+  const [sentTo, setSentTo] = useState<string | null>(null);
+  const [isSending, setIsSending] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const verifyTimeoutRef = useRef<number | null>(null);
 
-  const canVerify = normalizePhone(phone).length === 10 && otp.trim().length === 6;
+  const normalizedPhone = normalizePhone(phone);
+  const canSend = Boolean(toE164(normalizedPhone));
+  const canVerify = otp.trim().length === 6 && Boolean(sentTo);
 
   useEffect(() => {
-    if (canVerify) {
-      router.push("/memorial/checkout");
+    if (!sentTo) return;
+    if (typeof window === "undefined") return;
+    if (!("OTPCredential" in window)) return;
+
+    const controller = new AbortController();
+    const abortListener = () => controller.abort();
+    window.addEventListener("blur", abortListener);
+
+    navigator.credentials
+      .get({
+        // @ts-ignore - Web OTP is not in TS lib types yet
+        otp: { transport: ["sms"] },
+        signal: controller.signal,
+      })
+      .then((credential: any) => {
+        if (credential?.code) {
+          setOtp(credential.code);
+        }
+      })
+      .catch(() => {
+        // Ignore - user canceled or browser doesn't support it
+      })
+      .finally(() => {
+        window.removeEventListener("blur", abortListener);
+      });
+
+    return () => {
+      controller.abort();
+      window.removeEventListener("blur", abortListener);
+    };
+  }, [sentTo]);
+
+  useEffect(() => {
+    if (!canVerify || isVerifying) return;
+    if (verifyTimeoutRef.current) window.clearTimeout(verifyTimeoutRef.current);
+
+    verifyTimeoutRef.current = window.setTimeout(() => {
+      handleVerifyOtp();
+    }, 200);
+
+    return () => {
+      if (verifyTimeoutRef.current) window.clearTimeout(verifyTimeoutRef.current);
+    };
+  }, [canVerify, isVerifying, otp, sentTo]);
+
+  const handleSendOtp = async () => {
+    setErrorMessage(null);
+    setStatusMessage(null);
+
+    const e164 = toE164(normalizedPhone);
+    if (!e164) {
+      setErrorMessage("Enter a valid 10-digit US mobile number.");
+      return;
     }
-  }, [canVerify, router]);
+
+    setIsSending(true);
+    const { error } = await supabase.auth.signInWithOtp({ phone: e164 });
+    setIsSending(false);
+
+    if (error) {
+      setErrorMessage(error.message || "Unable to send code. Please try again.");
+      return;
+    }
+
+    setSentTo(e164);
+    setOtp("");
+    setStatusMessage(`Code sent to ${e164}. Enter the 6-digit code.`);
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!sentTo) {
+      setErrorMessage("Send the code first.");
+      return;
+    }
+
+    setErrorMessage(null);
+    setStatusMessage(null);
+    setIsVerifying(true);
+
+    const { error } = await supabase.auth.verifyOtp({
+      phone: sentTo,
+      token: otp.trim(),
+      type: "sms",
+    });
+
+    setIsVerifying(false);
+
+    if (error) {
+      setErrorMessage(error.message || "Invalid code. Please try again.");
+      return;
+    }
+
+    const { data: userData } = await supabase.auth.getUser();
+    if (userData?.user) {
+      await supabase
+        .from("users")
+        .upsert(
+          {
+            id: userData.user.id,
+            phone: sentTo,
+          },
+          { onConflict: "phone" }
+        );
+    }
+
+    setStatusMessage("Phone verified. Redirecting...");
+    router.push("/memorial/profile");
+  };
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-gradient-to-b from-[#0c0f1a] via-[#0b0d17] to-[#090b12] text-white">
@@ -48,7 +165,7 @@ export default function MemorialAcceptPage() {
             DASH
           </p>
           <p className="text-2xl font-semibold text-white/85">Life. Love. Forever.</p>
-          <p className="text-base leading-relaxed text-white/80">Accept Groman invite</p>
+          <p className="text-base leading-relaxed text-white/80">Accept invite</p>
 
           <div className="space-y-4 text-center">
             <div className="space-y-2">
@@ -66,6 +183,14 @@ export default function MemorialAcceptPage() {
                   />
                 </div>
               </div>
+              <button
+                type="button"
+                disabled={!canSend || isSending}
+                onClick={handleSendOtp}
+                className="mt-3 w-full rounded-full border border-white/10 bg-white/10 px-4 py-3 text-sm font-semibold text-white/90 transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isSending ? "Sending code..." : "Send code"}
+              </button>
             </div>
 
             <div className="space-y-2">
@@ -74,12 +199,26 @@ export default function MemorialAcceptPage() {
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
+                autoComplete="one-time-code"
                 value={otp}
                 onChange={(e) => setOtp(e.target.value.slice(0, 6))}
                 placeholder="• • • • • •"
                 className="h-12 w-full rounded-2xl border border-white/10 bg-white/5 px-4 text-center text-lg tracking-[0.6em] text-white placeholder:text-white/30 shadow-inner shadow-black/20 focus:border-purple-300/60 focus:outline-none focus:ring-2 focus:ring-purple-300/60"
               />
+              <button
+                type="button"
+                disabled={!canVerify || isVerifying}
+                onClick={handleVerifyOtp}
+                className="mt-3 w-full rounded-full border border-white/10 bg-purple-500/70 px-4 py-3 text-sm font-semibold text-white transition hover:bg-purple-500/90 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isVerifying ? "Verifying..." : "Verify code"}
+              </button>
             </div>
+            {(statusMessage || errorMessage) && (
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80">
+                {errorMessage ? <span className="text-rose-300">{errorMessage}</span> : statusMessage}
+              </div>
+            )}
           </div>
 
         </div>
