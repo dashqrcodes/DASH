@@ -161,7 +161,7 @@ export default function MemorialAcceptPage() {
 
       <div className="relative mx-auto flex min-h-screen w-full max-w-md flex-col px-6 pb-20 pt-20">
         <div className="space-y-8 text-center">
-          <p className="text-6xl font-extrabold tracking-tight bg-gradient-to-r from-[#0b1a3a] via-purple-500 via-[#0b1a3a] via-[#1f2b5a] to-purple-700 bg-clip-text text-transparent gradient-anim">
+          <p className="text-6xl font-extrabold tracking-tight bg-clip-text text-transparent gradient-anim">
             DASH
           </p>
           <p className="text-2xl font-semibold text-white/85">Life. Love. Forever.</p>
@@ -249,8 +249,17 @@ export default function MemorialAcceptPage() {
       `}</style>
       <style jsx>{`
         .gradient-anim {
-          background-size: 200% 200%;
-          animation: dash-gradient 6s ease infinite;
+          background-image: linear-gradient(
+            120deg,
+            #0b1a3a,
+            #4c1d95,
+            #8b5cf6,
+            #ef4444,
+            #f97316,
+            #f8fafc
+          );
+          background-size: 300% 300%;
+          animation: dash-gradient 8s ease infinite;
         }
         @keyframes dash-gradient {
           0% {

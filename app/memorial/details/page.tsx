@@ -1,19 +1,53 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 const primaryButtonClass =
   "h-12 w-full rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-500 text-base font-semibold text-white shadow-[0_12px_32px_rgba(99,102,241,0.35)] transition duration-200 hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-purple-300/60";
 
-const fieldLabel = "text-sm font-medium text-gray-100";
+const fieldLabel = "text-sm font-medium text-gray-100 pl-1";
 const inputBase =
   "h-12 w-full rounded-full border border-white/10 bg-white/5 px-4 text-base text-white placeholder:text-white/50 backdrop-blur-lg transition duration-200 focus:border-white/30 focus:outline-none focus:ring-2 focus:ring-purple-300/40";
 
 export default function MemorialDetailsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [language, setLanguage] = useState<"en" | "es">("en");
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const lang = searchParams?.get("lang") === "es" ? "es" : "en";
+    setLanguage(lang);
+  }, [searchParams]);
+
+  const strings =
+    language === "es"
+      ? {
+          addPhoto: "Agregar foto",
+          fullName: "Nombre completo",
+          fullNamePlaceholder: "Ingresa el nombre completo",
+          sunrise: "Amanecer",
+          sunset: "Atardecer",
+          datePlaceholder: "Mes dd, aaaa",
+          next: "Siguiente",
+        }
+      : {
+          addPhoto: "Add Photo",
+          fullName: "Full Name",
+          fullNamePlaceholder: "Enter full name",
+          sunrise: "Sunrise",
+          sunset: "Sunset",
+          datePlaceholder: "Month dd, yyyy",
+          next: "Next",
+        };
+
+  const updateLanguage = (lang: "en" | "es") => {
+    setLanguage(lang);
+    const params = new URLSearchParams(searchParams?.toString() || "");
+    params.set("lang", lang);
+    router.replace(`/memorial/details?${params.toString()}`);
+  };
 
   const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -30,35 +64,12 @@ export default function MemorialDetailsPage() {
       </div>
 
       <div className="relative mx-auto flex min-h-screen w-full max-w-md flex-col px-6 pb-28 pt-10">
-        {/* Language toggle */}
-        <div className="mb-8 flex items-center justify-center">
-          <div className="flex w-full rounded-full bg-white/5 p-1 ring-1 ring-white/10 backdrop-blur-xl shadow-inner shadow-black/40">
-            {(["en", "es"] as const).map((lng) => {
-              const active = language === lng;
-              return (
-                <button
-                  key={lng}
-                  type="button"
-                  onClick={() => setLanguage(lng)}
-                  className={`flex-1 rounded-full px-4 py-2 text-sm font-semibold transition duration-200 ${
-                    active
-                      ? "bg-white text-gray-900 shadow-sm"
-                      : "text-white/75 hover:text-white"
-                  }`}
-                >
-                  {lng === "en" ? "English" : "Español"}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
         <div className="space-y-8">
           {/* Photo upload placeholder */}
-          <div className="flex justify-center">
+          <div className="-mx-6 mt-2 overflow-hidden rounded-b-[32px] rounded-t-[44px]">
             <label
               htmlFor="memorial-photo"
-              className="group relative flex h-32 w-32 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-white/5 ring-1 ring-white/10 backdrop-blur-2xl shadow-inner shadow-black/40 transition hover:ring-white/30"
+              className="group relative flex h-[45vh] min-h-[280px] w-full cursor-pointer items-center justify-center overflow-hidden bg-white/5"
             >
               {photoUrl ? (
                 <div className="absolute inset-0">
@@ -74,9 +85,11 @@ export default function MemorialDetailsPage() {
                   <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white text-lg font-semibold">
                     +
                   </div>
-                  <span>Add Photo</span>
+                  <span>{strings.addPhoto}</span>
                 </div>
               )}
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/10 via-black/45 to-black/80" />
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.05),_transparent_55%)]" />
               <input
                 id="memorial-photo"
                 name="memorial-photo"
@@ -90,10 +103,10 @@ export default function MemorialDetailsPage() {
 
           {/* Name */}
           <div className="space-y-2">
-            <label className={fieldLabel}>Full Name</label>
+            <label className={fieldLabel}>{strings.fullName}</label>
             <input
               type="text"
-              placeholder="Enter full name"
+              placeholder={strings.fullNamePlaceholder}
               className={inputBase}
             />
           </div>
@@ -101,20 +114,43 @@ export default function MemorialDetailsPage() {
           {/* Dates */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <label className={fieldLabel}>Sunrise</label>
+              <label className={fieldLabel}>{strings.sunrise}</label>
               <input
                 type="text"
-                placeholder="Month dd, yyyy"
+                placeholder={strings.datePlaceholder}
                 className={inputBase}
               />
             </div>
             <div className="space-y-2">
-              <label className={fieldLabel}>Sunset</label>
+              <label className={fieldLabel}>{strings.sunset}</label>
               <input
                 type="text"
-                placeholder="Month dd, yyyy"
+                placeholder={strings.datePlaceholder}
                 className={inputBase}
               />
+            </div>
+          </div>
+
+          {/* Language toggle */}
+          <div className="pt-2 flex items-center justify-center">
+            <div className="flex w-full rounded-full bg-white/5 p-1 ring-1 ring-white/10 backdrop-blur-xl shadow-inner shadow-black/40">
+              {(["en", "es"] as const).map((lng) => {
+                const active = language === lng;
+                return (
+                  <button
+                    key={lng}
+                    type="button"
+                    onClick={() => updateLanguage(lng)}
+                    className={`flex-1 rounded-full px-4 py-2 text-sm font-semibold transition duration-200 ${
+                      active
+                        ? "bg-white text-gray-900 shadow-sm"
+                        : "text-white/75 hover:text-white"
+                    }`}
+                  >
+                    {lng === "en" ? "English" : "Español"}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -122,10 +158,10 @@ export default function MemorialDetailsPage() {
         <div className="fixed inset-x-0 bottom-0 bg-gradient-to-t from-[#0b0b0d] via-[#0b0b0d]/90 to-transparent px-6 pb-6 pt-6">
           <button
             type="button"
-            onClick={() => router.push("/memorial/preview")}
+            onClick={() => router.push(`/memorial/preview?lang=${language}`)}
             className={primaryButtonClass}
           >
-            Next
+            {strings.next}
           </button>
         </div>
       </div>
