@@ -12,6 +12,7 @@ const changeButtonClass =
 export default function FinalApprovalPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const currentLang = searchParams?.get("lang") === "es" ? "es" : "en";
   const name = searchParams?.get("name");
   const birth = searchParams?.get("birth");
   const death = searchParams?.get("death");
@@ -23,9 +24,25 @@ export default function FinalApprovalPage() {
       birth ? `birth=${encodeURIComponent(birth)}` : "",
       death ? `death=${encodeURIComponent(death)}` : "",
       slug ? `slug=${encodeURIComponent(slug)}` : "",
+      `lang=${currentLang}`,
     ].filter(Boolean);
     return parts.length ? `?${parts.join("&")}` : "";
   };
+
+  const strings =
+    currentLang === "es"
+      ? {
+          title: "Aprobación final",
+          body: "Revisa tu pedido antes de aprobar. Después de la aprobación, las impresiones son finales.",
+          change: "Cambiar",
+          approve: "Aprobar",
+        }
+      : {
+          title: "Final approval",
+          body: "Review your order before approving. After approval, print orders are final.",
+          change: "Change",
+          approve: "Approve",
+        };
 
   return (
     <main className="relative min-h-screen bg-[#0b0b0d] text-white">
@@ -36,10 +53,8 @@ export default function FinalApprovalPage() {
 
       <div className="relative mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center px-6 pb-16 pt-16 text-center space-y-6">
         <div className="space-y-3">
-          <h1 className="text-3xl font-semibold tracking-tight">Final approval</h1>
-          <p className="text-base text-white/80">
-            Review your order before approving. After approval, print orders are final.
-          </p>
+          <h1 className="text-3xl font-semibold tracking-tight">{strings.title}</h1>
+          <p className="text-base text-white/80">{strings.body}</p>
         </div>
 
         <div className="flex items-center justify-center gap-3 w-full">
@@ -48,14 +63,14 @@ export default function FinalApprovalPage() {
             className={changeButtonClass + " w-full"}
             onClick={() => router.back()}
           >
-            Change
+            {strings.change}
           </button>
           <button
             type="button"
             className={approveButtonClass + " w-full"}
             onClick={() => router.push(`/order/success${buildParams()}`)}
           >
-            Approve
+            {strings.approve}
           </button>
         </div>
       </div>

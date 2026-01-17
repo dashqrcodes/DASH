@@ -10,8 +10,20 @@ const primaryButtonClass =
 export default function SlideshowCreatePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const currentLang = searchParams?.get("lang") === "es" ? "es" : "en";
   const memorialName = searchParams?.get("name") || "";
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const strings =
+    currentLang === "es"
+      ? {
+          addMusic: "+ Música",
+          addPhotos: "+ Fotos",
+        }
+      : {
+          addMusic: "+ Music",
+          addPhotos: "+ Photos",
+        };
 
   return (
     <main className="relative min-h-screen bg-[#0b0b0d] text-white">
@@ -72,14 +84,14 @@ export default function SlideshowCreatePage() {
                 className={primaryButtonClass}
                 onClick={() => console.log("Add Music")}
               >
-                + Music
+                {strings.addMusic}
               </button>
               <button
                 type="button"
                 className={primaryButtonClass}
                 onClick={() => fileInputRef.current?.click()}
               >
-                + Photos
+                {strings.addPhotos}
               </button>
             </div>
           </div>

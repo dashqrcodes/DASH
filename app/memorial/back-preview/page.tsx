@@ -44,6 +44,7 @@ const passages = [
 export default function MemorialBackPreviewPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const currentLang = searchParams?.get("lang") === "es" ? "es" : "en";
   const counselorName = searchParams?.get("counselor") || "";
   const counselorPhone = searchParams?.get("phone") || "";
   const memorialName = searchParams?.get("name") || "";
@@ -62,9 +63,33 @@ export default function MemorialBackPreviewPage() {
     if (birthDate) params.set("birth", birthDate);
     if (deathDate) params.set("death", deathDate);
     if (slug) params.set("slug", slug);
+    params.set("lang", currentLang);
     const qs = params.toString();
     return qs ? `?${qs}` : "";
   };
+
+  const strings =
+    currentLang === "es"
+      ? {
+          preview: "Vista previa",
+          cardLabel: 'Tarjeta 4" × 6"',
+          approve: "Aprobar",
+          saving: "Guardando...",
+          forever: "Por siempre en nuestros corazones",
+          sunrise: "Amanecer",
+          sunset: "Atardecer",
+          honoring: "Honrando a tu ser querido con dignidad y respeto.",
+        }
+      : {
+          preview: "Preview",
+          cardLabel: '4" × 6" Card',
+          approve: "Approve",
+          saving: "Saving...",
+          forever: "Forever in Our Hearts",
+          sunrise: "Sunrise",
+          sunset: "Sunset",
+          honoring: "Honoring your loved one with dignity and respect.",
+        };
 
   const handleApprove = async () => {
     setSaving(true);
@@ -120,8 +145,8 @@ export default function MemorialBackPreviewPage() {
 
       <div className="relative mx-auto flex min-h-screen w-full max-w-md flex-col px-6 pb-24 pt-10">
         <header className="mb-8 flex flex-col items-center justify-center text-center space-y-1">
-          <p className="text-xs uppercase tracking-[0.18em] text-white/60">Preview</p>
-          <p className="text-sm font-semibold text-white/80">4&quot; × 6&quot; Card</p>
+          <p className="text-xs uppercase tracking-[0.18em] text-white/60">{strings.preview}</p>
+          <p className="text-sm font-semibold text-white/80">{strings.cardLabel}</p>
         </header>
 
         <div className="flex flex-1 items-center justify-center">
@@ -132,7 +157,7 @@ export default function MemorialBackPreviewPage() {
             <div className="absolute inset-0 flex flex-col items-center justify-between px-5 py-5 text-center text-purple-900 drop-shadow-[0_6px_18px_rgba(0,0,0,0.35)]">
               <div className="pt-2">
                 <p className="text-base md:text-lg font-semibold text-purple-900 font-serif">
-                  Forever in Our Hearts
+                  {strings.forever}
                 </p>
               </div>
 
@@ -162,7 +187,7 @@ export default function MemorialBackPreviewPage() {
                   <div className="flex-1 text-center flex flex-col items-center justify-center gap-1 leading-tight">
                     <p className="text-[12px] font-semibold text-purple-900 whitespace-nowrap">{birthDate}</p>
                     <p className="uppercase tracking-[0.14em] text-purple-900 font-normal whitespace-nowrap text-[10px]">
-                      Sunrise
+                      {strings.sunrise}
                     </p>
                   </div>
                   <div className="flex items-center justify-center">
@@ -177,12 +202,12 @@ export default function MemorialBackPreviewPage() {
                   <div className="flex-1 text-center flex flex-col items-center justify-center gap-1 leading-tight">
                     <p className="text-[12px] font-semibold text-purple-900 whitespace-nowrap">{deathDate}</p>
                     <p className="uppercase tracking-[0.14em] text-purple-900 font-normal whitespace-nowrap text-[10px]">
-                      Sunset
+                      {strings.sunset}
                     </p>
                   </div>
                 </div>
                 <p className="text-[11px] text-purple-800">
-                  Honoring your loved one with dignity and respect.
+                  {strings.honoring}
                 </p>
                 <p className="text-[11px] text-purple-800 font-semibold">
                   {counselorName} • {counselorPhone}
@@ -201,7 +226,7 @@ export default function MemorialBackPreviewPage() {
             disabled={saving}
             className={`${primaryButtonClass} ${saving ? "opacity-80" : ""}`}
           >
-            {saving ? "Saving..." : "Approve"}
+            {saving ? strings.saving : strings.approve}
           </button>
           {error && <p className="text-center text-sm text-red-300">{error}</p>}
         </div>

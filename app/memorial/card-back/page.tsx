@@ -57,6 +57,7 @@ export default function MemorialCardBackPage() {
     if (slug) params.set("slug", slug);
     if (counselorName) params.set("counselor", counselorName);
     if (counselorPhone) params.set("phone", counselorPhone);
+    params.set("lang", lang);
     const qs = params.toString();
     return qs ? `?${qs}` : "";
   };

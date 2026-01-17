@@ -10,10 +10,24 @@ const primaryButtonClass =
 export default function OrderSuccessPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const currentLang = searchParams?.get("lang") === "es" ? "es" : "en";
   const memorialName = searchParams?.get("name") || "";
   const birthDate = searchParams?.get("birth") || "";
   const deathDate = searchParams?.get("death") || "";
   const slug = searchParams?.get("slug") || "";
+
+  const strings =
+    currentLang === "es"
+      ? {
+          title: "Gracias.",
+          body: "Estamos trabajando en tu pedido y lo entregaremos.",
+          continue: "Continuar",
+        }
+      : {
+          title: "Thank you.",
+          body: "We are working diligently on your order and will deliver to Groman Mortuary.",
+          continue: "Continue",
+        };
 
   return (
     <main className="relative min-h-screen bg-[#0b0b0d] text-white">
@@ -32,10 +46,8 @@ export default function OrderSuccessPage() {
 
       <div className="relative mx-auto flex min-h-screen w-full max-w-md flex-col px-6 pb-24 pt-16 text-center">
         <div className="flex flex-1 flex-col items-center justify-center space-y-6">
-          <h1 className="text-3xl font-semibold tracking-tight text-white">Thank you.</h1>
-          <p className="text-base leading-relaxed text-white/90">
-            We are working diligently on your order and will deliver to Groman Mortuary.
-          </p>
+          <h1 className="text-3xl font-semibold tracking-tight text-white">{strings.title}</h1>
+          <p className="text-base leading-relaxed text-white/90">{strings.body}</p>
         </div>
 
         <div className="w-full pt-8">
@@ -48,6 +60,7 @@ export default function OrderSuccessPage() {
                   birthDate ? `birth=${encodeURIComponent(birthDate)}` : "",
                   deathDate ? `death=${encodeURIComponent(deathDate)}` : "",
                   slug ? `slug=${encodeURIComponent(slug)}` : "",
+                  `lang=${currentLang}`,
                 ]
                   .filter(Boolean)
                   .join("&")
@@ -56,7 +69,7 @@ export default function OrderSuccessPage() {
             }
             className={primaryButtonClass}
           >
-            Continue
+            {strings.continue}
           </button>
         </div>
       </div>

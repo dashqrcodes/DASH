@@ -12,6 +12,40 @@ const cardClass =
 export default function MemorialCheckoutPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const currentLang = searchParams?.get("lang") === "es" ? "es" : "en";
+
+  const strings =
+    currentLang === "es"
+      ? {
+          title: "Revisar y confirmar",
+          packageLabel: "Paquete memorial",
+          subtotal: "Subtotal",
+          tax: "Impuesto (CA 9.5%)",
+          total: "Total",
+          payNow: "Pagar ahora",
+          delivery: "Ubicación de entrega: Groman Mortuary",
+          items: [
+            '• 50 tarjetas memorial (4"×6")',
+            '• 1 retrato heroico (20"×30")',
+            "• Perfil y slideshow de por vida",
+            "• Código QR y enlace de por vida",
+          ],
+        }
+      : {
+          title: "Review & confirm",
+          packageLabel: "Memorial Package",
+          subtotal: "Subtotal",
+          tax: "Sales tax (CA 9.5%)",
+          total: "Total",
+          payNow: "Pay now",
+          delivery: "Delivery location: Groman Mortuary",
+          items: [
+            '• 50 memorial cards (4"x6")',
+            '• 1 hero portrait (20"x30")',
+            "• Lifetime profile & slideshow",
+            "• Life QR code & forever link",
+          ],
+        };
 
   const handleCheckout = async () => {
     const memorialId =
@@ -53,31 +87,30 @@ export default function MemorialCheckoutPage() {
       </button>
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-6 pb-24 pt-16">
         <header className="mb-8 space-y-1">
-          <h1 className="text-3xl font-semibold tracking-tight">Review &amp; confirm</h1>
+          <h1 className="text-3xl font-semibold tracking-tight">{strings.title}</h1>
         </header>
 
         <section className="space-y-6">
           <div className={cardClass}>
-            <p className="text-sm font-semibold text-gray-900">Memorial Package</p>
+            <p className="text-sm font-semibold text-gray-900">{strings.packageLabel}</p>
             <div className="space-y-2 text-sm text-gray-700">
-              <p>• 50 memorial cards (4&quot;x6&quot;)</p>
-              <p>• 1 hero portrait (20&quot;x30&quot;)</p>
-              <p>• Lifetime profile &amp; slideshow</p>
-              <p>• Life QR code &amp; forever link</p>
+              {strings.items.map((item) => (
+                <p key={item}>{item}</p>
+              ))}
             </div>
           </div>
 
           <div className={cardClass}>
             <div className="flex items-center justify-between text-sm text-gray-800">
-              <p>Subtotal</p>
+              <p>{strings.subtotal}</p>
               <p className="font-semibold">$250.00</p>
             </div>
             <div className="flex items-center justify-between text-sm text-gray-800">
-              <p>Sales tax (CA 9.5%)</p>
+              <p>{strings.tax}</p>
               <p className="font-semibold">$23.75</p>
             </div>
             <div className="flex items-center justify-between text-base font-semibold text-gray-900 pt-2">
-              <p>Total</p>
+              <p>{strings.total}</p>
               <p>$273.75</p>
             </div>
           </div>
@@ -89,9 +122,9 @@ export default function MemorialCheckoutPage() {
             className={primaryButtonClass}
             onClick={handleCheckout}
           >
-            Pay now
+            {strings.payNow}
           </button>
-          <p className="mt-3 text-center text-xs text-gray-600">Delivery location: Groman Mortuary</p>
+          <p className="mt-3 text-center text-xs text-gray-600">{strings.delivery}</p>
         </div>
       </div>
     </main>

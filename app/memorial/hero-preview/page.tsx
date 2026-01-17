@@ -11,6 +11,7 @@ const primaryButtonClass =
 export default function HeroPreviewPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const currentLang = searchParams?.get("lang") === "es" ? "es" : "en";
   const [cardData, setCardData] = useState({
     fullName: "",
     birthDate: "",
@@ -47,6 +48,23 @@ export default function HeroPreviewPage() {
   const birthDate = cardData.birthDate;
   const deathDate = cardData.deathDate;
 
+  const strings =
+    currentLang === "es"
+      ? {
+          preview: "Vista previa",
+          heroLabel: 'Retrato 20" × 30"',
+          sunrise: "Amanecer",
+          sunset: "Atardecer",
+          approve: "Aprobar",
+        }
+      : {
+          preview: "Preview",
+          heroLabel: '20" × 30" Hero Portrait',
+          sunrise: "Sunrise",
+          sunset: "Sunset",
+          approve: "Approve",
+        };
+
   return (
     <main className="relative min-h-screen bg-[#0b0b0d] text-white">
       <div className="pointer-events-none absolute inset-0">
@@ -65,8 +83,8 @@ export default function HeroPreviewPage() {
             ←
           </button>
           <div className="flex-1 text-center">
-            <p className="text-[11px] uppercase tracking-[0.22em] text-white/60">Preview</p>
-            <p className="text-base font-semibold text-white/80">20&quot; × 30&quot; Hero Portrait</p>
+            <p className="text-[11px] uppercase tracking-[0.22em] text-white/60">{strings.preview}</p>
+            <p className="text-base font-semibold text-white/80">{strings.heroLabel}</p>
           </div>
           <div className="h-10 w-10" />
         </header>
@@ -82,21 +100,21 @@ export default function HeroPreviewPage() {
             <div className="absolute inset-0 flex flex-col items-center justify-end px-6 pb-10 text-center text-white drop-shadow-[0_6px_18px_rgba(0,0,0,0.55)] space-y-2">
               <p className="text-[20px] font-semibold tracking-tight translate-y-4">{cardData.fullName}</p>
 
-              <div className="flex w-full items-center justify-center gap-3 text-[8px] font-medium text-white/85">
-                <div className="flex flex-col items-center leading-tight translate-y-[10px]">
-                  <p className="text-[10px] font-semibold text-white/90">{cardData.birthDate}</p>
-                  <p className="uppercase tracking-[0.14em] text-white/80 text-center">Sunrise</p>
+              <div className="flex w-full items-center justify-center gap-3 text-[6px] font-medium text-white/85">
+                <div className="flex flex-col items-center leading-tight">
+                  <p className="text-[6px] font-semibold text-white/90">{cardData.birthDate}</p>
+                  <p className="uppercase tracking-[0.2em] text-white/80 text-center">{strings.sunrise}</p>
                 </div>
-                <div className="flex items-center justify-center translate-y-[10px]">
+                <div className="flex items-center justify-center">
                   <img
                     src={cardData.qrUrl}
                     alt="Memorial QR"
                     className="h-5 w-5 shadow-[0_2px_6px_rgba(0,0,0,0.35)]"
                   />
                 </div>
-                <div className="flex flex-col items-center leading-tight translate-y-[10px]">
-                  <p className="text-[11px] font-semibold text-white/90">{cardData.deathDate}</p>
-                  <p className="uppercase tracking-[0.14em] text-white/80 text-center">Sunset</p>
+                <div className="flex flex-col items-center leading-tight">
+                  <p className="text-[7px] font-semibold text-white/90">{cardData.deathDate}</p>
+                  <p className="uppercase tracking-[0.2em] text-white/80 text-center">{strings.sunset}</p>
                 </div>
               </div>
             </div>
@@ -114,6 +132,7 @@ export default function HeroPreviewPage() {
                 birthDate ? `birth=${encodeURIComponent(birthDate)}` : "",
                 deathDate ? `death=${encodeURIComponent(deathDate)}` : "",
                 slug ? `slug=${encodeURIComponent(slug)}` : "",
+                `lang=${currentLang}`,
               ]
                 .filter(Boolean)
                 .join("&")
@@ -122,7 +141,7 @@ export default function HeroPreviewPage() {
           }
           className={primaryButtonClass}
         >
-          Approve
+          {strings.approve}
         </button>
       </div>
     </main>

@@ -10,11 +10,27 @@ export default function MemorialPreviewPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  const currentLang = searchParams?.get("lang") === "es" ? "es" : "en";
   const fullName = searchParams?.get("name")?.trim() || "";
   const birthDate = searchParams?.get("birth")?.trim() || "";
   const deathDate = searchParams?.get("death")?.trim() || "";
   const photoUrl = searchParams?.get("photo") || "";
   const slug = searchParams?.get("slug") || "";
+
+  const strings =
+    currentLang === "es"
+      ? {
+          preview: "Vista previa",
+          cardLabel: 'Tarjeta 4" × 6"',
+          inLovingMemory: "En amorosa memoria",
+          approve: "Aprobar",
+        }
+      : {
+          preview: "Preview",
+          cardLabel: '4" × 6" Card',
+          inLovingMemory: "In Loving Memory",
+          approve: "Approve",
+        };
 
   return (
     <main className="relative min-h-screen bg-[#0b0b0d] text-white">
@@ -35,8 +51,8 @@ export default function MemorialPreviewPage() {
             ←
           </button>
           <div className="flex-1 text-center">
-            <p className="text-xs uppercase tracking-[0.25em] text-white/50">Preview</p>
-            <p className="text-base font-semibold text-white/80">4&quot; × 6&quot; Card</p>
+            <p className="text-xs uppercase tracking-[0.25em] text-white/50">{strings.preview}</p>
+            <p className="text-base font-semibold text-white/80">{strings.cardLabel}</p>
           </div>
           <div className="h-10 w-10" />
         </header>
@@ -51,7 +67,7 @@ export default function MemorialPreviewPage() {
             <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/25 to-black/65" />
             <div className="absolute inset-0 flex items-end justify-center pb-10 px-6 text-center text-white drop-shadow-[0_6px_18px_rgba(0,0,0,0.55)]">
               <div className="space-y-2">
-                <p className="text-lg font-semibold text-white/90 font-serif">In Loving Memory</p>
+                <p className="text-lg font-semibold text-white/90 font-serif">{strings.inLovingMemory}</p>
                 <p className="text-2xl font-semibold tracking-tight text-white">{fullName || "—"}</p>
                 <p className="text-sm font-medium text-white/85">
                   {birthDate || "—"} – {deathDate || "—"}
@@ -73,6 +89,7 @@ export default function MemorialPreviewPage() {
                   deathDate ? `death=${encodeURIComponent(deathDate)}` : "",
                   slug ? `slug=${encodeURIComponent(slug)}` : "",
                   photoUrl ? `photo=${encodeURIComponent(photoUrl)}` : "",
+                  `lang=${currentLang}`,
                 ]
                   .filter(Boolean)
                   .join("&")
@@ -81,7 +98,7 @@ export default function MemorialPreviewPage() {
             }
             className={primaryButtonClass}
           >
-            Approve
+            {strings.approve}
           </button>
         </div>
       </div>

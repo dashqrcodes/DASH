@@ -13,7 +13,6 @@ const inputBase =
 export default function MemorialDetailsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [language, setLanguage] = useState<"en" | "es">("en");
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
 
   const currentLang = searchParams?.get("lang") === "es" ? "es" : "en";
