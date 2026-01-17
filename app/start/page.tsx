@@ -1,7 +1,7 @@
 "use client";
 export const dynamic = "force-dynamic";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 type Step = "phone" | "otp" | "welcome";
@@ -33,13 +33,14 @@ const primaryButtonClass =
 
 export default function StartPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [step, setStep] = useState<Step>("phone");
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
-  const [language, setLanguage] = useState<"en" | "es">("en");
   const [counselorName, setCounselorName] = useState("Counselor");
   const [mounted, setMounted] = useState(false);
-  const isSpanish = language === "es";
+  const currentLang = searchParams?.get("lang") === "es" ? "es" : "en";
+  const isSpanish = currentLang === "es";
 
   useEffect(() => {
     setMounted(true);
@@ -62,7 +63,7 @@ export default function StartPage() {
   };
 
   const strings =
-    language === "es"
+    currentLang === "es"
       ? {
           headerTitle: "Cuenta de consejeros",
           headerSubtitle: "DashMemories • Groman",
@@ -106,6 +107,12 @@ export default function StartPage() {
           finalCta: "Press Here",
         };
 
+  const updateLanguage = (lang: "en" | "es") => {
+    const params = new URLSearchParams(searchParams?.toString() || "");
+    params.set("lang", lang);
+    router.replace(`/start?${params.toString()}`);
+  };
+
   return (
     <main
       className={`min-h-screen bg-white text-gray-900 transition-all duration-300 ease-out motion-reduce:transition-none motion-reduce:transform-none ${
@@ -126,7 +133,7 @@ export default function StartPage() {
 
           <button
             type="button"
-            onClick={() => setLanguage(isSpanish ? "en" : "es")}
+            onClick={() => updateLanguage(isSpanish ? "en" : "es")}
             className="relative flex items-center gap-2 rounded-full bg-gray-100 px-2 py-1 text-sm font-medium text-gray-700 shadow-inner ring-1 ring-gray-200 transition focus:outline-none focus:ring-2 focus:ring-gray-300"
           >
             <span
@@ -222,7 +229,7 @@ export default function StartPage() {
               <button
                 type="button"
                 className={primaryButtonClass}
-                onClick={() => router.push(`/counselor/payments?lang=${language}`)}
+                onClick={() => router.push(`/counselor/payments?lang=${currentLang}`)}
               >
                 {strings.finalCta}
               </button>

@@ -1,7 +1,7 @@
 "use client";
 export const dynamic = "force-dynamic";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 const primaryButtonClass =
@@ -9,7 +9,7 @@ const primaryButtonClass =
 
 export default function MemorialProfilePage() {
   const router = useRouter();
-  const [language, setLanguage] = useState<"en" | "es">("en");
+  const searchParams = useSearchParams();
   const [fullName, setFullName] = useState("");
   const [sunrise, setSunrise] = useState("");
   const [sunset, setSunset] = useState("");
@@ -19,6 +19,7 @@ export default function MemorialProfilePage() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [mounted, setMounted] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const currentLang = searchParams?.get("lang") === "es" ? "es" : "en";
 
   useEffect(() => {
     setMounted(true);
@@ -34,7 +35,7 @@ export default function MemorialProfilePage() {
       .replace(/^-+|-+$/g, "");
 
   const strings =
-    language === "es"
+    currentLang === "es"
       ? {
           title: "Perfil del ser querido",
           subtitle: "Revisa los detalles antes de continuar.",
@@ -57,6 +58,12 @@ export default function MemorialProfilePage() {
           datePlaceholder: "Month dd, yyyy",
           cta: "Continue",
         };
+
+  const updateLanguage = (lang: "en" | "es") => {
+    const params = new URLSearchParams(searchParams?.toString() || "");
+    params.set("lang", lang);
+    router.replace(`/memorial/profile?${params.toString()}`);
+  };
 
   return (
     <main
@@ -82,18 +89,18 @@ export default function MemorialProfilePage() {
         <div className="mb-10 flex justify-center">
           <button
             type="button"
-            onClick={() => setLanguage(language === "en" ? "es" : "en")}
+            onClick={() => updateLanguage(currentLang === "en" ? "es" : "en")}
             className="relative flex h-9 items-center rounded-full bg-[#1C1C1E] px-1 text-xs font-semibold text-gray-300 shadow-inner shadow-black/40"
           >
             <span
               className={`absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-500 shadow-[inset_0_1px_2px_rgba(255,255,255,0.2)] transition-transform duration-200 ${
-                language === "es" ? "translate-x-full" : "translate-x-0"
+                currentLang === "es" ? "translate-x-full" : "translate-x-0"
               }`}
             />
-            <span className={`z-10 w-20 text-center ${language === "en" ? "text-white" : "text-gray-400"}`}>
+            <span className={`z-10 w-20 text-center ${currentLang === "en" ? "text-white" : "text-gray-400"}`}>
               English
             </span>
-            <span className={`z-10 w-20 text-center ${language === "es" ? "text-white" : "text-gray-400"}`}>
+            <span className={`z-10 w-20 text-center ${currentLang === "es" ? "text-white" : "text-gray-400"}`}>
               Español
             </span>
           </button>
@@ -111,7 +118,7 @@ export default function MemorialProfilePage() {
                 const targetSlug = slug || slugify(fullName);
                 if (!file) return;
                 if (!targetSlug) {
-                  setError(language === "es" ? "Agrega un nombre antes de subir la foto." : "Add the name before uploading a photo.");
+                  setError(currentLang === "es" ? "Agrega un nombre antes de subir la foto." : "Add the name before uploading a photo.");
                   return;
                 }
 
@@ -141,7 +148,7 @@ export default function MemorialProfilePage() {
                     setSlug(targetSlug);
                   }
                 } catch (uploadError) {
-                  setError(language === "es" ? "No se pudo subir la foto. Intenta de nuevo." : "Could not upload the photo. Please try again.");
+                  setError(currentLang === "es" ? "No se pudo subir la foto. Intenta de nuevo." : "Could not upload the photo. Please try again.");
                 } finally {
                   setUploadingPhoto(false);
                 }
@@ -168,7 +175,7 @@ export default function MemorialProfilePage() {
               )}
               {uploadingPhoto && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/60 text-xs text-white">
-                  {language === "es" ? "Subiendo..." : "Uploading..."}
+                  {currentLang === "es" ? "Subiendo..." : "Uploading..."}
                 </div>
               )}
             </button>
@@ -219,12 +226,12 @@ export default function MemorialProfilePage() {
               type="button"
                   onClick={() => {
                     if (!fullName || !sunrise || !sunset) {
-                      setError(language === "es" ? "Completa nombre y fechas antes de continuar." : "Please add name and dates before continuing.");
+                      setError(currentLang === "es" ? "Completa nombre y fechas antes de continuar." : "Please add name and dates before continuing.");
                       return;
                     }
                     const computedSlug = slug || slugify(fullName);
                     if (!computedSlug) {
-                      setError(language === "es" ? "Agrega un nombre válido para generar el enlace." : "Add a valid name to generate the link.");
+                      setError(currentLang === "es" ? "Agrega un nombre válido para generar el enlace." : "Add a valid name to generate the link.");
                       return;
                     }
                     setError(null);
@@ -233,7 +240,7 @@ export default function MemorialProfilePage() {
                         sunrise
                       )}&death=${encodeURIComponent(sunset)}&slug=${encodeURIComponent(computedSlug)}${
                         photoUrl ? `&photo=${encodeURIComponent(photoUrl)}` : ""
-                      }`
+                      }&lang=${currentLang}`
                     );
                   }}
               className={primaryButtonClass}
