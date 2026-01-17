@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 const primaryButtonClass =
   "h-12 w-full rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-500 text-base font-semibold text-white shadow-[0_12px_32px_rgba(99,102,241,0.35)] transition duration-200 hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-purple-300/60";
@@ -16,13 +16,10 @@ export default function MemorialDetailsPage() {
   const [language, setLanguage] = useState<"en" | "es">("en");
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
 
-  useEffect(() => {
-    const lang = searchParams?.get("lang") === "es" ? "es" : "en";
-    setLanguage(lang);
-  }, [searchParams]);
+  const currentLang = searchParams?.get("lang") === "es" ? "es" : "en";
 
   const strings =
-    language === "es"
+    currentLang === "es"
       ? {
           addPhoto: "Agregar foto",
           fullName: "Nombre completo",
@@ -43,7 +40,6 @@ export default function MemorialDetailsPage() {
         };
 
   const updateLanguage = (lang: "en" | "es") => {
-    setLanguage(lang);
     const params = new URLSearchParams(searchParams?.toString() || "");
     params.set("lang", lang);
     router.replace(`/memorial/details?${params.toString()}`);
@@ -135,7 +131,7 @@ export default function MemorialDetailsPage() {
           <div className="pt-2 flex items-center justify-center">
             <div className="flex w-full rounded-full bg-white/5 p-1 ring-1 ring-white/10 backdrop-blur-xl shadow-inner shadow-black/40">
               {(["en", "es"] as const).map((lng) => {
-                const active = language === lng;
+              const active = currentLang === lng;
                 return (
                   <button
                     key={lng}
@@ -158,7 +154,7 @@ export default function MemorialDetailsPage() {
         <div className="fixed inset-x-0 bottom-0 bg-gradient-to-t from-[#0b0b0d] via-[#0b0b0d]/90 to-transparent px-6 pb-6 pt-6">
           <button
             type="button"
-            onClick={() => router.push(`/memorial/preview?lang=${language}`)}
+            onClick={() => router.push(`/memorial/preview?lang=${currentLang}`)}
             className={primaryButtonClass}
           >
             {strings.next}
