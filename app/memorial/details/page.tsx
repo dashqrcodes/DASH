@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const primaryButtonClass =
   "h-12 w-full rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-500 text-base font-semibold text-white shadow-[0_12px_32px_rgba(99,102,241,0.35)] transition duration-200 hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-purple-300/60";
@@ -14,8 +14,13 @@ export default function MemorialDetailsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
 
   const currentLang = searchParams?.get("lang") === "es" ? "es" : "en";
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const strings =
     currentLang === "es"
@@ -52,39 +57,45 @@ export default function MemorialDetailsPage() {
   };
 
   return (
-    <main className="relative min-h-screen bg-gradient-to-b from-[#0b0b0d] via-[#0c0d13] to-[#0b0b0d] text-white">
+    <main
+      className={`relative min-h-screen bg-[#0b0b0d] text-white transition-all duration-300 ease-out motion-reduce:transition-none motion-reduce:transform-none ${
+        mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
+      }`}
+    >
+      {photoUrl && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={photoUrl}
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover"
+          aria-hidden="true"
+        />
+      )}
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/35 via-black/55 to-black/85" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(255,255,255,0.06),_transparent_55%)]" />
+      <div className="pointer-events-none absolute inset-0 shadow-[inset_0_0_160px_rgba(0,0,0,0.85)]" />
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-10 left-10 h-56 w-56 rounded-full bg-gradient-to-br from-indigo-500/25 via-purple-500/20 to-blue-400/10 blur-3xl" />
         <div className="absolute bottom-10 right-4 h-48 w-48 rounded-full bg-gradient-to-br from-blue-500/20 via-purple-500/15 to-indigo-400/10 blur-3xl" />
+      </div>
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        {Array.from({ length: 16 }).map((_, index) => (
+          <span
+            key={`star-${index}`}
+            className={`star star-${index + 1} absolute h-[2px] w-[2px] rounded-full bg-white/70 animate-float-slow`}
+          />
+        ))}
       </div>
 
       <div className="relative mx-auto flex min-h-screen w-full max-w-md flex-col px-6 pb-28 pt-10">
         <div className="space-y-8">
           {/* Photo upload placeholder */}
-          <div className="-mx-6 mt-2 overflow-hidden rounded-b-[32px] rounded-t-[44px]">
+          <div className="flex justify-center">
             <label
               htmlFor="memorial-photo"
-              className="group relative flex h-[45vh] min-h-[280px] w-full cursor-pointer items-center justify-center overflow-hidden bg-white/5"
+              className="group relative inline-flex items-center justify-center rounded-full bg-white/10 px-5 py-2 text-sm font-semibold text-white/80 ring-1 ring-white/20 backdrop-blur-xl transition hover:bg-white/20 hover:text-white"
             >
-              {photoUrl ? (
-                <div className="absolute inset-0">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={photoUrl}
-                    alt="Uploaded memorial"
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-              ) : (
-                <div className="flex flex-col items-center gap-2 text-xs font-semibold text-white/75 transition group-hover:text-white">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white text-lg font-semibold">
-                    +
-                  </div>
-                  <span>{strings.addPhoto}</span>
-                </div>
-              )}
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/10 via-black/45 to-black/80" />
-              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.05),_transparent_55%)]" />
+              {strings.addPhoto}
               <input
                 id="memorial-photo"
                 name="memorial-photo"
@@ -128,24 +139,30 @@ export default function MemorialDetailsPage() {
 
           {/* Language toggle */}
           <div className="pt-2 flex items-center justify-center">
-            <div className="flex w-full rounded-full bg-white/5 p-1 ring-1 ring-white/10 backdrop-blur-xl shadow-inner shadow-black/40">
-              {(["en", "es"] as const).map((lng) => {
-              const active = currentLang === lng;
-                return (
-                  <button
-                    key={lng}
-                    type="button"
-                    onClick={() => updateLanguage(lng)}
-                    className={`flex-1 rounded-full px-4 py-2 text-sm font-semibold transition duration-200 ${
-                      active
-                        ? "bg-white text-gray-900 shadow-sm"
-                        : "text-white/75 hover:text-white"
-                    }`}
-                  >
-                    {lng === "en" ? "English" : "Español"}
-                  </button>
-                );
-              })}
+            <div className="relative flex w-full rounded-full bg-white/5 p-1 ring-1 ring-white/10 backdrop-blur-xl shadow-inner shadow-black/40">
+              <span
+                className={`absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-full bg-white shadow-sm transition-transform duration-200 ${
+                  currentLang === "es" ? "translate-x-full" : "translate-x-0"
+                }`}
+              />
+              <button
+                type="button"
+                onClick={() => updateLanguage("en")}
+                className={`relative z-10 flex-1 rounded-full px-4 py-2 text-sm font-semibold transition ${
+                  currentLang === "en" ? "text-gray-900" : "text-white/75 hover:text-white"
+                }`}
+              >
+                English
+              </button>
+              <button
+                type="button"
+                onClick={() => updateLanguage("es")}
+                className={`relative z-10 flex-1 rounded-full px-4 py-2 text-sm font-semibold transition ${
+                  currentLang === "es" ? "text-gray-900" : "text-white/75 hover:text-white"
+                }`}
+              >
+                Español
+              </button>
             </div>
           </div>
         </div>
@@ -160,6 +177,125 @@ export default function MemorialDetailsPage() {
           </button>
         </div>
       </div>
+      <style jsx>{`
+        @keyframes float-slow {
+          0% {
+            transform: translateY(20px);
+            opacity: 0;
+          }
+          20% {
+            opacity: 0.7;
+          }
+          80% {
+            opacity: 0.7;
+          }
+          100% {
+            transform: translateY(-60px);
+            opacity: 0;
+          }
+        }
+        .animate-float-slow {
+          animation-name: float-slow;
+          animation-timing-function: ease-in-out;
+          animation-iteration-count: infinite;
+        }
+        .star-1 {
+          left: 10%;
+          top: 15%;
+          animation-delay: 0s;
+          animation-duration: 12s;
+        }
+        .star-2 {
+          left: 22%;
+          top: 65%;
+          animation-delay: 1s;
+          animation-duration: 14s;
+        }
+        .star-3 {
+          left: 35%;
+          top: 35%;
+          animation-delay: 2s;
+          animation-duration: 11s;
+        }
+        .star-4 {
+          left: 48%;
+          top: 78%;
+          animation-delay: 3s;
+          animation-duration: 16s;
+        }
+        .star-5 {
+          left: 62%;
+          top: 25%;
+          animation-delay: 4s;
+          animation-duration: 13s;
+        }
+        .star-6 {
+          left: 74%;
+          top: 55%;
+          animation-delay: 5s;
+          animation-duration: 12s;
+        }
+        .star-7 {
+          left: 86%;
+          top: 40%;
+          animation-delay: 6s;
+          animation-duration: 15s;
+        }
+        .star-8 {
+          left: 18%;
+          top: 85%;
+          animation-delay: 2.5s;
+          animation-duration: 18s;
+        }
+        .star-9 {
+          left: 55%;
+          top: 12%;
+          animation-delay: 1.5s;
+          animation-duration: 10s;
+        }
+        .star-10 {
+          left: 90%;
+          top: 70%;
+          animation-delay: 3.5s;
+          animation-duration: 17s;
+        }
+        .star-11 {
+          left: 6%;
+          top: 45%;
+          animation-delay: 4.5s;
+          animation-duration: 14s;
+        }
+        .star-12 {
+          left: 30%;
+          top: 10%;
+          animation-delay: 5.5s;
+          animation-duration: 12s;
+        }
+        .star-13 {
+          left: 44%;
+          top: 58%;
+          animation-delay: 6.5s;
+          animation-duration: 15s;
+        }
+        .star-14 {
+          left: 68%;
+          top: 82%;
+          animation-delay: 7.5s;
+          animation-duration: 19s;
+        }
+        .star-15 {
+          left: 80%;
+          top: 18%;
+          animation-delay: 8.5s;
+          animation-duration: 13s;
+        }
+        .star-16 {
+          left: 96%;
+          top: 30%;
+          animation-delay: 9.5s;
+          animation-duration: 16s;
+        }
+      `}</style>
     </main>
   );
 }
