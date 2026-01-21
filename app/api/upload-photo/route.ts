@@ -3,8 +3,15 @@ import { Buffer } from 'node:buffer';
 import { Vibrant } from 'node-vibrant/node';
 import type { Palette } from '@vibrant/color';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { v2 as cloudinary } from 'cloudinary';
 
 export const runtime = 'nodejs';
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || '',
+  api_key: process.env.CLOUDINARY_API_KEY || '',
+  api_secret: process.env.CLOUDINARY_API_SECRET || '',
+});
 
 function pickAccentHex(palette: Palette) {
   const swatches = [
@@ -45,20 +52,41 @@ export async function POST(req: Request) {
       normalizedExt === 'heic' ||
       normalizedExt === 'heif';
 
-    let uploadBuffer = Buffer.from(await file.arrayBuffer());
+    const uploadBuffer = Buffer.from(await file.arrayBuffer());
     let fileExt = normalizedExt || 'jpg';
     let contentType = file.type || 'image/jpeg';
 
     if (isHeic) {
-      const { default: heicConvert } = await import('heic-convert');
-      const outputBuffer = await heicConvert({
-        buffer: uploadBuffer,
-        format: 'JPEG',
-        quality: 0.9,
-      });
-      uploadBuffer = Buffer.from(outputBuffer);
-      fileExt = 'jpg';
-      contentType = 'image/jpeg';
+      try {
+        const cloudinaryUrl = await new Promise<string>((resolve, reject) => {
+          const stream = cloudinary.uploader.upload_stream(
+            {
+              folder: 'drafts',
+              public_id: slug,
+              resource_type: 'image',
+              format: 'jpg',
+            },
+            (error, result) => {
+              if (error || !result?.secure_url) {
+                reject(error || new Error('Cloudinary upload failed'));
+                return;
+              }
+              resolve(result.secure_url);
+            },
+          );
+          stream.end(uploadBuffer);
+        });
+
+        await supabaseAdmin.from('drafts').update({ photo_url: cloudinaryUrl }).eq('slug', slug);
+
+        return NextResponse.json({ photoUrl: cloudinaryUrl, accentColor: '#ffffff' });
+      } catch (cloudinaryError) {
+        console.error('Cloudinary HEIC upload failed', cloudinaryError);
+        return NextResponse.json(
+          { error: 'Unable to convert HEIC photo. Please try a JPG or PNG.' },
+          { status: 422 },
+        );
+      }
     }
 
     const filePath = `drafts/${slug}.${fileExt}`;

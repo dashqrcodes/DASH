@@ -94,8 +94,8 @@ export default function MemorialDetailsPage() {
           setPhotoUrl(json.photoUrl);
         }
       })
-      .catch(() => {
-        setPhotoError(strings.uploadFailed);
+      .catch((error) => {
+        setPhotoError(error?.message || strings.uploadFailed);
       })
       .finally(() => {
         setUploadingPhoto(false);
