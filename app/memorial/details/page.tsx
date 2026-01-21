@@ -84,8 +84,19 @@ export default function MemorialDetailsPage() {
     })
       .then(async (res) => {
         if (!res.ok) {
-          const errorBody = await res.json().catch(() => null);
-          throw new Error(errorBody?.error || "Upload failed");
+          const text = await res.text();
+          let message = strings.uploadFailed;
+          if (text) {
+            try {
+              const data = JSON.parse(text);
+              message = data?.error || message;
+            } catch {
+              message = `Upload failed (${res.status}).`;
+            }
+          } else {
+            message = `Upload failed (${res.status}).`;
+          }
+          throw new Error(message);
         }
         return res.json();
       })
