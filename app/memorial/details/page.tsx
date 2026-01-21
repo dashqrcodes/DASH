@@ -14,6 +14,8 @@ export default function MemorialDetailsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
 
   const currentLang = searchParams?.get("lang") === "es" ? "es" : "en";
@@ -32,6 +34,8 @@ export default function MemorialDetailsPage() {
           sunset: "Atardecer",
           datePlaceholder: "Mes dd, aaaa",
           next: "Siguiente",
+          uploading: "Convirtiendo foto...",
+          uploadFailed: "No se pudo subir la foto. Intenta de nuevo.",
         }
       : {
           addPhoto: "Add Photo",
@@ -41,6 +45,8 @@ export default function MemorialDetailsPage() {
           sunset: "Sunset",
           datePlaceholder: "Month dd, yyyy",
           next: "Next",
+          uploading: "Converting photo...",
+          uploadFailed: "Could not upload the photo. Please try again.",
         };
 
   const updateLanguage = (lang: "en" | "es") => {
@@ -52,8 +58,48 @@ export default function MemorialDetailsPage() {
   const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    const url = URL.createObjectURL(file);
-    setPhotoUrl(url);
+    const fileExt = file.name.split(".").pop()?.toLowerCase() || "";
+    const isHeic =
+      file.type === "image/heic" ||
+      file.type === "image/heif" ||
+      fileExt === "heic" ||
+      fileExt === "heif";
+
+    setPhotoError(null);
+
+    if (!isHeic) {
+      const url = URL.createObjectURL(file);
+      setPhotoUrl(url);
+      return;
+    }
+
+    setUploadingPhoto(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("slug", `temp-${Date.now()}`);
+
+    fetch("/api/upload-photo", {
+      method: "POST",
+      body: formData,
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          const errorBody = await res.json().catch(() => null);
+          throw new Error(errorBody?.error || "Upload failed");
+        }
+        return res.json();
+      })
+      .then((json) => {
+        if (json?.photoUrl) {
+          setPhotoUrl(json.photoUrl);
+        }
+      })
+      .catch(() => {
+        setPhotoError(strings.uploadFailed);
+      })
+      .finally(() => {
+        setUploadingPhoto(false);
+      });
   };
 
   return (
@@ -79,7 +125,18 @@ export default function MemorialDetailsPage() {
         {!photoUrl && (
           <div className="pointer-events-none absolute inset-x-0 bottom-10 flex items-center justify-center">
             <div className="rounded-full bg-black/55 px-4 py-2 text-xs font-semibold tracking-[0.2em] text-white/80">
-              Tap to add photo
+              {uploadingPhoto
+                ? strings.uploading
+                : currentLang === "es"
+                  ? "Toca para agregar foto"
+                  : "Tap to add photo"}
+            </div>
+          </div>
+        )}
+        {photoError && (
+          <div className="pointer-events-none absolute inset-x-0 bottom-2 flex items-center justify-center">
+            <div className="rounded-full bg-red-500/80 px-3 py-1 text-[11px] font-semibold text-white">
+              {photoError}
             </div>
           </div>
         )}
@@ -174,7 +231,13 @@ export default function MemorialDetailsPage() {
         <div className="fixed inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/80 to-transparent px-6 pb-6 pt-6">
           <button
             type="button"
-            onClick={() => router.push(`/memorial/preview?lang=${currentLang}`)}
+            onClick={() =>
+              router.push(
+                `/memorial/preview?lang=${currentLang}${
+                  photoUrl ? `&photo=${encodeURIComponent(photoUrl)}` : ""
+                }`
+              )
+            }
             className={primaryButtonClass}
           >
             {strings.next}
