@@ -37,15 +37,37 @@ export async function POST(req: Request) {
       );
     }
 
-    const fileExt = file.name.split('.').pop() || 'jpg';
+    const rawExt = file.name.split('.').pop() || 'jpg';
+    const normalizedExt = rawExt.toLowerCase();
+    const isHeic =
+      file.type === 'image/heic' ||
+      file.type === 'image/heif' ||
+      normalizedExt === 'heic' ||
+      normalizedExt === 'heif';
+
+    let uploadBuffer = Buffer.from(await file.arrayBuffer());
+    let fileExt = normalizedExt || 'jpg';
+    let contentType = file.type || 'image/jpeg';
+
+    if (isHeic) {
+      const { default: heicConvert } = await import('heic-convert');
+      const outputBuffer = await heicConvert({
+        buffer: uploadBuffer,
+        format: 'JPEG',
+        quality: 0.9,
+      });
+      uploadBuffer = Buffer.from(outputBuffer);
+      fileExt = 'jpg';
+      contentType = 'image/jpeg';
+    }
+
     const filePath = `drafts/${slug}.${fileExt}`;
-    const buffer = Buffer.from(await file.arrayBuffer());
 
     const { error: uploadError } = await supabaseAdmin.storage
       .from('photos')
-      .upload(filePath, buffer, {
+      .upload(filePath, uploadBuffer, {
         upsert: true,
-        contentType: file.type || 'image/jpeg',
+        contentType,
       });
 
     if (uploadError) {
@@ -59,7 +81,7 @@ export async function POST(req: Request) {
 
     let accentColor = '#ffffff';
     try {
-      const palette = await Vibrant.from(buffer).getPalette();
+      const palette = await Vibrant.from(uploadBuffer).getPalette();
       accentColor = pickAccentHex(palette);
     } catch (colorError) {
       console.warn('Failed to calculate accent color', colorError);
