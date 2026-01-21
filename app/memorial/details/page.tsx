@@ -16,6 +16,9 @@ export default function MemorialDetailsPage() {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
+  const [fullName, setFullName] = useState("");
+  const [sunrise, setSunrise] = useState("");
+  const [sunset, setSunset] = useState("");
   const [mounted, setMounted] = useState(false);
 
   const currentLang = searchParams?.get("lang") === "es" ? "es" : "en";
@@ -185,6 +188,8 @@ export default function MemorialDetailsPage() {
             <input
               type="text"
               placeholder={strings.fullNamePlaceholder}
+              value={fullName}
+              onChange={(event) => setFullName(event.target.value)}
               className={inputBase}
             />
           </div>
@@ -196,6 +201,8 @@ export default function MemorialDetailsPage() {
               <input
                 type="text"
                 placeholder={strings.datePlaceholder}
+                value={sunrise}
+                onChange={(event) => setSunrise(event.target.value)}
                 className={inputBase}
               />
             </div>
@@ -204,6 +211,8 @@ export default function MemorialDetailsPage() {
               <input
                 type="text"
                 placeholder={strings.datePlaceholder}
+                value={sunset}
+                onChange={(event) => setSunset(event.target.value)}
                 className={inputBase}
               />
             </div>
@@ -245,8 +254,10 @@ export default function MemorialDetailsPage() {
             onClick={() =>
               router.push(
                 `/memorial/preview?lang=${currentLang}${
-                  photoUrl ? `&photo=${encodeURIComponent(photoUrl)}` : ""
-                }`
+                  fullName ? `&name=${encodeURIComponent(fullName)}` : ""
+                }${sunrise ? `&birth=${encodeURIComponent(sunrise)}` : ""}${
+                  sunset ? `&death=${encodeURIComponent(sunset)}` : ""
+                }${photoUrl ? `&photo=${encodeURIComponent(photoUrl)}` : ""}`
               )
             }
             className={primaryButtonClass}
