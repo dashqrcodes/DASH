@@ -97,7 +97,7 @@ export default function MemorialDetailsPage() {
         ))}
       </div>
 
-      <div className="relative mx-auto flex min-h-screen w-full max-w-md flex-col px-6 pb-28 pt-[58vh]">
+      <div className="relative mx-auto flex min-h-screen w-full max-w-md flex-col px-6 pb-28 pt-[52vh]">
         <label htmlFor="memorial-photo" className="absolute inset-x-0 top-0 h-[56vh] min-h-[340px]">
           <input
             id="memorial-photo"
@@ -109,13 +109,7 @@ export default function MemorialDetailsPage() {
             aria-label="Upload memorial photo"
           />
         </label>
-        <div className="space-y-8 rounded-[28px] border border-white/10 bg-black/55 p-6 shadow-[0_20px_60px_rgba(0,0,0,0.55)] backdrop-blur-2xl">
-          {/* Photo upload placeholder */}
-          <div className="flex justify-center">
-            <div className="rounded-full bg-white/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.25em] text-white/70">
-              {strings.addPhoto}
-            </div>
-          </div>
+        <div className="space-y-8">
 
           {/* Name */}
           <div className="space-y-2">
