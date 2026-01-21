@@ -57,6 +57,17 @@ export async function POST(req: Request) {
     let contentType = file.type || 'image/jpeg';
 
     if (isHeic) {
+      if (
+        !process.env.CLOUDINARY_CLOUD_NAME ||
+        !process.env.CLOUDINARY_API_KEY ||
+        !process.env.CLOUDINARY_API_SECRET
+      ) {
+        return NextResponse.json(
+          { error: 'Cloudinary is not configured for HEIC uploads.' },
+          { status: 500 },
+        );
+      }
+
       try {
         const cloudinaryUrl = await new Promise<string>((resolve, reject) => {
           const stream = cloudinary.uploader.upload_stream(
@@ -65,6 +76,8 @@ export async function POST(req: Request) {
               public_id: slug,
               resource_type: 'image',
               format: 'jpg',
+              overwrite: true,
+              unique_filename: false,
             },
             (error, result) => {
               if (error || !result?.secure_url) {
@@ -80,10 +93,14 @@ export async function POST(req: Request) {
         await supabaseAdmin.from('drafts').update({ photo_url: cloudinaryUrl }).eq('slug', slug);
 
         return NextResponse.json({ photoUrl: cloudinaryUrl, accentColor: '#ffffff' });
-      } catch (cloudinaryError) {
+      } catch (cloudinaryError: any) {
         console.error('Cloudinary HEIC upload failed', cloudinaryError);
+        const message =
+          cloudinaryError?.message ||
+          cloudinaryError?.error?.message ||
+          'Unable to convert HEIC photo. Please try a JPG or PNG.';
         return NextResponse.json(
-          { error: 'Unable to convert HEIC photo. Please try a JPG or PNG.' },
+          { error: message },
           { status: 422 },
         );
       }
