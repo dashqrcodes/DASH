@@ -122,9 +122,21 @@ export default function MemorialProfilePage() {
                   return;
                 }
 
-                // Local preview immediately
-                const localUrl = URL.createObjectURL(file);
-                setPhotoUrl(localUrl);
+                const fileExt = file.name.split(".").pop()?.toLowerCase() || "";
+                const isHeic =
+                  file.type === "image/heic" ||
+                  file.type === "image/heif" ||
+                  fileExt === "heic" ||
+                  fileExt === "heif";
+
+                if (!isHeic) {
+                  // Local preview immediately for browser-supported formats
+                  const localUrl = URL.createObjectURL(file);
+                  setPhotoUrl(localUrl);
+                } else {
+                  setPhotoUrl(null);
+                }
+
                 setError(null);
                 setUploadingPhoto(true);
 
@@ -139,7 +151,8 @@ export default function MemorialProfilePage() {
                   });
 
                   if (!res.ok) {
-                    throw new Error("Upload failed");
+                    const errorBody = await res.json().catch(() => null);
+                    throw new Error(errorBody?.error || "Upload failed");
                   }
 
                   const json = await res.json();
