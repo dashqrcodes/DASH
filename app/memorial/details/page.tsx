@@ -62,23 +62,33 @@ export default function MemorialDetailsPage() {
         mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
       }`}
     >
-      {photoUrl && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={photoUrl}
-          alt=""
-          className="absolute inset-0 h-full w-full object-cover"
-          aria-hidden="true"
-        />
-      )}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/35 via-black/55 to-black/85" />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(255,255,255,0.06),_transparent_55%)]" />
-      <div className="pointer-events-none absolute inset-0 shadow-[inset_0_0_160px_rgba(0,0,0,0.85)]" />
+      <div className="absolute inset-x-0 top-0 h-[56vh] min-h-[340px] overflow-hidden">
+        {photoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={photoUrl}
+            alt=""
+            className="h-full w-full object-cover"
+            aria-hidden="true"
+          />
+        ) : (
+          <div className="h-full w-full bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.06),_transparent_60%)]" />
+        )}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/30 via-black/45 to-black/85" />
+        <div className="pointer-events-none absolute inset-0 shadow-[inset_0_0_160px_rgba(0,0,0,0.85)]" />
+        {!photoUrl && (
+          <div className="pointer-events-none absolute inset-x-0 bottom-10 flex items-center justify-center">
+            <div className="rounded-full bg-black/55 px-4 py-2 text-xs font-semibold tracking-[0.2em] text-white/80">
+              Tap to add photo
+            </div>
+          </div>
+        )}
+      </div>
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-10 left-10 h-56 w-56 rounded-full bg-gradient-to-br from-indigo-500/25 via-purple-500/20 to-blue-400/10 blur-3xl" />
         <div className="absolute bottom-10 right-4 h-48 w-48 rounded-full bg-gradient-to-br from-blue-500/20 via-purple-500/15 to-indigo-400/10 blur-3xl" />
       </div>
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 top-[58vh] overflow-hidden">
         {Array.from({ length: 16 }).map((_, index) => (
           <span
             key={`star-${index}`}
@@ -87,24 +97,24 @@ export default function MemorialDetailsPage() {
         ))}
       </div>
 
-      <div className="relative mx-auto flex min-h-screen w-full max-w-md flex-col px-6 pb-28 pt-10">
-        <div className="space-y-8">
+      <div className="relative mx-auto flex min-h-screen w-full max-w-md flex-col px-6 pb-28 pt-[58vh]">
+        <label htmlFor="memorial-photo" className="absolute inset-x-0 top-0 h-[56vh] min-h-[340px]">
+          <input
+            id="memorial-photo"
+            name="memorial-photo"
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handlePhotoChange}
+            aria-label="Upload memorial photo"
+          />
+        </label>
+        <div className="space-y-8 rounded-[28px] border border-white/10 bg-black/55 p-6 shadow-[0_20px_60px_rgba(0,0,0,0.55)] backdrop-blur-2xl">
           {/* Photo upload placeholder */}
           <div className="flex justify-center">
-            <label
-              htmlFor="memorial-photo"
-              className="group relative inline-flex items-center justify-center rounded-full bg-white/10 px-5 py-2 text-sm font-semibold text-white/80 ring-1 ring-white/20 backdrop-blur-xl transition hover:bg-white/20 hover:text-white"
-            >
+            <div className="rounded-full bg-white/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.25em] text-white/70">
               {strings.addPhoto}
-              <input
-                id="memorial-photo"
-                name="memorial-photo"
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handlePhotoChange}
-              />
-            </label>
+            </div>
           </div>
 
           {/* Name */}
@@ -167,7 +177,7 @@ export default function MemorialDetailsPage() {
           </div>
         </div>
 
-        <div className="fixed inset-x-0 bottom-0 bg-gradient-to-t from-[#0b0b0d] via-[#0b0b0d]/90 to-transparent px-6 pb-6 pt-6">
+        <div className="fixed inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/80 to-transparent px-6 pb-6 pt-6">
           <button
             type="button"
             onClick={() => router.push(`/memorial/preview?lang=${currentLang}`)}
