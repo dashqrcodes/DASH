@@ -10,6 +10,38 @@ const fieldLabel = "text-sm font-medium text-gray-100 pl-1";
 const inputBase =
   "h-12 w-full rounded-full border border-white/10 bg-white/5 px-4 text-base text-white placeholder:text-white/50 backdrop-blur-lg transition duration-200 focus:border-white/30 focus:outline-none focus:ring-2 focus:ring-purple-300/40";
 
+const toTitleCase = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+
+const formatDateInput = (value: string) => {
+  const cleaned = value.replace(/[^a-zA-Z0-9\s,]/g, " ");
+  const parts = cleaned.split(/[\s,]+/).filter(Boolean);
+  if (!parts.length) return "";
+
+  const monthRaw = parts[0] || "";
+  const dayRaw = parts[1] || "";
+  const yearRaw = parts[2] || "";
+
+  const month = monthRaw
+    ? monthRaw.charAt(0).toUpperCase() + monthRaw.slice(1).toLowerCase()
+    : "";
+  const day = dayRaw.replace(/\D/g, "").slice(0, 2);
+  const year = yearRaw.replace(/\D/g, "").slice(0, 4);
+
+  let result = month;
+  if (day) {
+    result += ` ${day}`;
+  }
+  if (year) {
+    result += `, ${year}`;
+  }
+  return result;
+};
+
 export default function MemorialDetailsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -29,6 +61,36 @@ export default function MemorialDetailsPage() {
   }, []);
 
   useEffect(() => {
+    const paramsName = searchParams?.get("name") || "";
+    const paramsBirth = searchParams?.get("birth") || "";
+    const paramsDeath = searchParams?.get("death") || "";
+    const paramsPhoto = searchParams?.get("photo") || "";
+
+    if (paramsName) {
+      setFullName(paramsName);
+      try {
+        window.sessionStorage.setItem("memorial_full_name", paramsName);
+      } catch {}
+    }
+    if (paramsBirth) {
+      setSunrise(paramsBirth);
+      try {
+        window.sessionStorage.setItem("memorial_birth_date", paramsBirth);
+      } catch {}
+    }
+    if (paramsDeath) {
+      setSunset(paramsDeath);
+      try {
+        window.sessionStorage.setItem("memorial_death_date", paramsDeath);
+      } catch {}
+    }
+    if (paramsPhoto) {
+      setPhotoUrl(paramsPhoto);
+      try {
+        window.sessionStorage.setItem("memorial_photo_url", paramsPhoto);
+      } catch {}
+    }
+
     try {
       const storedName = window.sessionStorage.getItem("memorial_full_name") || "";
       const storedBirth = window.sessionStorage.getItem("memorial_birth_date") || "";
@@ -39,7 +101,7 @@ export default function MemorialDetailsPage() {
       if (!sunset && storedDeath) setSunset(storedDeath);
       if (!photoUrl && storedPhoto) setPhotoUrl(storedPhoto);
     } catch {}
-  }, []);
+  }, [searchParams]);
 
   const strings =
     currentLang === "es"
@@ -212,7 +274,7 @@ export default function MemorialDetailsPage() {
               placeholder={strings.fullNamePlaceholder}
               value={fullName}
               onChange={(event) => {
-                const value = event.target.value;
+                const value = toTitleCase(event.target.value);
                 setFullName(value);
                 setFormError(null);
                 try {
@@ -232,7 +294,7 @@ export default function MemorialDetailsPage() {
                 placeholder={strings.datePlaceholder}
                 value={sunrise}
                 onChange={(event) => {
-                  const value = event.target.value;
+                  const value = formatDateInput(event.target.value);
                   setSunrise(value);
                   setFormError(null);
                   try {
@@ -249,7 +311,7 @@ export default function MemorialDetailsPage() {
                 placeholder={strings.datePlaceholder}
                 value={sunset}
                 onChange={(event) => {
-                  const value = event.target.value;
+                  const value = formatDateInput(event.target.value);
                   setSunset(value);
                   setFormError(null);
                   try {
