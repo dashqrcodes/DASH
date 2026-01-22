@@ -28,6 +28,19 @@ export default function MemorialDetailsPage() {
     setMounted(true);
   }, []);
 
+  useEffect(() => {
+    try {
+      const storedName = window.sessionStorage.getItem("memorial_full_name") || "";
+      const storedBirth = window.sessionStorage.getItem("memorial_birth_date") || "";
+      const storedDeath = window.sessionStorage.getItem("memorial_death_date") || "";
+      const storedPhoto = window.sessionStorage.getItem("memorial_photo_url") || "";
+      if (!fullName && storedName) setFullName(storedName);
+      if (!sunrise && storedBirth) setSunrise(storedBirth);
+      if (!sunset && storedDeath) setSunset(storedDeath);
+      if (!photoUrl && storedPhoto) setPhotoUrl(storedPhoto);
+    } catch {}
+  }, []);
+
   const strings =
     currentLang === "es"
       ? {
@@ -76,6 +89,9 @@ export default function MemorialDetailsPage() {
     if (!isHeic) {
       const url = URL.createObjectURL(file);
       setPhotoUrl(url);
+      try {
+        window.sessionStorage.setItem("memorial_photo_url", url);
+      } catch {}
       return;
     }
 
@@ -109,6 +125,9 @@ export default function MemorialDetailsPage() {
       .then((json) => {
         if (json?.photoUrl) {
           setPhotoUrl(json.photoUrl);
+          try {
+            window.sessionStorage.setItem("memorial_photo_url", json.photoUrl);
+          } catch {}
         }
       })
       .catch((error) => {
