@@ -14,10 +14,11 @@ const toTitleCase = (value: string) =>
   value
     .toLowerCase()
     .replace(/\s+/g, " ")
-    .trim()
     .replace(/\b\w/g, (char) => char.toUpperCase());
 
-const formatDateInput = (value: string) => {
+const formatDateInput = (value: string) => value;
+
+const formatDateOnBlur = (value: string) => {
   const cleaned = value.replace(/[^a-zA-Z0-9\s,]/g, " ");
   const parts = cleaned.split(/[\s,]+/).filter(Boolean);
   if (!parts.length) return "";
@@ -41,6 +42,21 @@ const formatDateInput = (value: string) => {
   }
   return result;
 };
+
+const monthOptions = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
 
 export default function MemorialDetailsPage() {
   const router = useRouter();
@@ -274,11 +290,18 @@ export default function MemorialDetailsPage() {
               placeholder={strings.fullNamePlaceholder}
               value={fullName}
               onChange={(event) => {
-                const value = toTitleCase(event.target.value);
+                const value = event.target.value;
                 setFullName(value);
                 setFormError(null);
                 try {
                   window.sessionStorage.setItem("memorial_full_name", value);
+                } catch {}
+              }}
+              onBlur={() => {
+                const formatted = toTitleCase(fullName);
+                setFullName(formatted);
+                try {
+                  window.sessionStorage.setItem("memorial_full_name", formatted);
                 } catch {}
               }}
               className={inputBase}
@@ -292,6 +315,7 @@ export default function MemorialDetailsPage() {
               <input
                 type="text"
                 placeholder={strings.datePlaceholder}
+                list="month-options"
                 value={sunrise}
                 onChange={(event) => {
                   const value = formatDateInput(event.target.value);
@@ -299,6 +323,13 @@ export default function MemorialDetailsPage() {
                   setFormError(null);
                   try {
                     window.sessionStorage.setItem("memorial_birth_date", value);
+                  } catch {}
+                }}
+                onBlur={() => {
+                  const formatted = formatDateOnBlur(sunrise);
+                  setSunrise(formatted);
+                  try {
+                    window.sessionStorage.setItem("memorial_birth_date", formatted);
                   } catch {}
                 }}
                 className={inputBase}
@@ -309,6 +340,7 @@ export default function MemorialDetailsPage() {
               <input
                 type="text"
                 placeholder={strings.datePlaceholder}
+                list="month-options"
                 value={sunset}
                 onChange={(event) => {
                   const value = formatDateInput(event.target.value);
@@ -318,10 +350,22 @@ export default function MemorialDetailsPage() {
                     window.sessionStorage.setItem("memorial_death_date", value);
                   } catch {}
                 }}
+                onBlur={() => {
+                  const formatted = formatDateOnBlur(sunset);
+                  setSunset(formatted);
+                  try {
+                    window.sessionStorage.setItem("memorial_death_date", formatted);
+                  } catch {}
+                }}
                 className={inputBase}
               />
             </div>
           </div>
+          <datalist id="month-options">
+            {monthOptions.map((month) => (
+              <option key={month} value={month} />
+            ))}
+          </datalist>
 
           {/* Language toggle */}
           <div className="pt-2 flex items-center justify-center">
