@@ -19,6 +19,7 @@ export default function MemorialDetailsPage() {
   const [fullName, setFullName] = useState("");
   const [sunrise, setSunrise] = useState("");
   const [sunset, setSunset] = useState("");
+  const [formError, setFormError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
 
   const currentLang = searchParams?.get("lang") === "es" ? "es" : "en";
@@ -39,6 +40,7 @@ export default function MemorialDetailsPage() {
           next: "Siguiente",
           uploading: "Convirtiendo foto...",
           uploadFailed: "No se pudo subir la foto. Intenta de nuevo.",
+          missingFields: "Completa nombre y fechas antes de continuar.",
         }
       : {
           addPhoto: "Add Photo",
@@ -50,6 +52,7 @@ export default function MemorialDetailsPage() {
           next: "Next",
           uploading: "Converting photo...",
           uploadFailed: "Could not upload the photo. Please try again.",
+          missingFields: "Please add name and dates before continuing.",
         };
 
   const updateLanguage = (lang: "en" | "es") => {
@@ -168,7 +171,7 @@ export default function MemorialDetailsPage() {
         ))}
       </div>
 
-      <div className="relative mx-auto flex min-h-screen w-full max-w-md flex-col px-6 pb-28 pt-[52vh]">
+      <div className="relative mx-auto flex min-h-screen w-full max-w-md flex-col px-6 pb-28 pt-[56vh]">
         <label htmlFor="memorial-photo" className="absolute inset-x-0 top-0 h-[56vh] min-h-[340px]">
           <input
             id="memorial-photo"
@@ -189,7 +192,10 @@ export default function MemorialDetailsPage() {
               type="text"
               placeholder={strings.fullNamePlaceholder}
               value={fullName}
-              onChange={(event) => setFullName(event.target.value)}
+              onChange={(event) => {
+                setFullName(event.target.value);
+                setFormError(null);
+              }}
               className={inputBase}
             />
           </div>
@@ -202,7 +208,10 @@ export default function MemorialDetailsPage() {
                 type="text"
                 placeholder={strings.datePlaceholder}
                 value={sunrise}
-                onChange={(event) => setSunrise(event.target.value)}
+                onChange={(event) => {
+                  setSunrise(event.target.value);
+                  setFormError(null);
+                }}
                 className={inputBase}
               />
             </div>
@@ -212,7 +221,10 @@ export default function MemorialDetailsPage() {
                 type="text"
                 placeholder={strings.datePlaceholder}
                 value={sunset}
-                onChange={(event) => setSunset(event.target.value)}
+                onChange={(event) => {
+                  setSunset(event.target.value);
+                  setFormError(null);
+                }}
                 className={inputBase}
               />
             </div>
@@ -249,17 +261,22 @@ export default function MemorialDetailsPage() {
         </div>
 
         <div className="fixed inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/80 to-transparent px-6 pb-6 pt-6">
+          {formError && <p className="mb-3 text-center text-sm text-red-300">{formError}</p>}
           <button
             type="button"
-            onClick={() =>
+            onClick={() => {
+              if (!fullName || !sunrise || !sunset) {
+                setFormError(strings.missingFields);
+                return;
+              }
               router.push(
                 `/memorial/preview?lang=${currentLang}${
                   fullName ? `&name=${encodeURIComponent(fullName)}` : ""
                 }${sunrise ? `&birth=${encodeURIComponent(sunrise)}` : ""}${
                   sunset ? `&death=${encodeURIComponent(sunset)}` : ""
                 }${photoUrl ? `&photo=${encodeURIComponent(photoUrl)}` : ""}`
-              )
-            }
+              );
+            }}
             className={primaryButtonClass}
           >
             {strings.next}
