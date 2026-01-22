@@ -193,8 +193,12 @@ export default function MemorialDetailsPage() {
               placeholder={strings.fullNamePlaceholder}
               value={fullName}
               onChange={(event) => {
-                setFullName(event.target.value);
+                const value = event.target.value;
+                setFullName(value);
                 setFormError(null);
+                try {
+                  window.sessionStorage.setItem("memorial_full_name", value);
+                } catch {}
               }}
               className={inputBase}
             />
@@ -209,8 +213,12 @@ export default function MemorialDetailsPage() {
                 placeholder={strings.datePlaceholder}
                 value={sunrise}
                 onChange={(event) => {
-                  setSunrise(event.target.value);
+                  const value = event.target.value;
+                  setSunrise(value);
                   setFormError(null);
+                  try {
+                    window.sessionStorage.setItem("memorial_birth_date", value);
+                  } catch {}
                 }}
                 className={inputBase}
               />
@@ -222,8 +230,12 @@ export default function MemorialDetailsPage() {
                 placeholder={strings.datePlaceholder}
                 value={sunset}
                 onChange={(event) => {
-                  setSunset(event.target.value);
+                  const value = event.target.value;
+                  setSunset(value);
                   setFormError(null);
+                  try {
+                    window.sessionStorage.setItem("memorial_death_date", value);
+                  } catch {}
                 }}
                 className={inputBase}
               />

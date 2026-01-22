@@ -2,7 +2,7 @@
 export const dynamic = "force-dynamic";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { getSupabaseClient } from "../../../utils/supabaseClient";
 
 const primaryButtonClass =
@@ -47,15 +47,35 @@ export default function MemorialBackPreviewPage() {
   const currentLang = searchParams?.get("lang") === "es" ? "es" : "en";
   const counselorName = searchParams?.get("counselor") || "";
   const counselorPhone = searchParams?.get("phone") || "";
-  const memorialName = searchParams?.get("name") || "";
-  const birthDate = searchParams?.get("birth") || "";
-  const deathDate = searchParams?.get("death") || "";
+  const [memorialName, setMemorialName] = useState(searchParams?.get("name") || "");
+  const [birthDate, setBirthDate] = useState(searchParams?.get("birth") || "");
+  const [deathDate, setDeathDate] = useState(searchParams?.get("death") || "");
   const slug = searchParams?.get("slug") || "";
   const [passageIndex, setPassageIndex] = useState(0);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const bodyText = passages[passageIndex].text;
   const bodyCredit = passages[passageIndex].credit;
+
+  useEffect(() => {
+    const name = searchParams?.get("name") || "";
+    const birth = searchParams?.get("birth") || "";
+    const death = searchParams?.get("death") || "";
+    if (name) setMemorialName(name);
+    if (birth) setBirthDate(birth);
+    if (death) setDeathDate(death);
+
+    if (!name || !birth || !death) {
+      try {
+        const storedName = window.sessionStorage.getItem("memorial_full_name") || "";
+        const storedBirth = window.sessionStorage.getItem("memorial_birth_date") || "";
+        const storedDeath = window.sessionStorage.getItem("memorial_death_date") || "";
+        if (!name && storedName) setMemorialName(storedName);
+        if (!birth && storedBirth) setBirthDate(storedBirth);
+        if (!death && storedDeath) setDeathDate(storedDeath);
+      } catch {}
+    }
+  }, [searchParams]);
 
   const buildQueryString = () => {
     const params = new URLSearchParams();

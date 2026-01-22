@@ -2,6 +2,7 @@
 export const dynamic = "force-dynamic";
 
 import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 const primaryButtonClass =
   "h-12 w-full rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-500 text-base font-semibold text-white shadow-[0_12px_32px_rgba(99,102,241,0.35)] transition duration-200 hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-purple-300/60";
@@ -11,11 +12,32 @@ export default function MemorialPreviewPage() {
   const searchParams = useSearchParams();
 
   const currentLang = searchParams?.get("lang") === "es" ? "es" : "en";
-  const fullName = searchParams?.get("name")?.trim() || "";
-  const birthDate = searchParams?.get("birth")?.trim() || "";
-  const deathDate = searchParams?.get("death")?.trim() || "";
+  const [fullName, setFullName] = useState(searchParams?.get("name")?.trim() || "");
+  const [birthDate, setBirthDate] = useState(searchParams?.get("birth")?.trim() || "");
+  const [deathDate, setDeathDate] = useState(searchParams?.get("death")?.trim() || "");
   const photoUrl = searchParams?.get("photo") || "";
   const slug = searchParams?.get("slug") || "";
+
+  useEffect(() => {
+    const name = searchParams?.get("name")?.trim() || "";
+    const birth = searchParams?.get("birth")?.trim() || "";
+    const death = searchParams?.get("death")?.trim() || "";
+
+    if (name) setFullName(name);
+    if (birth) setBirthDate(birth);
+    if (death) setDeathDate(death);
+
+    if (!name || !birth || !death) {
+      try {
+        const storedName = window.sessionStorage.getItem("memorial_full_name") || "";
+        const storedBirth = window.sessionStorage.getItem("memorial_birth_date") || "";
+        const storedDeath = window.sessionStorage.getItem("memorial_death_date") || "";
+        if (!name && storedName) setFullName(storedName);
+        if (!birth && storedBirth) setBirthDate(storedBirth);
+        if (!death && storedDeath) setDeathDate(storedDeath);
+      } catch {}
+    }
+  }, [searchParams]);
 
   const strings =
     currentLang === "es"
