@@ -41,6 +41,18 @@ const passages = [
   },
 ];
 
+const formatShortMonth = (value: string) => {
+  if (!value) return value;
+  return value.replace(
+    /\b(January|February|March|April|May|June|July|August|September|October|November|December)\b/gi,
+    (match) => {
+      const normalized = match.toLowerCase();
+      if (normalized === "june" || normalized === "july") return match;
+      return match.slice(0, 3);
+    }
+  );
+};
+
 export default function MemorialBackPreviewPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -56,6 +68,8 @@ export default function MemorialBackPreviewPage() {
   const [error, setError] = useState<string | null>(null);
   const bodyText = passages[passageIndex].text;
   const bodyCredit = passages[passageIndex].credit;
+  const displayBirthDate = formatShortMonth(birthDate);
+  const displayDeathDate = formatShortMonth(deathDate);
 
   useEffect(() => {
     const name = searchParams?.get("name") || "";
@@ -205,7 +219,7 @@ export default function MemorialBackPreviewPage() {
               <div className="flex flex-col items-center gap-2 pb-3">
                 <div className="flex w-full items-center justify-between gap-3 text-xs text-purple-800">
                   <div className="flex-1 text-center flex flex-col items-center justify-center gap-1 leading-tight">
-                    <p className="text-[12px] font-semibold text-purple-900 whitespace-nowrap">{birthDate}</p>
+                    <p className="text-[12px] font-semibold text-purple-900 whitespace-nowrap">{displayBirthDate}</p>
                     <p className="uppercase tracking-[0.14em] text-purple-900 font-normal whitespace-nowrap text-[10px]">
                       {strings.sunrise}
                     </p>
@@ -220,7 +234,7 @@ export default function MemorialBackPreviewPage() {
                     />
                   </div>
                   <div className="flex-1 text-center flex flex-col items-center justify-center gap-1 leading-tight">
-                    <p className="text-[12px] font-semibold text-purple-900 whitespace-nowrap">{deathDate}</p>
+                    <p className="text-[12px] font-semibold text-purple-900 whitespace-nowrap">{displayDeathDate}</p>
                     <p className="uppercase tracking-[0.14em] text-purple-900 font-normal whitespace-nowrap text-[10px]">
                       {strings.sunset}
                     </p>
