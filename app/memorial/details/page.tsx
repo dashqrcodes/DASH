@@ -16,34 +16,7 @@ const toTitleCase = (value: string) =>
     .replace(/\s+/g, " ")
     .replace(/\b\w/g, (char) => char.toUpperCase());
 
-const formatDateInput = (value: string) => value;
-
-const formatDateOnBlur = (value: string) => {
-  const cleaned = value.replace(/[^a-zA-Z0-9\s,]/g, " ");
-  const parts = cleaned.split(/[\s,]+/).filter(Boolean);
-  if (!parts.length) return "";
-
-  const monthRaw = parts[0] || "";
-  const dayRaw = parts[1] || "";
-  const yearRaw = parts[2] || "";
-
-  const month = monthRaw
-    ? monthRaw.charAt(0).toUpperCase() + monthRaw.slice(1).toLowerCase()
-    : "";
-  const day = dayRaw.replace(/\D/g, "").slice(0, 2);
-  const year = yearRaw.replace(/\D/g, "").slice(0, 4);
-
-  let result = month;
-  if (day) {
-    result += ` ${day}`;
-  }
-  if (year) {
-    result += `, ${year}`;
-  }
-  return result;
-};
-
-const monthOptions = [
+const monthOptionsEn = [
   "January",
   "February",
   "March",
@@ -58,6 +31,32 @@ const monthOptions = [
   "December",
 ];
 
+const monthOptionsEs = [
+  "Enero",
+  "Febrero",
+  "Marzo",
+  "Abril",
+  "Mayo",
+  "Junio",
+  "Julio",
+  "Agosto",
+  "Septiembre",
+  "Octubre",
+  "Noviembre",
+  "Diciembre",
+];
+
+const buildDate = (month: string, day: string, year: string) => {
+  if (!month || !day || !year) return "";
+  return `${month} ${day}, ${year}`;
+};
+
+const parseDateParts = (value: string) => {
+  const match = value.match(/^([A-Za-zÁÉÍÓÚÑáéíóúñ]+)\s+(\d{1,2})(?:,\s*|\s+)(\d{4})$/);
+  if (!match) return { month: "", day: "", year: "" };
+  return { month: match[1], day: match[2], year: match[3] };
+};
+
 export default function MemorialDetailsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -67,6 +66,12 @@ export default function MemorialDetailsPage() {
   const [fullName, setFullName] = useState("");
   const [sunrise, setSunrise] = useState("");
   const [sunset, setSunset] = useState("");
+  const [sunriseMonth, setSunriseMonth] = useState("");
+  const [sunriseDay, setSunriseDay] = useState("");
+  const [sunriseYear, setSunriseYear] = useState("");
+  const [sunsetMonth, setSunsetMonth] = useState("");
+  const [sunsetDay, setSunsetDay] = useState("");
+  const [sunsetYear, setSunsetYear] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
 
@@ -90,12 +95,24 @@ export default function MemorialDetailsPage() {
     }
     if (paramsBirth) {
       setSunrise(paramsBirth);
+      const parsed = parseDateParts(paramsBirth);
+      if (parsed.month) {
+        setSunriseMonth(parsed.month);
+        setSunriseDay(parsed.day);
+        setSunriseYear(parsed.year);
+      }
       try {
         window.sessionStorage.setItem("memorial_birth_date", paramsBirth);
       } catch {}
     }
     if (paramsDeath) {
       setSunset(paramsDeath);
+      const parsed = parseDateParts(paramsDeath);
+      if (parsed.month) {
+        setSunsetMonth(parsed.month);
+        setSunsetDay(parsed.day);
+        setSunsetYear(parsed.year);
+      }
       try {
         window.sessionStorage.setItem("memorial_death_date", paramsDeath);
       } catch {}
@@ -113,8 +130,24 @@ export default function MemorialDetailsPage() {
       const storedDeath = window.sessionStorage.getItem("memorial_death_date") || "";
       const storedPhoto = window.sessionStorage.getItem("memorial_photo_url") || "";
       if (!fullName && storedName) setFullName(storedName);
-      if (!sunrise && storedBirth) setSunrise(storedBirth);
-      if (!sunset && storedDeath) setSunset(storedDeath);
+      if (!sunrise && storedBirth) {
+        setSunrise(storedBirth);
+        const parsed = parseDateParts(storedBirth);
+        if (parsed.month) {
+          setSunriseMonth(parsed.month);
+          setSunriseDay(parsed.day);
+          setSunriseYear(parsed.year);
+        }
+      }
+      if (!sunset && storedDeath) {
+        setSunset(storedDeath);
+        const parsed = parseDateParts(storedDeath);
+        if (parsed.month) {
+          setSunsetMonth(parsed.month);
+          setSunsetDay(parsed.day);
+          setSunsetYear(parsed.year);
+        }
+      }
       if (!photoUrl && storedPhoto) setPhotoUrl(storedPhoto);
     } catch {}
   }, [searchParams]);
@@ -312,60 +345,139 @@ export default function MemorialDetailsPage() {
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <label className={fieldLabel}>{strings.sunrise}</label>
-              <input
-                type="text"
-                placeholder={strings.datePlaceholder}
-                list="month-options"
-                value={sunrise}
-                onChange={(event) => {
-                  const value = formatDateInput(event.target.value);
-                  setSunrise(value);
-                  setFormError(null);
-                  try {
-                    window.sessionStorage.setItem("memorial_birth_date", value);
-                  } catch {}
-                }}
-                onBlur={() => {
-                  const formatted = formatDateOnBlur(sunrise);
-                  setSunrise(formatted);
-                  try {
-                    window.sessionStorage.setItem("memorial_birth_date", formatted);
-                  } catch {}
-                }}
-                className={inputBase}
-              />
+              <div className="flex gap-2">
+                <select
+                  value={sunriseMonth}
+                  aria-label={currentLang === "es" ? "Mes de nacimiento" : "Birth month"}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setSunriseMonth(value);
+                    const next = buildDate(value, sunriseDay, sunriseYear);
+                    setSunrise(next);
+                    setFormError(null);
+                    if (next) {
+                      try {
+                        window.sessionStorage.setItem("memorial_birth_date", next);
+                      } catch {}
+                    }
+                  }}
+                  className={inputBase}
+                >
+                  <option value="">{currentLang === "es" ? "Mes" : "Month"}</option>
+                  {(currentLang === "es" ? monthOptionsEs : monthOptionsEn).map((month) => (
+                    <option key={month} value={month}>
+                      {month}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="DD"
+                  value={sunriseDay}
+                  onChange={(event) => {
+                    const value = event.target.value.replace(/\D/g, "").slice(0, 2);
+                    setSunriseDay(value);
+                    const next = buildDate(sunriseMonth, value, sunriseYear);
+                    setSunrise(next);
+                    setFormError(null);
+                    if (next) {
+                      try {
+                        window.sessionStorage.setItem("memorial_birth_date", next);
+                      } catch {}
+                    }
+                  }}
+                  className={inputBase}
+                />
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="YYYY"
+                  value={sunriseYear}
+                  onChange={(event) => {
+                    const value = event.target.value.replace(/\D/g, "").slice(0, 4);
+                    setSunriseYear(value);
+                    const next = buildDate(sunriseMonth, sunriseDay, value);
+                    setSunrise(next);
+                    setFormError(null);
+                    if (next) {
+                      try {
+                        window.sessionStorage.setItem("memorial_birth_date", next);
+                      } catch {}
+                    }
+                  }}
+                  className={inputBase}
+                />
+              </div>
             </div>
             <div className="space-y-2">
               <label className={fieldLabel}>{strings.sunset}</label>
-              <input
-                type="text"
-                placeholder={strings.datePlaceholder}
-                list="month-options"
-                value={sunset}
-                onChange={(event) => {
-                  const value = formatDateInput(event.target.value);
-                  setSunset(value);
-                  setFormError(null);
-                  try {
-                    window.sessionStorage.setItem("memorial_death_date", value);
-                  } catch {}
-                }}
-                onBlur={() => {
-                  const formatted = formatDateOnBlur(sunset);
-                  setSunset(formatted);
-                  try {
-                    window.sessionStorage.setItem("memorial_death_date", formatted);
-                  } catch {}
-                }}
-                className={inputBase}
-              />
+              <div className="flex gap-2">
+                <select
+                  value={sunsetMonth}
+                  aria-label={currentLang === "es" ? "Mes de fallecimiento" : "Death month"}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setSunsetMonth(value);
+                    const next = buildDate(value, sunsetDay, sunsetYear);
+                    setSunset(next);
+                    setFormError(null);
+                    if (next) {
+                      try {
+                        window.sessionStorage.setItem("memorial_death_date", next);
+                      } catch {}
+                    }
+                  }}
+                  className={inputBase}
+                >
+                  <option value="">{currentLang === "es" ? "Mes" : "Month"}</option>
+                  {(currentLang === "es" ? monthOptionsEs : monthOptionsEn).map((month) => (
+                    <option key={month} value={month}>
+                      {month}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="DD"
+                  value={sunsetDay}
+                  onChange={(event) => {
+                    const value = event.target.value.replace(/\D/g, "").slice(0, 2);
+                    setSunsetDay(value);
+                    const next = buildDate(sunsetMonth, value, sunsetYear);
+                    setSunset(next);
+                    setFormError(null);
+                    if (next) {
+                      try {
+                        window.sessionStorage.setItem("memorial_death_date", next);
+                      } catch {}
+                    }
+                  }}
+                  className={inputBase}
+                />
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="YYYY"
+                  value={sunsetYear}
+                  onChange={(event) => {
+                    const value = event.target.value.replace(/\D/g, "").slice(0, 4);
+                    setSunsetYear(value);
+                    const next = buildDate(sunsetMonth, sunsetDay, value);
+                    setSunset(next);
+                    setFormError(null);
+                    if (next) {
+                      try {
+                        window.sessionStorage.setItem("memorial_death_date", next);
+                      } catch {}
+                    }
+                  }}
+                  className={inputBase}
+                />
+              </div>
             </div>
           </div>
-          <datalist id="month-options">
-            {monthOptions.map((month) => (
-              <option key={month} value={month} />
-            ))}
-          </datalist>
 
           {/* Language toggle */}
           <div className="pt-2 flex items-center justify-center">
@@ -402,7 +514,15 @@ export default function MemorialDetailsPage() {
           <button
             type="button"
             onClick={() => {
-              if (!fullName || !sunrise || !sunset) {
+              if (
+                !fullName ||
+                !sunriseMonth ||
+                !sunriseDay ||
+                !sunriseYear ||
+                !sunsetMonth ||
+                !sunsetDay ||
+                !sunsetYear
+              ) {
                 setFormError(strings.missingFields);
                 return;
               }
