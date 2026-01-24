@@ -188,7 +188,7 @@ export default function MemorialBackPreviewPage() {
             <div className="absolute inset-0 bg-[url('/sky%20background%20rear.jpg')] bg-cover bg-center" />
             <div className="absolute inset-0 bg-gradient-to-b from-white/65 via-white/55 to-white/45" />
 
-            <div className="absolute inset-0 flex flex-col items-center justify-between px-5 py-5 text-center text-purple-900 drop-shadow-[0_6px_18px_rgba(0,0,0,0.35)]">
+            <div className="absolute inset-0 flex flex-col items-center justify-between px-7 py-6 text-center text-purple-900 drop-shadow-[0_6px_18px_rgba(0,0,0,0.35)]">
               <div className="pt-2">
                 <p className="text-base md:text-lg font-semibold text-purple-900 font-serif">
                   {strings.forever}
@@ -196,7 +196,7 @@ export default function MemorialBackPreviewPage() {
               </div>
 
               <div className="flex-1 w-full flex items-center justify-center">
-                <div className="space-y-2 text-xs md:text-sm leading-relaxed text-purple-900 text-center">
+                <div className="space-y-2 text-xs md:text-sm leading-relaxed text-purple-900 text-center px-2">
                   <p
                     role="button"
                     tabIndex={0}
@@ -227,7 +227,7 @@ export default function MemorialBackPreviewPage() {
                   <div className="flex items-center justify-center">
                     <img
                       src={`https://quickchart.io/qr?text=${encodeURIComponent(
-                        `https://dashmemories.com/memorial/${slug}`
+                        `https://dashmemories.com/heaven/${slug}`
                       )}&dark=4b0082&light=00000000&margin=0&size=240`}
                       alt="Memorial QR"
                       className="h-[60px] w-[60px] shadow-[0_4px_10px_rgba(88,28,135,0.25)]"
