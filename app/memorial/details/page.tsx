@@ -432,7 +432,7 @@ export default function MemorialDetailsPage() {
                 return;
               }
               router.push(
-                `/memorial/preview?lang=${currentLang}${
+                `/memorial/card-front?lang=${currentLang}${
                   fullName ? `&name=${encodeURIComponent(fullName)}` : ""
                 }${sunrise ? `&birth=${encodeURIComponent(sunrise)}` : ""}${
                   sunset ? `&death=${encodeURIComponent(sunset)}` : ""

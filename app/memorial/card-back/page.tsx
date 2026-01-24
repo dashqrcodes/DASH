@@ -114,7 +114,7 @@ export default function MemorialCardBackPage() {
             type="button"
             aria-label="Back"
             className="flex h-10 w-10 items-center justify-center rounded-full bg-white/5 ring-1 ring-white/10 backdrop-blur-xl transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-purple-300/60"
-            onClick={() => router.push(`/memorial/preview${buildQueryString()}`)}
+            onClick={() => router.push(`/memorial/card-front${buildQueryString()}`)}
           >
             ←
           </button>
@@ -156,7 +156,7 @@ export default function MemorialCardBackPage() {
                   <div className="flex items-center justify-center">
                     <img
                       src={`https://quickchart.io/qr?text=${encodeURIComponent(
-                        `https://dashmemories.com/memorial/${slug}`
+                        `https://dashmemories.com/heaven/${slug}`
                       )}&dark=4b0082&light=00000000&margin=0&size=240`}
                       alt="Memorial QR"
                       className="h-16 w-16 bg-white ring-1 ring-gray-300 shadow-md"

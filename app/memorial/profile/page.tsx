@@ -249,7 +249,7 @@ export default function MemorialProfilePage() {
                     }
                     setError(null);
                     router.push(
-                      `/memorial/preview?name=${encodeURIComponent(fullName)}&birth=${encodeURIComponent(
+                      `/memorial/card-front?name=${encodeURIComponent(fullName)}&birth=${encodeURIComponent(
                         sunrise
                       )}&death=${encodeURIComponent(sunset)}&slug=${encodeURIComponent(computedSlug)}${
                         photoUrl ? `&photo=${encodeURIComponent(photoUrl)}` : ""
