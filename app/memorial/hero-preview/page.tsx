@@ -34,9 +34,23 @@ export default function HeroPreviewPage() {
     if (pDeath) next.deathDate = pDeath;
     if (pSlug) nextSlug = pSlug;
     if (pPhoto) next.photoUrl = pPhoto;
+
+    if (!pName || !pBirth || !pDeath || !pPhoto) {
+      try {
+        const storedName = window.sessionStorage.getItem("memorial_full_name") || "";
+        const storedBirth = window.sessionStorage.getItem("memorial_birth_date") || "";
+        const storedDeath = window.sessionStorage.getItem("memorial_death_date") || "";
+        const storedPhoto = window.sessionStorage.getItem("memorial_photo_url") || "";
+        if (!pName && storedName) next.fullName = storedName;
+        if (!pBirth && storedBirth) next.birthDate = storedBirth;
+        if (!pDeath && storedDeath) next.deathDate = storedDeath;
+        if (!pPhoto && storedPhoto) next.photoUrl = storedPhoto;
+      } catch {}
+    }
+
     next.qrUrl = nextSlug
       ? `https://quickchart.io/qr?text=${encodeURIComponent(
-          `https://dashmemories.com/memorial/${nextSlug}`
+          `https://dashmemories.com/heaven/${nextSlug}`
         )}&dark=ffffff&light=00000000&margin=0&size=44`
       : "";
     setCardData(next);
@@ -47,6 +61,18 @@ export default function HeroPreviewPage() {
   const memorialName = cardData.fullName;
   const birthDate = cardData.birthDate;
   const deathDate = cardData.deathDate;
+
+  const buildQueryString = () => {
+    const params = new URLSearchParams();
+    if (memorialName) params.set("name", memorialName);
+    if (birthDate) params.set("birth", birthDate);
+    if (deathDate) params.set("death", deathDate);
+    if (slug) params.set("slug", slug);
+    if (cardData.photoUrl) params.set("photo", cardData.photoUrl);
+    params.set("lang", currentLang);
+    const qs = params.toString();
+    return qs ? `?${qs}` : "";
+  };
 
   const strings =
     currentLang === "es"
@@ -78,7 +104,7 @@ export default function HeroPreviewPage() {
             type="button"
             aria-label="Back"
             className="flex h-10 w-10 items-center justify-center rounded-full bg-white/5 ring-1 ring-white/10 backdrop-blur-xl transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-purple-300/60"
-            onClick={() => router.back()}
+            onClick={() => router.push(`/memorial/back-preview${buildQueryString()}`)}
           >
             ←
           </button>
@@ -91,10 +117,15 @@ export default function HeroPreviewPage() {
 
         <div className="flex flex-1 items-center justify-center">
           <div className="relative aspect-[2/3] w-full max-w-[440px] overflow-hidden bg-black shadow-[0_18px_40px_rgba(0,0,0,0.45)]">
-            <div
-              className="absolute inset-0 bg-cover bg-center"
-              style={{ backgroundImage: `url(${cardData.photoUrl})` }}
-            />
+            {cardData.photoUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={cardData.photoUrl}
+                alt=""
+                className="absolute inset-0 h-full w-full object-cover"
+                aria-hidden="true"
+              />
+            )}
             <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/35 to-black/70" />
 
             <div className="absolute inset-0 flex flex-col items-center justify-end px-6 pb-10 text-center text-white drop-shadow-[0_6px_18px_rgba(0,0,0,0.55)] space-y-2">
