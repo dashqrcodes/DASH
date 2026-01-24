@@ -43,7 +43,7 @@ export default function MemorialStartPage() {
         <div className="pt-2">
           <button
             type="button"
-            onClick={() => router.push("/memorial/details")}
+            onClick={() => router.push("/memorial/profile")}
             className={primaryButtonClass}
           >
             Continue
