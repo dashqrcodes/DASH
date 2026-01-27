@@ -17,7 +17,6 @@ export default function MemorialPreviewPage() {
   const [deathDate, setDeathDate] = useState(searchParams?.get("death")?.trim() || "");
   const photoUrl = searchParams?.get("photo") || "";
   const slug = searchParams?.get("slug") || "";
-  const [isTransitioning, setIsTransitioning] = useState(false);
 
   useEffect(() => {
     const name = searchParams?.get("name")?.trim() || "";
@@ -117,9 +116,8 @@ export default function MemorialPreviewPage() {
           <button
             type="button"
             onClick={() =>
-              (() => {
-                setIsTransitioning(true);
-                const target = `/memorial/back-preview${[
+              router.push(
+                `/memorial/back-preview${[
                   fullName ? `name=${encodeURIComponent(fullName)}` : "",
                   birthDate ? `birth=${encodeURIComponent(birthDate)}` : "",
                   deathDate ? `death=${encodeURIComponent(deathDate)}` : "",
@@ -129,9 +127,8 @@ export default function MemorialPreviewPage() {
                 ]
                   .filter(Boolean)
                   .join("&")
-                  .replace(/^/, "?")}`;
-                window.setTimeout(() => router.push(target), 120);
-              })()
+                  .replace(/^/, "?")}`
+              )
             }
             className={primaryButtonClass}
           >
@@ -139,11 +136,6 @@ export default function MemorialPreviewPage() {
           </button>
         </div>
       </div>
-      <div
-        className={`pointer-events-none fixed inset-0 z-30 bg-black transition-opacity duration-200 ${
-          isTransitioning ? "opacity-70" : "opacity-0"
-        }`}
-      />
     </main>
   );
 }

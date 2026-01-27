@@ -87,14 +87,14 @@ export default function HeroPreviewPage() {
           heroLabel: 'Retrato 20" × 30"',
           sunrise: "Amanecer",
           sunset: "Atardecer",
-          approve: "Aprobar",
+          next: "Siguiente",
         }
       : {
           preview: "Preview",
           heroLabel: '20" × 30" Hero Portrait',
           sunrise: "Sunrise",
           sunset: "Sunset",
-          approve: "Approve",
+          next: "Next",
         };
 
   return (
@@ -183,7 +183,7 @@ export default function HeroPreviewPage() {
           }
           className={primaryButtonClass}
         >
-          {strings.approve}
+          {strings.next}
         </button>
       </div>
     </main>

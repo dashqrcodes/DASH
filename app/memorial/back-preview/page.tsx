@@ -110,7 +110,7 @@ export default function MemorialBackPreviewPage() {
       ? {
           preview: "Vista previa",
           cardLabel: 'Tarjeta 4" × 6"',
-          approve: "Aprobar",
+          next: "Siguiente",
           forever: "Por siempre en nuestros corazones",
           sunrise: "Amanecer",
           sunset: "Atardecer",
@@ -119,7 +119,7 @@ export default function MemorialBackPreviewPage() {
       : {
           preview: "Preview",
           cardLabel: '4" × 6" Card',
-          approve: "Approve",
+          next: "Next",
           forever: "Forever in Our Hearts",
           sunrise: "Sunrise",
           sunset: "Sunset",
@@ -137,25 +137,20 @@ export default function MemorialBackPreviewPage() {
       }
 
       try {
-        await Promise.race([
-          supabase.from("memorial_cards").upsert(
-            {
-              slug,
-              memorial_name: memorialName,
-              birth_date: birthDate,
-              death_date: deathDate,
-              counselor_name: counselorName,
-              counselor_phone: counselorPhone,
-              passage_index: passageIndex,
-              body_text: bodyText,
-              body_credit: bodyCredit,
-            },
-            { onConflict: "slug" }
-          ),
-          new Promise((_, reject) => {
-            window.setTimeout(() => reject(new Error("Supabase timeout")), 2000);
-          }),
-        ]);
+        await supabase.from("memorial_cards").upsert(
+          {
+            slug,
+            memorial_name: memorialName,
+            birth_date: birthDate,
+            death_date: deathDate,
+            counselor_name: counselorName,
+            counselor_phone: counselorPhone,
+            passage_index: passageIndex,
+            body_text: bodyText,
+            body_credit: bodyCredit,
+          },
+          { onConflict: "slug" }
+        );
       } catch {
         // Ignore save errors; navigation should not be blocked.
       }
@@ -260,7 +255,7 @@ export default function MemorialBackPreviewPage() {
             onClick={handleApprove}
             className={primaryButtonClass}
           >
-            {strings.approve}
+            {strings.next}
           </button>
           {error && <p className="text-center text-sm text-red-300">{error}</p>}
         </div>

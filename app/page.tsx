@@ -138,7 +138,7 @@ export default function HomePage() {
                 e.preventDefault();
                 setMode("business");
                 setIsTransitioning(true);
-                setTimeout(() => router.push("/start"), 200);
+                router.push("/start");
               }}
               className={`relative z-10 flex-1 rounded-full px-5 py-2 text-center text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 ${
                 mode === "business" ? "text-gray-900" : "text-white/80 hover:text-white"
@@ -152,7 +152,7 @@ export default function HomePage() {
                 e.preventDefault();
                 setMode("consumer");
                 setIsTransitioning(true);
-                setTimeout(() => router.push("/memorial/start"), 200);
+                router.push("/memorial/start");
               }}
               className={`relative z-10 flex-1 rounded-full px-5 py-2 text-center text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 ${
                 mode === "consumer" ? "text-gray-900" : "text-white/80 hover:text-white"

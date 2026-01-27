@@ -20,12 +20,20 @@ export default function PhoneOTP({ onSuccess, redirectTo = '/' }: PhoneOTPProps)
   const [resendCooldown, setResendCooldown] = useState(0);
   const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // Resend cooldown timer
+  // Resend cooldown timer without timeouts
   useEffect(() => {
-    if (resendCooldown > 0) {
-      const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
-      return () => clearTimeout(timer);
-    }
+    if (resendCooldown <= 0) return;
+    let frameId = 0;
+    let lastTick = performance.now();
+    const tick = (now: number) => {
+      if (now - lastTick >= 1000) {
+        lastTick = now;
+        setResendCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+      }
+      frameId = window.requestAnimationFrame(tick);
+    };
+    frameId = window.requestAnimationFrame(tick);
+    return () => window.cancelAnimationFrame(frameId);
   }, [resendCooldown]);
 
   const handlePhoneSubmit = async (e: React.FormEvent) => {
@@ -282,6 +290,7 @@ export default function PhoneOTP({ onSuccess, redirectTo = '/' }: PhoneOTPProps)
               inputMode="numeric"
               maxLength={1}
               value={digit}
+              aria-label={`OTP digit ${index + 1}`}
               onChange={(e) => handleOtpChange(index, e.target.value)}
               onKeyDown={(e) => handleOtpKeyDown(index, e)}
               onPaste={index === 0 ? handleOtpPaste : undefined}

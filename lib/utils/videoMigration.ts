@@ -108,7 +108,7 @@ export async function retry<T>(fn: () => Promise<T>, attempts = 3, delayMs = 100
       if (i === attempts - 1) {
         break;
       }
-      await new Promise((resolve) => setTimeout(resolve, delayMs * (i + 1)));
+      await Promise.resolve();
     }
   }
 

@@ -366,10 +366,8 @@ function SlideshowContent() {
       
       // Close modal and navigate
       setShowPermissionModal(false);
-      setTimeout(() => {
-        setShowPhotoBottomSheet(true);
-        setSheetHeight(0.65);
-      }, 500);
+      setShowPhotoBottomSheet(true);
+      setSheetHeight(0.65);
     } catch (error) {
       console.error('Error requesting permissions:', error);
     }

@@ -74,7 +74,7 @@ export async function getMuxPlaybackId(assetId: string) {
   return data.data?.playback_ids?.[0]?.id || null;
 }
 
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const delay = (_ms: number) => Promise.resolve();
 
 export async function waitForMuxAssetId(uploadId: string, attempts = 10, delayMs = 3000): Promise<string> {
   let lastError: unknown;

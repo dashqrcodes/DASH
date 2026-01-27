@@ -29,7 +29,7 @@ export default function MemorialAcceptPage() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const verifyTimeoutRef = useRef<number | null>(null);
+  const lastVerifyOtpRef = useRef<string>("");
 
   const normalizedPhone = normalizePhone(phone);
   const canSend = Boolean(toE164(normalizedPhone));
@@ -70,15 +70,11 @@ export default function MemorialAcceptPage() {
 
   useEffect(() => {
     if (!canVerify || isVerifying) return;
-    if (verifyTimeoutRef.current) window.clearTimeout(verifyTimeoutRef.current);
-
-    verifyTimeoutRef.current = window.setTimeout(() => {
-      handleVerifyOtp();
-    }, 200);
-
-    return () => {
-      if (verifyTimeoutRef.current) window.clearTimeout(verifyTimeoutRef.current);
-    };
+    const token = otp.trim();
+    if (token.length !== 6) return;
+    if (lastVerifyOtpRef.current === token) return;
+    lastVerifyOtpRef.current = token;
+    handleVerifyOtp();
   }, [canVerify, isVerifying, otp, sentTo]);
 
   const handleSendOtp = async () => {

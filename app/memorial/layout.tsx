@@ -10,8 +10,8 @@ export default function MemorialLayout({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setVisible(false);
-    const timer = setTimeout(() => setVisible(true), 30);
-    return () => clearTimeout(timer);
+    const frame = window.requestAnimationFrame(() => setVisible(true));
+    return () => window.cancelAnimationFrame(frame);
   }, [pathname]);
 
   return (
