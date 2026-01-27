@@ -41,17 +41,19 @@ export default function HeroPreviewPage() {
         const storedBirth = window.sessionStorage.getItem("memorial_birth_date") || "";
         const storedDeath = window.sessionStorage.getItem("memorial_death_date") || "";
         const storedPhoto = window.sessionStorage.getItem("memorial_photo_url") || "";
+        const storedSlug = window.sessionStorage.getItem("memorial_slug") || "";
         if (!pName && storedName) next.fullName = storedName;
         if (!pBirth && storedBirth) next.birthDate = storedBirth;
         if (!pDeath && storedDeath) next.deathDate = storedDeath;
         if (!pPhoto && storedPhoto) next.photoUrl = storedPhoto;
+        if (!pSlug && storedSlug) nextSlug = storedSlug;
       } catch {}
     }
 
     next.qrUrl = nextSlug
       ? `https://quickchart.io/qr?text=${encodeURIComponent(
           `https://dashmemories.com/heaven/${nextSlug}`
-        )}&dark=ffffff&light=00000000&margin=0&size=44`
+        )}&dark=111827&light=ffffff&margin=0&size=160`
       : "";
     setCardData(next);
     setSlug(nextSlug);
@@ -128,23 +130,27 @@ export default function HeroPreviewPage() {
             )}
             <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/35 to-black/70" />
 
-            <div className="absolute inset-0 flex flex-col items-center justify-end px-6 pb-10 text-center text-white drop-shadow-[0_6px_18px_rgba(0,0,0,0.55)] space-y-2">
-              <p className="text-[20px] font-semibold tracking-tight translate-y-4">{cardData.fullName}</p>
+            <div className="absolute inset-0 flex flex-col items-center justify-end px-6 pb-10 text-center text-white drop-shadow-[0_6px_18px_rgba(0,0,0,0.55)] space-y-3">
+              <p className="text-[20px] font-semibold tracking-tight leading-[1.2]">{cardData.fullName}</p>
 
-              <div className="flex w-full items-center justify-center gap-3 text-[6px] font-medium text-white/85">
-                <div className="flex flex-col items-center leading-tight">
-                  <p className="text-[6px] font-semibold text-white/90">{cardData.birthDate}</p>
+              <div className="flex w-full items-center justify-center gap-4 text-[7px] font-medium text-white/85">
+                <div className="flex flex-col items-center leading-[1.3]">
+                  <p className="text-[7px] font-semibold text-white/90 leading-[1.2]">
+                    {cardData.birthDate}
+                  </p>
                   <p className="uppercase tracking-[0.2em] text-white/80 text-center">{strings.sunrise}</p>
                 </div>
                 <div className="flex items-center justify-center">
                   <img
                     src={cardData.qrUrl}
                     alt="Memorial QR"
-                    className="h-5 w-5 shadow-[0_2px_6px_rgba(0,0,0,0.35)]"
+                    className="h-[7.5%] w-[7.5%] min-h-[30px] min-w-[30px] max-h-[36px] max-w-[36px] rounded-md bg-white/95 p-1 shadow-[0_2px_8px_rgba(0,0,0,0.45)]"
                   />
                 </div>
-                <div className="flex flex-col items-center leading-tight">
-                  <p className="text-[7px] font-semibold text-white/90">{cardData.deathDate}</p>
+                <div className="flex flex-col items-center leading-[1.3]">
+                  <p className="text-[7px] font-semibold text-white/90 leading-[1.2]">
+                    {cardData.deathDate}
+                  </p>
                   <p className="uppercase tracking-[0.2em] text-white/80 text-center">{strings.sunset}</p>
                 </div>
               </div>
@@ -163,6 +169,7 @@ export default function HeroPreviewPage() {
                 birthDate ? `birth=${encodeURIComponent(birthDate)}` : "",
                 deathDate ? `death=${encodeURIComponent(deathDate)}` : "",
                 slug ? `slug=${encodeURIComponent(slug)}` : "",
+                cardData.photoUrl ? `photo=${encodeURIComponent(cardData.photoUrl)}` : "",
                 `lang=${currentLang}`,
               ]
                 .filter(Boolean)

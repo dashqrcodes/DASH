@@ -168,7 +168,7 @@ export default function MemorialBackPreviewPage() {
         type="button"
         aria-label="Back"
         className="fixed left-4 top-4 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-white/5 ring-1 ring-white/10 backdrop-blur-xl transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-purple-300/60"
-        onClick={() => router.back()}
+        onClick={() => router.push(`/memorial/card-front${buildQueryString()}`)}
       >
         ←
       </button>
@@ -230,7 +230,7 @@ export default function MemorialBackPreviewPage() {
                         `https://dashmemories.com/heaven/${slug}`
                       )}&dark=4b0082&light=00000000&margin=0&size=240`}
                       alt="Memorial QR"
-                      className="h-[60px] w-[60px] shadow-[0_4px_10px_rgba(88,28,135,0.25)]"
+                    className="h-[18.75%] w-[18.75%] min-h-[48px] min-w-[48px] max-h-[64px] max-w-[64px] shadow-[0_4px_10px_rgba(88,28,135,0.25)]"
                     />
                   </div>
                   <div className="flex-1 text-center flex flex-col items-center justify-center gap-1 leading-tight">

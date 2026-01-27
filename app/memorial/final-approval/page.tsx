@@ -17,6 +17,7 @@ export default function FinalApprovalPage() {
   const birth = searchParams?.get("birth");
   const death = searchParams?.get("death");
   const slug = searchParams?.get("slug");
+  const photo = searchParams?.get("photo");
 
   const buildParams = () => {
     const parts = [
@@ -24,6 +25,7 @@ export default function FinalApprovalPage() {
       birth ? `birth=${encodeURIComponent(birth)}` : "",
       death ? `death=${encodeURIComponent(death)}` : "",
       slug ? `slug=${encodeURIComponent(slug)}` : "",
+      photo ? `photo=${encodeURIComponent(photo)}` : "",
       `lang=${currentLang}`,
     ].filter(Boolean);
     return parts.length ? `?${parts.join("&")}` : "";
@@ -61,7 +63,7 @@ export default function FinalApprovalPage() {
           <button
             type="button"
             className={changeButtonClass + " w-full"}
-            onClick={() => router.back()}
+            onClick={() => router.push(`/memorial/hero-preview${buildParams()}`)}
           >
             {strings.change}
           </button>

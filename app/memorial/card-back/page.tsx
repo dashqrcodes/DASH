@@ -159,7 +159,7 @@ export default function MemorialCardBackPage() {
                         `https://dashmemories.com/heaven/${slug}`
                       )}&dark=4b0082&light=00000000&margin=0&size=240`}
                       alt="Memorial QR"
-                      className="h-16 w-16 bg-white ring-1 ring-gray-300 shadow-md"
+                    className="h-[18.75%] w-[18.75%] min-h-[48px] min-w-[48px] max-h-[64px] max-w-[64px] bg-white ring-1 ring-gray-300 shadow-md"
                     />
                   </div>
                   <div className="text-right">
