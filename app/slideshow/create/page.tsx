@@ -72,6 +72,15 @@ export default function SlideshowCreatePage() {
     setCurrentIndex(0);
   };
 
+  const handleBack = () => {
+    const qs = searchParams?.toString() || "";
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+      return;
+    }
+    router.push(qs ? `/memorial/order/success?${qs}` : "/memorial/order/success");
+  };
+
   return (
     <main className="relative min-h-screen bg-[#0b0b0d] text-white">
       {/* Floating stars */}
@@ -96,7 +105,7 @@ export default function SlideshowCreatePage() {
             type="button"
             aria-label="Back"
             className="flex h-10 w-10 items-center justify-center rounded-full bg-white/5 ring-1 ring-white/10 backdrop-blur-xl transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-purple-300/60"
-            onClick={() => router.back()}
+            onClick={handleBack}
           >
             ←
           </button>
