@@ -24,6 +24,7 @@ export default function SlideshowCreatePage() {
           addMusic: "+ Música",
           addPhotos: "+ Fotos",
           uploadLimit: "Límite de carga total 500MB.",
+          maxPhotos: "Máximo 250 fotos por ahora.",
           play: "Reproducir",
           pause: "Pausar",
           empty: "Selecciona fotos para iniciar el playback.",
@@ -32,6 +33,7 @@ export default function SlideshowCreatePage() {
           addMusic: "+ Music",
           addPhotos: "+ Photos",
           uploadLimit: "Max total upload 500MB.",
+          maxPhotos: "Maximum 250 photos for now.",
           play: "Play",
           pause: "Pause",
           empty: "Select photos to start playback.",
@@ -53,6 +55,11 @@ export default function SlideshowCreatePage() {
 
   const handleFiles = (files: FileList | null) => {
     if (!files || files.length === 0) return;
+    const maxPhotos = 250;
+    if (files.length > maxPhotos) {
+      setUploadError(strings.maxPhotos);
+      return;
+    }
     const maxBytes = 500 * 1024 * 1024;
     const totalBytes = Array.from(files).reduce((sum, file) => sum + file.size, 0);
     if (totalBytes > maxBytes) {
