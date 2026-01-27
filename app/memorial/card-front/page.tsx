@@ -41,6 +41,8 @@ export default function MemorialPreviewPage() {
 
   useEffect(() => {
     router.prefetch("/memorial/back-preview");
+    const image = new Image();
+    image.src = "/sky background rear.jpg";
   }, [router]);
 
   const strings =

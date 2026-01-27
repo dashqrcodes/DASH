@@ -265,7 +265,7 @@ export default function MemorialDetailsPage() {
           <img
             src={photoUrl}
             alt=""
-            className="h-full w-full object-cover"
+            className="h-full w-full object-cover pointer-events-none"
             aria-hidden="true"
           />
         ) : (
@@ -306,7 +306,10 @@ export default function MemorialDetailsPage() {
       </div>
 
       <div className="relative mx-auto flex min-h-screen w-full max-w-md flex-col px-6 pb-28 pt-[56vh]">
-        <label htmlFor="memorial-photo" className="absolute inset-x-0 top-0 h-[56vh] min-h-[340px]">
+        <label
+          htmlFor="memorial-photo"
+          className="absolute inset-x-0 top-0 h-[56vh] min-h-[340px] z-20 cursor-pointer"
+        >
           <input
             id="memorial-photo"
             name="memorial-photo"

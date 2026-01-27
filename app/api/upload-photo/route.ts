@@ -56,18 +56,13 @@ export async function POST(req: Request) {
     let fileExt = normalizedExt || 'jpg';
     let contentType = file.type || 'image/jpeg';
 
-    if (isHeic) {
-      if (
-        !process.env.CLOUDINARY_CLOUD_NAME ||
-        !process.env.CLOUDINARY_API_KEY ||
-        !process.env.CLOUDINARY_API_SECRET
-      ) {
-        return NextResponse.json(
-          { error: 'Cloudinary is not configured for HEIC uploads.' },
-          { status: 500 },
-        );
-      }
+    const cloudinaryConfigured = Boolean(
+      process.env.CLOUDINARY_CLOUD_NAME &&
+        process.env.CLOUDINARY_API_KEY &&
+        process.env.CLOUDINARY_API_SECRET
+    );
 
+    if (cloudinaryConfigured) {
       try {
         const cloudinaryUrl = await new Promise<string>((resolve, reject) => {
           const stream = cloudinary.uploader.upload_stream(
@@ -94,16 +89,23 @@ export async function POST(req: Request) {
 
         return NextResponse.json({ photoUrl: cloudinaryUrl, accentColor: '#ffffff' });
       } catch (cloudinaryError: any) {
-        console.error('Cloudinary HEIC upload failed', cloudinaryError);
+        console.error('Cloudinary upload failed', cloudinaryError);
         const message =
           cloudinaryError?.message ||
           cloudinaryError?.error?.message ||
-          'Unable to convert HEIC photo. Please try a JPG or PNG.';
+          'Unable to upload photo. Please try again.';
         return NextResponse.json(
           { error: message },
           { status: 422 },
         );
       }
+    }
+
+    if (isHeic) {
+      return NextResponse.json(
+        { error: 'Cloudinary is not configured for HEIC uploads.' },
+        { status: 500 },
+      );
     }
 
     const filePath = `drafts/${slug}.${fileExt}`;
