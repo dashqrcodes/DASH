@@ -39,6 +39,10 @@ export default function MemorialPreviewPage() {
     }
   }, [searchParams]);
 
+  useEffect(() => {
+    router.prefetch("/memorial/back-preview");
+  }, [router]);
+
   const strings =
     currentLang === "es"
       ? {

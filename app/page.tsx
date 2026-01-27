@@ -44,6 +44,11 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
+    router.prefetch("/start");
+    router.prefetch("/memorial/start");
+  }, [router]);
+
+  useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
     audio.muted = muted;

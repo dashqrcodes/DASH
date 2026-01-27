@@ -1,6 +1,7 @@
 "use client";
 export const dynamic = "force-dynamic";
 
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 const approveButtonClass =
@@ -18,6 +19,11 @@ export default function FinalApprovalPage() {
   const death = searchParams?.get("death");
   const slug = searchParams?.get("slug");
   const photo = searchParams?.get("photo");
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    router.prefetch("/memorial/order/success");
+  }, [router]);
 
   const buildParams = () => {
     const parts = [
@@ -38,13 +44,47 @@ export default function FinalApprovalPage() {
           body: "Revisa tu pedido antes de aprobar. Después de la aprobación, las impresiones son finales.",
           change: "Cambiar",
           approve: "Aprobar",
+          saving: "Guardando...",
         }
       : {
           title: "Final approval",
           body: "Review your order before approving. After approval, print orders are final.",
           change: "Change",
           approve: "Approve",
+          saving: "Saving...",
         };
+
+  const handleApprove = () => {
+    setIsSaving(true);
+
+    const getStoredValue = (key: string) => {
+      try {
+        return window.sessionStorage.getItem(key) || "";
+      } catch {
+        return "";
+      }
+    };
+
+    const effectiveSlug = slug || getStoredValue("memorial_slug");
+    const effectivePhoto = photo || getStoredValue("memorial_photo_url");
+    const qrUrl = effectiveSlug ? `https://dashmemories.com/heaven/${effectiveSlug}` : "";
+
+    if (effectiveSlug && effectivePhoto && qrUrl) {
+      void fetch("/api/generate-print-pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug: effectiveSlug,
+          photoUrl: effectivePhoto,
+          qrUrl,
+        }),
+      }).catch(() => {
+        // Ignore; PDF generation should not block navigation.
+      });
+    }
+
+    router.push(`/memorial/order/success${buildParams()}`);
+  };
 
   return (
     <main className="relative min-h-screen bg-[#0b0b0d] text-white">
@@ -70,9 +110,9 @@ export default function FinalApprovalPage() {
           <button
             type="button"
             className={approveButtonClass + " w-full"}
-            onClick={() => router.push(`/order/success${buildParams()}`)}
+            onClick={handleApprove}
           >
-            {strings.approve}
+            {isSaving ? strings.saving : strings.approve}
           </button>
         </div>
       </div>

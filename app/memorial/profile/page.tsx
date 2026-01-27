@@ -107,6 +107,10 @@ export default function MemorialDetailsPage() {
   }, []);
 
   useEffect(() => {
+    router.prefetch("/memorial/card-front");
+  }, [router]);
+
+  useEffect(() => {
     const paramsName = searchParams?.get("name") || "";
     const paramsBirth = searchParams?.get("birth") || "";
     const paramsDeath = searchParams?.get("death") || "";

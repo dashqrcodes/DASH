@@ -91,6 +91,10 @@ export default function MemorialBackPreviewPage() {
     }
   }, [searchParams]);
 
+  useEffect(() => {
+    router.prefetch("/memorial/hero-preview");
+  }, [router]);
+
   const buildQueryString = () => {
     const params = new URLSearchParams();
     if (memorialName) params.set("name", memorialName);
@@ -113,6 +117,7 @@ export default function MemorialBackPreviewPage() {
           sunrise: "Amanecer",
           sunset: "Atardecer",
           honoring: "Honrando a tu ser querido con dignidad y respeto.",
+          qrNote: "El QR se activa con la aprobacion final de impresion.",
         }
       : {
           preview: "Preview",
@@ -123,42 +128,46 @@ export default function MemorialBackPreviewPage() {
           sunrise: "Sunrise",
           sunset: "Sunset",
           honoring: "Honoring your loved one with dignity and respect.",
+          qrNote: "QR activates on final print approval.",
         };
 
-  const handleApprove = async () => {
+  const handleApprove = () => {
     setSaving(true);
     setError(null);
-    let supabase;
+    const saveToSupabase = async () => {
+      let supabase;
+      try {
+        supabase = getSupabaseClient();
+      } catch {
+        return;
+      }
 
-    try {
-      supabase = getSupabaseClient();
-    } catch {
-      setError("Supabase is not configured. Continuing without saving.");
-      router.push(`/memorial/hero-preview${buildQueryString()}`);
-      return;
-    }
+      try {
+        await Promise.race([
+          supabase.from("memorial_cards").upsert(
+            {
+              slug,
+              memorial_name: memorialName,
+              birth_date: birthDate,
+              death_date: deathDate,
+              counselor_name: counselorName,
+              counselor_phone: counselorPhone,
+              passage_index: passageIndex,
+              body_text: bodyText,
+              body_credit: bodyCredit,
+            },
+            { onConflict: "slug" }
+          ),
+          new Promise((_, reject) => {
+            window.setTimeout(() => reject(new Error("Supabase timeout")), 2000);
+          }),
+        ]);
+      } catch {
+        // Ignore save errors; navigation should not be blocked.
+      }
+    };
 
-    const { error: supabaseError } = await supabase
-      .from("memorial_cards")
-      .upsert(
-        {
-          slug,
-          memorial_name: memorialName,
-          birth_date: birthDate,
-          death_date: deathDate,
-          counselor_name: counselorName,
-          counselor_phone: counselorPhone,
-          passage_index: passageIndex,
-          body_text: bodyText,
-          body_credit: bodyCredit,
-        },
-        { onConflict: "slug" }
-      );
-
-    if (supabaseError) {
-      setError("Unable to save to Supabase right now. Continuing in review mode.");
-    }
-
+    void saveToSupabase();
     router.push(`/memorial/hero-preview${buildQueryString()}`);
   };
 
@@ -224,14 +233,15 @@ export default function MemorialBackPreviewPage() {
                       {strings.sunrise}
                     </p>
                   </div>
-                  <div className="flex items-center justify-center">
+                  <div className="flex flex-col items-center justify-center gap-1">
                     <img
-                      src={`https://quickchart.io/qr?text=${encodeURIComponent(
-                        `https://dashmemories.com/heaven/${slug}`
-                      )}&dark=4b0082&light=00000000&margin=0&size=240`}
-                      alt="Memorial QR"
-                    className="h-[18.75%] w-[18.75%] min-h-[48px] min-w-[48px] max-h-[64px] max-w-[64px] shadow-[0_4px_10px_rgba(88,28,135,0.25)]"
+                      src="/qr-placeholder.svg"
+                      alt="QR placeholder"
+                      className="h-[18.75%] w-[18.75%] min-h-[48px] min-w-[48px] max-h-[64px] max-w-[64px] shadow-[0_4px_10px_rgba(88,28,135,0.25)]"
                     />
+                    <p className="text-[9px] text-purple-800 text-center max-w-[110px] leading-tight">
+                      {strings.qrNote}
+                    </p>
                   </div>
                   <div className="flex-1 text-center flex flex-col items-center justify-center gap-1 leading-tight">
                     <p className="text-[12px] font-semibold text-purple-900 whitespace-nowrap">{displayDeathDate}</p>

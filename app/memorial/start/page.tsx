@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 const primaryButtonClass =
@@ -10,6 +11,10 @@ const cardClass =
 
 export default function MemorialStartPage() {
   const router = useRouter();
+
+  useEffect(() => {
+    router.prefetch("/memorial/profile");
+  }, [router]);
 
   return (
     <main className="min-h-screen bg-white text-gray-900">
