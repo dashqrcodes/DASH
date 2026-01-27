@@ -25,7 +25,17 @@ const slugify = (value: string) =>
     .replace(/-+/g, "-")
     .replace(/^-+|-+$/g, "");
 
-const formatDateInput = (value: string) => value;
+const formatDateInput = (value: string) => {
+  let next = value.replace(/[^a-zA-Z0-9\s,ÁÉÍÓÚÑáéíóúñ]/g, "");
+  next = next.replace(/\s+/g, " ");
+  next = next.replace(/^([A-Za-zÁÉÍÓÚÑáéíóúñ]+)(\d)/, "$1 $2");
+  next = next.replace(
+    /^([A-Za-zÁÉÍÓÚÑáéíóúñ]+)\s+(\d{1,2})\s*(\d{1,4})/,
+    "$1 $2, $3"
+  );
+  next = next.replace(/,\s*,+/g, ", ");
+  return next;
+};
 
 const formatDateOnBlur = (value: string) => {
   const cleaned = value.replace(/[^a-zA-Z0-9\s,]/g, " ");
