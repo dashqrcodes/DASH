@@ -88,7 +88,6 @@ export default function HeroPreviewPage() {
           sunrise: "Amanecer",
           sunset: "Atardecer",
           approve: "Aprobar",
-          qrNote: "El QR se activa con la aprobacion final de impresion.",
         }
       : {
           preview: "Preview",
@@ -96,7 +95,6 @@ export default function HeroPreviewPage() {
           sunrise: "Sunrise",
           sunset: "Sunset",
           approve: "Approve",
-          qrNote: "QR activates on final print approval.",
         };
 
   return (
@@ -146,15 +144,12 @@ export default function HeroPreviewPage() {
                   </p>
                   <p className="uppercase tracking-[0.2em] text-white/80 text-center">{strings.sunrise}</p>
                 </div>
-                <div className="flex flex-col items-center justify-center gap-1">
+                <div className="flex items-center justify-center">
                   <img
                     src="/qr-placeholder.svg"
                     alt="QR placeholder"
                     className="h-[7.5%] w-[7.5%] min-h-[30px] min-w-[30px] max-h-[36px] max-w-[36px] rounded-md bg-white/95 p-1 shadow-[0_2px_8px_rgba(0,0,0,0.45)]"
                   />
-                  <p className="text-[6px] text-white/80 text-center max-w-[70px] leading-tight">
-                    {strings.qrNote}
-                  </p>
                 </div>
                 <div className="flex flex-col items-center leading-[1.3]">
                   <p className="text-[7px] font-semibold text-white/90 leading-[1.2]">

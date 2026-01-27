@@ -64,7 +64,6 @@ export default function MemorialBackPreviewPage() {
   const [deathDate, setDeathDate] = useState(searchParams?.get("death") || "");
   const slug = searchParams?.get("slug") || "";
   const [passageIndex, setPassageIndex] = useState(0);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const bodyText = passages[passageIndex].text;
   const bodyCredit = passages[passageIndex].credit;
@@ -112,27 +111,22 @@ export default function MemorialBackPreviewPage() {
           preview: "Vista previa",
           cardLabel: 'Tarjeta 4" × 6"',
           approve: "Aprobar",
-          saving: "Guardando...",
           forever: "Por siempre en nuestros corazones",
           sunrise: "Amanecer",
           sunset: "Atardecer",
           honoring: "Honrando a tu ser querido con dignidad y respeto.",
-          qrNote: "El QR se activa con la aprobacion final de impresion.",
         }
       : {
           preview: "Preview",
           cardLabel: '4" × 6" Card',
           approve: "Approve",
-          saving: "Saving...",
           forever: "Forever in Our Hearts",
           sunrise: "Sunrise",
           sunset: "Sunset",
           honoring: "Honoring your loved one with dignity and respect.",
-          qrNote: "QR activates on final print approval.",
         };
 
   const handleApprove = () => {
-    setSaving(true);
     setError(null);
     const saveToSupabase = async () => {
       let supabase;
@@ -233,15 +227,12 @@ export default function MemorialBackPreviewPage() {
                       {strings.sunrise}
                     </p>
                   </div>
-                  <div className="flex flex-col items-center justify-center gap-1">
+                  <div className="flex items-center justify-center">
                     <img
                       src="/qr-placeholder.svg"
                       alt="QR placeholder"
                       className="h-[18.75%] w-[18.75%] min-h-[48px] min-w-[48px] max-h-[64px] max-w-[64px] shadow-[0_4px_10px_rgba(88,28,135,0.25)]"
                     />
-                    <p className="text-[9px] text-purple-800 text-center max-w-[110px] leading-tight">
-                      {strings.qrNote}
-                    </p>
                   </div>
                   <div className="flex-1 text-center flex flex-col items-center justify-center gap-1 leading-tight">
                     <p className="text-[12px] font-semibold text-purple-900 whitespace-nowrap">{displayDeathDate}</p>
@@ -267,10 +258,9 @@ export default function MemorialBackPreviewPage() {
           <button
             type="button"
             onClick={handleApprove}
-            disabled={saving}
-            className={`${primaryButtonClass} ${saving ? "opacity-80" : ""}`}
+            className={primaryButtonClass}
           >
-            {saving ? strings.saving : strings.approve}
+            {strings.approve}
           </button>
           {error && <p className="text-center text-sm text-red-300">{error}</p>}
         </div>

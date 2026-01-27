@@ -167,7 +167,7 @@ export default function MemorialDetailsPage() {
           sunset: "Atardecer",
           datePlaceholder: "Mes dd, aaaa",
           next: "Siguiente",
-          uploading: "Convirtiendo foto...",
+          uploading: "Subiendo foto...",
           uploadFailed: "No se pudo subir la foto. Intenta de nuevo.",
           missingFields: "Completa nombre y fechas antes de continuar.",
         }
@@ -179,7 +179,7 @@ export default function MemorialDetailsPage() {
           sunset: "Sunset",
           datePlaceholder: "Month dd, yyyy",
           next: "Next",
-          uploading: "Converting photo...",
+          uploading: "Uploading photo...",
           uploadFailed: "Could not upload the photo. Please try again.",
           missingFields: "Please add name and dates before continuing.",
         };
@@ -202,14 +202,11 @@ export default function MemorialDetailsPage() {
 
     setPhotoError(null);
 
-    if (!isHeic) {
-      const url = URL.createObjectURL(file);
-      setPhotoUrl(url);
-      try {
-        window.sessionStorage.setItem("memorial_photo_url", url);
-      } catch {}
-      return;
-    }
+    const previewUrl = URL.createObjectURL(file);
+    setPhotoUrl(previewUrl);
+    try {
+      window.sessionStorage.setItem("memorial_photo_url", previewUrl);
+    } catch {}
 
     setUploadingPhoto(true);
     const formData = new FormData();
@@ -244,6 +241,8 @@ export default function MemorialDetailsPage() {
           try {
             window.sessionStorage.setItem("memorial_photo_url", json.photoUrl);
           } catch {}
+        } else if (!isHeic) {
+          setPhotoError(strings.uploadFailed);
         }
       })
       .catch((error) => {
