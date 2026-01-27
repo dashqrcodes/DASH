@@ -25,15 +25,6 @@ const slugify = (value: string) =>
     .replace(/-+/g, "-")
     .replace(/^-+|-+$/g, "");
 
-const slugify = (value: string) =>
-  value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-+|-+$/g, "");
-
 const formatDateInput = (value: string) => value;
 
 const formatDateOnBlur = (value: string) => {
