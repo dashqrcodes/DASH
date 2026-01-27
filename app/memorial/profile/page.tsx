@@ -16,6 +16,15 @@ const toTitleCase = (value: string) =>
     .replace(/\s+/g, " ")
     .replace(/\b\w/g, (char) => char.toUpperCase());
 
+const slugify = (value: string) =>
+  value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
 const formatDateInput = (value: string) => value;
 
 const formatDateOnBlur = (value: string) => {
@@ -318,6 +327,10 @@ export default function MemorialDetailsPage() {
                 const value = event.target.value;
                 setFullName(value);
                 setFormError(null);
+                const nextSlug = slugify(value);
+                try {
+                  window.sessionStorage.setItem("memorial_slug", nextSlug);
+                } catch {}
                 try {
                   window.sessionStorage.setItem("memorial_full_name", value);
                 } catch {}
@@ -431,12 +444,15 @@ export default function MemorialDetailsPage() {
                 setFormError(strings.missingFields);
                 return;
               }
+              const computedSlug = slugify(fullName);
               router.push(
                 `/memorial/card-front?lang=${currentLang}${
                   fullName ? `&name=${encodeURIComponent(fullName)}` : ""
                 }${sunrise ? `&birth=${encodeURIComponent(sunrise)}` : ""}${
                   sunset ? `&death=${encodeURIComponent(sunset)}` : ""
-                }${photoUrl ? `&photo=${encodeURIComponent(photoUrl)}` : ""}`
+                }${computedSlug ? `&slug=${encodeURIComponent(computedSlug)}` : ""}${
+                  photoUrl ? `&photo=${encodeURIComponent(photoUrl)}` : ""
+                }`
               );
             }}
             className={primaryButtonClass}
