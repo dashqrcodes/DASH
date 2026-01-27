@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import QRCode from "qrcode";
 import { getSupabaseClient } from "../../../utils/supabaseClient";
 
 const primaryButtonClass =
@@ -65,6 +66,7 @@ export default function MemorialBackPreviewPage() {
   const slug = searchParams?.get("slug") || "";
   const [passageIndex, setPassageIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [qrPreviewUrl, setQrPreviewUrl] = useState<string>("");
   const bodyText = passages[passageIndex].text;
   const bodyCredit = passages[passageIndex].credit;
   const displayBirthDate = formatShortMonth(birthDate);
@@ -93,6 +95,23 @@ export default function MemorialBackPreviewPage() {
   useEffect(() => {
     router.prefetch("/memorial/hero-preview");
   }, [router]);
+
+  useEffect(() => {
+    const buildPreviewQr = async () => {
+      try {
+        const dataUrl = await QRCode.toDataURL("dashmemories:preview", {
+          width: 240,
+          margin: 1,
+          color: { dark: "#000000", light: "#FFFFFF" },
+          errorCorrectionLevel: "H",
+        });
+        setQrPreviewUrl(dataUrl);
+      } catch {
+        setQrPreviewUrl("");
+      }
+    };
+    buildPreviewQr();
+  }, []);
 
   const buildQueryString = () => {
     const params = new URLSearchParams();
@@ -224,8 +243,8 @@ export default function MemorialBackPreviewPage() {
                   </div>
                   <div className="flex items-center justify-center">
                     <img
-                      src="/qr-placeholder.svg"
-                      alt="QR placeholder"
+                      src={qrPreviewUrl || "/qr-placeholder.svg"}
+                      alt="QR preview"
                       className="h-[18.75%] w-[18.75%] min-h-[48px] min-w-[48px] max-h-[64px] max-w-[64px] shadow-[0_4px_10px_rgba(88,28,135,0.25)]"
                     />
                   </div>

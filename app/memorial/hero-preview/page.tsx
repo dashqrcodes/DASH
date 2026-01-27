@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import QRCode from "qrcode";
 
 const primaryButtonClass =
   "h-12 w-full rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-500 text-base font-semibold text-white shadow-[0_12px_32px_rgba(99,102,241,0.35)] transition duration-200 hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-purple-300/60";
@@ -20,6 +21,7 @@ export default function HeroPreviewPage() {
     photoUrl: "",
   });
   const [slug, setSlug] = useState("");
+  const [qrPreviewUrl, setQrPreviewUrl] = useState<string>("");
 
   useEffect(() => {
     let next = { ...cardData };
@@ -50,11 +52,6 @@ export default function HeroPreviewPage() {
       } catch {}
     }
 
-    next.qrUrl = nextSlug
-      ? `https://quickchart.io/qr?text=${encodeURIComponent(
-          `https://dashmemories.com/heaven/${nextSlug}`
-        )}&dark=111827&light=ffffff&margin=0&size=160`
-      : "";
     setCardData(next);
     setSlug(nextSlug);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -63,6 +60,23 @@ export default function HeroPreviewPage() {
   useEffect(() => {
     router.prefetch("/memorial/final-approval");
   }, [router]);
+
+  useEffect(() => {
+    const buildPreviewQr = async () => {
+      try {
+        const dataUrl = await QRCode.toDataURL("dashmemories:preview", {
+          width: 240,
+          margin: 1,
+          color: { dark: "#000000", light: "#FFFFFF" },
+          errorCorrectionLevel: "H",
+        });
+        setQrPreviewUrl(dataUrl);
+      } catch {
+        setQrPreviewUrl("");
+      }
+    };
+    buildPreviewQr();
+  }, []);
 
   const memorialName = cardData.fullName;
   const birthDate = cardData.birthDate;
@@ -146,8 +160,8 @@ export default function HeroPreviewPage() {
                 </div>
                 <div className="flex items-center justify-center">
                   <img
-                    src="/qr-placeholder.svg"
-                    alt="QR placeholder"
+                    src={qrPreviewUrl || "/qr-placeholder.svg"}
+                    alt="QR preview"
                     className="h-[7.5%] w-[7.5%] min-h-[30px] min-w-[30px] max-h-[36px] max-w-[36px] rounded-md bg-white/95 p-1 shadow-[0_2px_8px_rgba(0,0,0,0.45)]"
                   />
                 </div>
