@@ -3,7 +3,6 @@ export const dynamic = "force-dynamic";
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import QRCode from "qrcode";
 import { buildCloudinaryFaceCropUrl } from "@/lib/utils/cloudinary";
 
 const primaryButtonClass =
@@ -22,7 +21,6 @@ export default function HeroPreviewPage() {
     photoUrl: "",
   });
   const [slug, setSlug] = useState("");
-  const [qrPreviewUrl, setQrPreviewUrl] = useState<string>("");
 
   useEffect(() => {
     let next = { ...cardData };
@@ -61,23 +59,6 @@ export default function HeroPreviewPage() {
   useEffect(() => {
     router.prefetch("/memorial/final-approval");
   }, [router]);
-
-  useEffect(() => {
-    const buildPreviewQr = async () => {
-      try {
-        const dataUrl = await QRCode.toDataURL("dashmemories:preview", {
-          width: 240,
-          margin: 1,
-          color: { dark: "#000000", light: "#FFFFFF" },
-          errorCorrectionLevel: "H",
-        });
-        setQrPreviewUrl(dataUrl);
-      } catch {
-        setQrPreviewUrl("");
-      }
-    };
-    buildPreviewQr();
-  }, []);
 
   const memorialName = cardData.fullName;
   const birthDate = cardData.birthDate;
@@ -166,9 +147,9 @@ export default function HeroPreviewPage() {
                 </div>
                 <div className="flex items-center justify-center">
                   <img
-                    src={qrPreviewUrl || "/qr-placeholder.svg"}
+                    src="/qr-dark-purple.svg"
                     alt="QR preview"
-                    className="h-[7.5%] w-[7.5%] min-h-[30px] min-w-[30px] max-h-[36px] max-w-[36px] rounded-md bg-white/95 p-1 shadow-[0_2px_8px_rgba(0,0,0,0.45)]"
+                    className="h-[7.5%] w-[7.5%] min-h-[30px] min-w-[30px] max-h-[36px] max-w-[36px] drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)]"
                   />
                 </div>
                 <div className="flex flex-col items-center leading-[1.3]">
