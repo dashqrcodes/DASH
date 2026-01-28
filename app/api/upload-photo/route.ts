@@ -118,6 +118,17 @@ export async function POST(req: Request) {
       });
 
     if (uploadError) {
+      const message = uploadError?.message || '';
+      const isMissingBucket =
+        message.toLowerCase().includes('bucket') && message.toLowerCase().includes('not found');
+      if (isMissingBucket) {
+        const dataUrl = `data:${contentType};base64,${uploadBuffer.toString('base64')}`;
+        return NextResponse.json({
+          photoUrl: dataUrl,
+          accentColor: '#ffffff',
+          warning: 'Storage bucket not found. Using temporary photo URL.',
+        });
+      }
       console.error('Photo upload failed', uploadError);
       throw uploadError;
     }

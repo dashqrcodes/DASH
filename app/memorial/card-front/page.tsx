@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { buildCloudinaryFaceCropUrl } from "@/lib/utils/cloudinary";
 
 const primaryButtonClass =
   "h-12 w-full rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-500 text-base font-semibold text-white shadow-[0_12px_32px_rgba(99,102,241,0.35)] transition duration-200 hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-purple-300/60";
@@ -15,26 +16,33 @@ export default function MemorialPreviewPage() {
   const [fullName, setFullName] = useState(searchParams?.get("name")?.trim() || "");
   const [birthDate, setBirthDate] = useState(searchParams?.get("birth")?.trim() || "");
   const [deathDate, setDeathDate] = useState(searchParams?.get("death")?.trim() || "");
-  const photoUrl = searchParams?.get("photo") || "";
+  const [photoUrl, setPhotoUrl] = useState(searchParams?.get("photo") || "");
   const slug = searchParams?.get("slug") || "";
+  const previewPhotoUrl = photoUrl
+    ? buildCloudinaryFaceCropUrl(photoUrl, { aspectRatio: "2:3", width: 1200 })
+    : "";
 
   useEffect(() => {
     const name = searchParams?.get("name")?.trim() || "";
     const birth = searchParams?.get("birth")?.trim() || "";
     const death = searchParams?.get("death")?.trim() || "";
+    const photo = searchParams?.get("photo") || "";
 
     if (name) setFullName(name);
     if (birth) setBirthDate(birth);
     if (death) setDeathDate(death);
+    if (photo) setPhotoUrl(photo);
 
-    if (!name || !birth || !death) {
+    if (!name || !birth || !death || !photo) {
       try {
         const storedName = window.sessionStorage.getItem("memorial_full_name") || "";
         const storedBirth = window.sessionStorage.getItem("memorial_birth_date") || "";
         const storedDeath = window.sessionStorage.getItem("memorial_death_date") || "";
+        const storedPhoto = window.sessionStorage.getItem("memorial_photo_url") || "";
         if (!name && storedName) setFullName(storedName);
         if (!birth && storedBirth) setBirthDate(storedBirth);
         if (!death && storedDeath) setDeathDate(storedDeath);
+        if (!photo && storedPhoto) setPhotoUrl(storedPhoto);
       } catch {}
     }
   }, [searchParams]);
@@ -80,7 +88,11 @@ export default function MemorialPreviewPage() {
                   fullName ? `&name=${encodeURIComponent(fullName)}` : ""
                 }${birthDate ? `&birth=${encodeURIComponent(birthDate)}` : ""}${
                   deathDate ? `&death=${encodeURIComponent(deathDate)}` : ""
-                }${photoUrl ? `&photo=${encodeURIComponent(photoUrl)}` : ""}`
+                }${
+                  photoUrl && !photoUrl.startsWith("data:") && !photoUrl.startsWith("blob:")
+                    ? `&photo=${encodeURIComponent(photoUrl)}`
+                    : ""
+                }`
               )
             }
           >
@@ -96,10 +108,17 @@ export default function MemorialPreviewPage() {
         {/* Card Preview */}
         <div className="flex flex-1 items-center justify-center">
           <div className="relative aspect-[2/3] w-full max-w-[320px] bg-white shadow-[0_18px_40px_rgba(0,0,0,0.45)] ring-1 ring-black/10 overflow-hidden">
-            <div
-              className="absolute inset-0 bg-cover bg-center"
-              style={{ backgroundImage: photoUrl ? `url(${photoUrl})` : undefined }}
-            />
+            {photoUrl && (
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={previewPhotoUrl}
+                  alt=""
+                  className="absolute inset-0 h-full w-full object-cover"
+                  aria-hidden="true"
+                />
+              </>
+            )}
             <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/25 to-black/65" />
             <div className="absolute inset-0 flex items-end justify-center pb-10 px-6 text-center text-white drop-shadow-[0_6px_18px_rgba(0,0,0,0.55)]">
               <div className="space-y-2">
@@ -124,7 +143,9 @@ export default function MemorialPreviewPage() {
                   birthDate ? `birth=${encodeURIComponent(birthDate)}` : "",
                   deathDate ? `death=${encodeURIComponent(deathDate)}` : "",
                   slug ? `slug=${encodeURIComponent(slug)}` : "",
-                  photoUrl ? `photo=${encodeURIComponent(photoUrl)}` : "",
+                  photoUrl && !photoUrl.startsWith("data:") && !photoUrl.startsWith("blob:")
+                    ? `photo=${encodeURIComponent(photoUrl)}`
+                    : "",
                   `lang=${currentLang}`,
                 ]
                   .filter(Boolean)

@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { buildCloudinaryFaceCropUrl } from "@/lib/utils/cloudinary";
 
 const primaryButtonClass =
   "h-12 w-full rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-500 text-base font-semibold text-white shadow-[0_12px_32px_rgba(99,102,241,0.35)] transition duration-200 hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-purple-300/60";
@@ -111,6 +112,9 @@ export default function MemorialDetailsPage() {
   const [mounted, setMounted] = useState(false);
 
   const currentLang = searchParams?.get("lang") === "es" ? "es" : "en";
+  const previewPhotoUrl = photoUrl
+    ? buildCloudinaryFaceCropUrl(photoUrl, { aspectRatio: "2:3", width: 1200 })
+    : "";
 
   useEffect(() => {
     setMounted(true);
@@ -271,13 +275,15 @@ export default function MemorialDetailsPage() {
     >
       <div className="absolute inset-x-0 top-0 h-[56vh] min-h-[340px] overflow-hidden">
         {photoUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={photoUrl}
-            alt=""
-            className="h-full w-full object-cover pointer-events-none"
-            aria-hidden="true"
-          />
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={previewPhotoUrl}
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover pointer-events-none"
+              aria-hidden="true"
+            />
+          </>
         ) : (
           <div className="h-full w-full bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.06),_transparent_60%)]" />
         )}
@@ -461,13 +467,17 @@ export default function MemorialDetailsPage() {
                 return;
               }
               const computedSlug = slugify(fullName);
+              const shouldIncludePhoto =
+                photoUrl &&
+                !photoUrl.startsWith("data:") &&
+                !photoUrl.startsWith("blob:");
               router.push(
                 `/memorial/card-front?lang=${currentLang}${
                   fullName ? `&name=${encodeURIComponent(fullName)}` : ""
                 }${sunrise ? `&birth=${encodeURIComponent(sunrise)}` : ""}${
                   sunset ? `&death=${encodeURIComponent(sunset)}` : ""
                 }${computedSlug ? `&slug=${encodeURIComponent(computedSlug)}` : ""}${
-                  photoUrl ? `&photo=${encodeURIComponent(photoUrl)}` : ""
+                  shouldIncludePhoto ? `&photo=${encodeURIComponent(photoUrl)}` : ""
                 }`
               );
             }}
