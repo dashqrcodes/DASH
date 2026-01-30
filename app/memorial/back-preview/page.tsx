@@ -59,6 +59,12 @@ export default function MemorialBackPreviewPage() {
   const [memorialName, setMemorialName] = useState(searchParams?.get("name") || "");
   const [birthDate, setBirthDate] = useState(searchParams?.get("birth") || "");
   const [deathDate, setDeathDate] = useState(searchParams?.get("death") || "");
+  const [counselorName, setCounselorName] = useState(
+    searchParams?.get("counselorName") || "Groman Mortuary"
+  );
+  const [counselorPhone, setCounselorPhone] = useState(
+    searchParams?.get("counselorPhone") || "323-476-8005"
+  );
   const slug = searchParams?.get("slug") || "";
   const [passageIndex, setPassageIndex] = useState(0);
   const bodyText = passages[passageIndex].text;
@@ -70,9 +76,13 @@ export default function MemorialBackPreviewPage() {
     const name = searchParams?.get("name") || "";
     const birth = searchParams?.get("birth") || "";
     const death = searchParams?.get("death") || "";
+    const counselor = searchParams?.get("counselorName") || "";
+    const phone = searchParams?.get("counselorPhone") || "";
     if (name) setMemorialName(name);
     if (birth) setBirthDate(birth);
     if (death) setDeathDate(death);
+    if (counselor) setCounselorName(counselor);
+    if (phone) setCounselorPhone(phone);
 
     if (!name || !birth || !death) {
       try {
@@ -223,7 +233,6 @@ export default function MemorialBackPreviewPage() {
           >
             {strings.next}
           </button>
-          {error && <p className="text-center text-sm text-red-300">{error}</p>}
         </div>
       </div>
     </main>
