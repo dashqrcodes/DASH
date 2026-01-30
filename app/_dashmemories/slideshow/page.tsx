@@ -39,6 +39,24 @@ function SlideshowContent() {
   );
 
   useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem('slideshowMedia');
+      if (!stored) return;
+      const parsed = JSON.parse(stored) as Array<{ type?: string; url?: string }>;
+      if (!Array.isArray(parsed) || parsed.length === 0) return;
+      const mapped = parsed
+        .filter((item) => item?.type === 'photo' && typeof item.url === 'string')
+        .map((item, index) => ({
+          id: `${Date.now()}-${index}`,
+          url: item.url as string,
+          file: null,
+          preview: item.url as string
+        }));
+      if (mapped.length > 0) setPhotos(mapped);
+    } catch {}
+  }, []);
+
+  useEffect(() => {
     // Load language preference from localStorage
     const savedLanguage = localStorage.getItem('appLanguage') as 'en' | 'es' | null;
     if (savedLanguage) {
@@ -444,7 +462,7 @@ function SlideshowContent() {
   }, [isPlaying, totalTime, isLooping]);
 
   return (
-    <div style={{width:'100vw',height:'100dvh',background:'#000000',fontFamily:'-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',color:'white',padding:'6px',paddingBottom:'calc(env(safe-area-inset-bottom, 0px) + 70px)',display:'flex',flexDirection:'column',maxWidth:'100vw',overflow:'hidden',position:'fixed',top:0,left:0,right:0,bottom:0,aspectRatio:'9/16',WebkitTouchCallout:'none',WebkitUserSelect:'none',touchAction:'manipulation'}}>
+    <div style={{width:'100vw',height:'100dvh',background:'#0b0b0d',fontFamily:'-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',color:'white',padding:'6px',paddingBottom:'calc(env(safe-area-inset-bottom, 0px) + 70px)',display:'flex',flexDirection:'column',maxWidth:'100vw',overflow:'hidden',position:'fixed',top:0,left:0,right:0,bottom:0,aspectRatio:'9/16',WebkitTouchCallout:'none',WebkitUserSelect:'none',touchAction:'manipulation'}}>
       {/* Status Bar with Safe Area */}
       <div style={{display:'flex',justifyContent:'space-between',paddingTop:'env(safe-area-inset-top, 6px)',paddingBottom:'6px',paddingLeft:'12px',paddingRight:'12px',marginBottom:'6px',fontSize:'11px',alignItems:'center'}}>
         <div style={{display:'flex',alignItems:'center',gap:'10px'}}>

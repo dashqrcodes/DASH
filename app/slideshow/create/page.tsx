@@ -43,6 +43,10 @@ export default function SlideshowCreatePage() {
       ),
     [photoItems, slideshowTransform]
   );
+  const readyUrls = useMemo(
+    () => photoItems.filter((item) => item.remoteUrl).map((item) => item.remoteUrl as string),
+    [photoItems]
+  );
 
   const strings =
     currentLang === "es"
@@ -263,6 +267,21 @@ export default function SlideshowCreatePage() {
     router.push(qs ? `/memorial/order/success?${qs}` : "/memorial/order/success");
   };
 
+  const handleContinue = () => {
+    if (readyUrls.length === 0) {
+      setUploadError(strings.empty);
+      return;
+    }
+    try {
+      window.localStorage.setItem(
+        "slideshowMedia",
+        JSON.stringify(readyUrls.map((url) => ({ type: "photo" as const, url })))
+      );
+    } catch {}
+    const qs = searchParams?.toString() || "";
+    router.push(qs ? `/_dashmemories/slideshow?${qs}` : "/_dashmemories/slideshow");
+  };
+
   return (
     <main className="relative min-h-screen bg-[#0b0b0d] text-white">
       {/* Floating stars */}
@@ -382,6 +401,17 @@ export default function SlideshowCreatePage() {
             )}
             {uploadError && <p className="text-center text-xs text-red-300">{uploadError}</p>}
           </div>
+        </div>
+
+        <div className="mt-12 flex w-full max-w-md justify-center">
+          <button
+            type="button"
+            className={primaryButtonClass}
+            onClick={handleContinue}
+            disabled={readyUrls.length === 0}
+          >
+            Continue to Slideshow
+          </button>
         </div>
 
         {/* Hidden file input */}
