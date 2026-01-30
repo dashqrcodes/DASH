@@ -4,6 +4,8 @@ export const dynamic = "force-dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { buildCloudinaryTransformUrl } from "@/lib/utils/cloudinary";
+import { convertToJpeg720p } from "@/lib/utils/clientImage";
+import { musicTracks } from "@/lib/data/musicTracks";
 
 const primaryButtonClass =
   "h-12 w-full rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-500 text-base font-semibold text-white shadow-[0_12px_32px_rgba(99,102,241,0.35)] transition duration-200 hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-purple-300/60";
@@ -23,8 +25,15 @@ export default function SlideshowCreatePage() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadingCount, setUploadingCount] = useState(0);
+  const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
+  const [showMusicPicker, setShowMusicPicker] = useState(false);
   const lastIndexRef = useRef(0);
-  const slideshowTransform = "f_auto,q_auto,c_fill,g_faces,ar_16:9,w_1600";
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const slideshowTransform = "f_auto,q_auto,c_fill,g_faces,ar_16:9,w_1280,h_720";
+  const selectedTrack = useMemo(
+    () => musicTracks.find((track) => track.id === selectedTrackId) || null,
+    [selectedTrackId]
+  );
   const playbackUrls = useMemo(
     () =>
       photoItems.map((item) =>
@@ -121,6 +130,35 @@ export default function SlideshowCreatePage() {
     img.src = nextUrl;
   }, [currentIndex, playbackUrls]);
 
+  useEffect(() => {
+    try {
+      const stored = window.sessionStorage.getItem("slideshow_music_track");
+      if (!stored) return;
+      const parsed = JSON.parse(stored) as { id?: string } | null;
+      if (parsed?.id) setSelectedTrackId(parsed.id);
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (!selectedTrack) {
+      audio.pause();
+      audio.removeAttribute("src");
+      return;
+    }
+    if (audio.src !== selectedTrack.audioUrl) {
+      audio.src = selectedTrack.audioUrl;
+      audio.currentTime = 0;
+    }
+    audio.loop = true;
+    if (isPlaying) {
+      void audio.play().catch(() => {});
+    } else {
+      audio.pause();
+    }
+  }, [selectedTrack, isPlaying]);
+
   const uploadToCloudinary = async (file: File, index: number, id: string, localUrl: string) => {
     try {
       const formData = new FormData();
@@ -172,6 +210,19 @@ export default function SlideshowCreatePage() {
     }
   };
 
+  const processAndUpload = async (file: File, index: number, id: string, localUrl: string) => {
+    try {
+      const processedFile = await convertToJpeg720p(file);
+      await uploadToCloudinary(processedFile, index, id, localUrl);
+    } catch (error: any) {
+      setPhotoItems((prev) =>
+        prev.map((item) => (item.id === id ? { ...item, status: "error" } : item))
+      );
+      setUploadError(error?.message || "Upload failed.");
+      setUploadingCount((count) => Math.max(0, count - 1));
+    }
+  };
+
   const handleFiles = (files: FileList | null) => {
     if (!files || files.length === 0) return;
     const maxPhotos = 300;
@@ -199,7 +250,7 @@ export default function SlideshowCreatePage() {
     setCurrentIndex(0);
     setUploadingCount((count) => count + newItems.length);
     newItems.forEach((item, index) => {
-      void uploadToCloudinary(fileArray[index], index, item.id, item.localUrl);
+      void processAndUpload(fileArray[index], index, item.id, item.localUrl);
     });
   };
 
@@ -251,22 +302,40 @@ export default function SlideshowCreatePage() {
           <div className="w-full max-w-3xl">
             <div className="relative mx-auto aspect-video w-full overflow-hidden bg-gradient-to-b from-black/70 via-black/65 to-black/80 shadow-[0_18px_40px_rgba(0,0,0,0.5)] ring-1 ring-white/10">
               {playbackUrls.length > 0 && prevIndex !== null && prevIndex !== currentIndex && (
-                <img
-                  src={playbackUrls[prevIndex]}
-                  alt="Slideshow preview"
-                  className="absolute inset-0 h-full w-full object-cover animate-fade-out"
-                  aria-hidden="true"
-                />
+                <>
+                  <img
+                    src={playbackUrls[prevIndex]}
+                    alt=""
+                    className="absolute inset-0 h-full w-full object-cover scale-110 blur-2xl opacity-60 animate-fade-out"
+                    aria-hidden="true"
+                  />
+                  <img
+                    src={playbackUrls[prevIndex]}
+                    alt="Slideshow preview"
+                    className="absolute inset-0 h-full w-full object-contain animate-fade-out"
+                    aria-hidden="true"
+                  />
+                </>
               )}
               {playbackUrls.length > 0 && (
-                <img
-                  src={playbackUrls[currentIndex]}
-                  alt="Slideshow preview"
-                  className={`absolute inset-0 h-full w-full object-cover animate-fade-in ${
-                    isPlaying ? "opacity-100" : "opacity-90"
-                  }`}
-                  fetchPriority="high"
-                />
+                <>
+                  <img
+                    src={playbackUrls[currentIndex]}
+                    alt=""
+                    className={`absolute inset-0 h-full w-full object-cover scale-110 blur-2xl opacity-60 animate-fade-in ${
+                      isPlaying ? "opacity-100" : "opacity-90"
+                    }`}
+                    aria-hidden="true"
+                  />
+                  <img
+                    src={playbackUrls[currentIndex]}
+                    alt="Slideshow preview"
+                    className={`absolute inset-0 h-full w-full object-contain animate-fade-in ${
+                      isPlaying ? "opacity-100" : "opacity-90"
+                    }`}
+                    fetchPriority="high"
+                  />
+                </>
               )}
               <div className="absolute inset-0 flex items-center justify-center">
                 <button
@@ -294,7 +363,7 @@ export default function SlideshowCreatePage() {
               <button
                 type="button"
                 className={primaryButtonClass}
-                onClick={() => console.log("Add Music")}
+                onClick={() => setShowMusicPicker(true)}
               >
                 {strings.addMusic}
               </button>
@@ -326,6 +395,88 @@ export default function SlideshowCreatePage() {
           onChange={(e) => handleFiles(e.target.files)}
         />
       </div>
+      <audio ref={audioRef} preload="auto" />
+      {showMusicPicker && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-6">
+          <div className="w-full max-w-lg rounded-3xl bg-[#111117] p-6 shadow-2xl ring-1 ring-white/10">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-white">Choose music</h2>
+                <p className="text-xs text-white/60">
+                  Royalty-free tracks for slideshow playback
+                </p>
+              </div>
+              <button
+                type="button"
+                className="rounded-full bg-white/10 px-3 py-1 text-xs text-white/70"
+                onClick={() => setShowMusicPicker(false)}
+              >
+                Close
+              </button>
+            </div>
+            <div className="space-y-3">
+              {musicTracks.map((track) => {
+                const isSelected = track.id === selectedTrackId;
+                return (
+                  <button
+                    key={track.id}
+                    type="button"
+                    className={`w-full rounded-2xl border px-4 py-3 text-left transition ${
+                      isSelected
+                        ? "border-indigo-400/80 bg-indigo-500/15"
+                        : "border-white/10 bg-white/5 hover:border-white/20"
+                    }`}
+                    onClick={() => {
+                      setSelectedTrackId(track.id);
+                      try {
+                        window.sessionStorage.setItem(
+                          "slideshow_music_track",
+                          JSON.stringify({ id: track.id })
+                        );
+                      } catch {}
+                    }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-sm font-semibold text-white">{track.title}</div>
+                        <div className="text-xs text-white/60">{track.artist}</div>
+                      </div>
+                      <div className="text-xs text-white/50">{track.duration}</div>
+                    </div>
+                    <div className="mt-2 text-[11px] text-white/50">{track.licenseName}</div>
+                  </button>
+                );
+              })}
+            </div>
+            {selectedTrack && (
+              <div className="mt-4 rounded-2xl bg-white/5 px-4 py-3 text-xs text-white/70">
+                <div>
+                  Selected:{" "}
+                  <span className="font-semibold text-white">{selectedTrack.title}</span>
+                </div>
+                <div className="mt-1 flex items-center gap-3 text-[11px] text-white/60">
+                  <a
+                    className="underline decoration-dotted"
+                    href={selectedTrack.licenseUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    License
+                  </a>
+                  <a
+                    className="underline decoration-dotted"
+                    href={selectedTrack.sourceUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Source
+                  </a>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       <style jsx>{`
         @keyframes fade-in {
           from {

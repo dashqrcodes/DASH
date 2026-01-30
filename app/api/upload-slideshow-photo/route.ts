@@ -1,14 +1,8 @@
 import { NextResponse } from "next/server";
 import { Buffer } from "node:buffer";
-import { v2 as cloudinary } from "cloudinary";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export const runtime = "nodejs";
-
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || "",
-  api_key: process.env.CLOUDINARY_API_KEY || "",
-  api_secret: process.env.CLOUDINARY_API_SECRET || "",
-});
 
 export async function POST(req: Request) {
   try {
@@ -21,44 +15,28 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing file" }, { status: 400 });
     }
 
-    const cloudinaryConfigured = Boolean(
-      process.env.CLOUDINARY_CLOUD_NAME &&
-        process.env.CLOUDINARY_API_KEY &&
-        process.env.CLOUDINARY_API_SECRET
-    );
+    const uploadBuffer = Buffer.from(await file.arrayBuffer());
+    const safeSlug = slug.replace(/[^a-zA-Z0-9-_]/g, "_");
+    const filename = `${safeSlug}-${Date.now()}-${index}.jpg`;
+    const filePath = `slideshows/${safeSlug}/${filename}`;
 
-    if (!cloudinaryConfigured) {
-      return NextResponse.json(
-        { error: "Cloudinary is not configured" },
-        { status: 500 }
-      );
+    const { error: uploadError } = await supabaseAdmin.storage
+      .from("photos")
+      .upload(filePath, uploadBuffer, {
+        upsert: true,
+        contentType: file.type || "image/jpeg",
+        cacheControl: "31536000",
+      });
+
+    if (uploadError) {
+      throw uploadError;
     }
 
-    const uploadBuffer = Buffer.from(await file.arrayBuffer());
-    const publicId = `${slug}-${Date.now()}-${index}`;
+    const {
+      data: { publicUrl },
+    } = supabaseAdmin.storage.from("photos").getPublicUrl(filePath);
 
-    const cloudinaryUrl = await new Promise<string>((resolve, reject) => {
-      const stream = cloudinary.uploader.upload_stream(
-        {
-          folder: "slideshows",
-          public_id: publicId,
-          resource_type: "image",
-          format: "jpg",
-          overwrite: true,
-          unique_filename: false,
-        },
-        (error, result) => {
-          if (error || !result?.secure_url) {
-            reject(error || new Error("Cloudinary upload failed"));
-            return;
-          }
-          resolve(result.secure_url);
-        }
-      );
-      stream.end(uploadBuffer);
-    });
-
-    return NextResponse.json({ photoUrl: cloudinaryUrl });
+    return NextResponse.json({ photoUrl: publicUrl });
   } catch (error: any) {
     console.error("Upload slideshow photo error", error);
     return NextResponse.json(

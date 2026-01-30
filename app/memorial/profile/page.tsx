@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { buildCloudinaryFaceCropUrl } from "@/lib/utils/cloudinary";
+import { convertToJpeg720p } from "@/lib/utils/clientImage";
 
 const primaryButtonClass =
   "h-12 w-full rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-500 text-base font-semibold text-white shadow-[0_12px_32px_rgba(99,102,241,0.35)] transition duration-200 hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-purple-300/60";
@@ -204,27 +205,37 @@ export default function MemorialDetailsPage() {
     router.replace(`/memorial/profile?${params.toString()}`);
   };
 
-  const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    const fileExt = file.name.split(".").pop()?.toLowerCase() || "";
-    const isHeic =
-      file.type === "image/heic" ||
-      file.type === "image/heif" ||
-      fileExt === "heic" ||
-      fileExt === "heif";
 
     setPhotoError(null);
 
-    const previewUrl = URL.createObjectURL(file);
+    setUploadingPhoto(true);
+
+    let processedFile: File;
+    try {
+      processedFile = await convertToJpeg720p(file);
+    } catch (error: any) {
+      setPhotoError(error?.message || strings.uploadFailed);
+      setUploadingPhoto(false);
+      return;
+    }
+
+    if (photoUrl?.startsWith("blob:")) {
+      try {
+        URL.revokeObjectURL(photoUrl);
+      } catch {}
+    }
+
+    const previewUrl = URL.createObjectURL(processedFile);
     setPhotoUrl(previewUrl);
     try {
       window.sessionStorage.setItem("memorial_photo_url", previewUrl);
     } catch {}
 
-    setUploadingPhoto(true);
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append("file", processedFile);
     formData.append("slug", `temp-${Date.now()}`);
 
     fetch("/api/upload-photo", {
@@ -251,11 +262,16 @@ export default function MemorialDetailsPage() {
       })
       .then((json) => {
         if (json?.photoUrl) {
+          if (previewUrl.startsWith("blob:")) {
+            try {
+              URL.revokeObjectURL(previewUrl);
+            } catch {}
+          }
           setPhotoUrl(json.photoUrl);
           try {
             window.sessionStorage.setItem("memorial_photo_url", json.photoUrl);
           } catch {}
-        } else if (!isHeic) {
+        } else {
           setPhotoError(strings.uploadFailed);
         }
       })
