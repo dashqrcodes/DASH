@@ -57,4 +57,28 @@ export const musicTracks: MusicTrack[] = [
     licenseName: "Public Domain",
     licenseUrl: "https://creativecommons.org/publicdomain/mark/1.0/deed.en",
   },
+  {
+    id: "satie-gymnopedie-1-musopen",
+    title: "Gymnopédies No. 1 (Lent et douloureux)",
+    artist: "Erik Satie (performance by Robin Alciatore)",
+    duration: "3:04",
+    audioUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/transcoded/9/90/Erik_Satie_-_gymnopedies_-_la_1_ere._lent_et_douloureux.ogg/Erik_Satie_-_gymnopedies_-_la_1_ere._lent_et_douloureux.ogg.mp3?download",
+    sourceUrl:
+      "https://commons.wikimedia.org/wiki/File:Erik_Satie_-_gymnopedies_-_la_1_ere._lent_et_douloureux.ogg",
+    licenseName: "Public Domain",
+    licenseUrl: "https://creativecommons.org/publicdomain/mark/1.0/deed.en",
+  },
+  {
+    id: "gershwin-rhapsody-in-blue",
+    title: "Rhapsody in Blue (Piano Solo)",
+    artist: "George Gershwin (performance by hmscomp)",
+    duration: "15:57",
+    audioUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/8/85/George_Gershwin%27s_%22Rhapsody_in_Blue%22_piano_solo.mp3",
+    sourceUrl:
+      "https://commons.wikimedia.org/wiki/File:George_Gershwin%27s_%22Rhapsody_in_Blue%22_piano_solo.mp3",
+    licenseName: "CC0 1.0 (performance)",
+    licenseUrl: "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+  },
 ];

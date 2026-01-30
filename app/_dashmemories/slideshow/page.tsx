@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useMemo, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { musicTracks } from '@/lib/data/musicTracks';
 
 function SlideshowContent() {
   const router = useRouter();
@@ -30,6 +31,12 @@ function SlideshowContent() {
   const [photos, setPhotos] = useState<Array<{id: string, url: string, file: File | null, date?: string, preview?: string}>>([]);
   const [language, setLanguage] = useState<'en' | 'es'>('en');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const selectedTrack = useMemo(
+    () => musicTracks.find((track) => track.id === selectedTrackId) || null,
+    [selectedTrackId]
+  );
 
   useEffect(() => {
     // Load language preference from localStorage
@@ -273,6 +280,38 @@ function SlideshowContent() {
     const mediaItems = allPhotos.map(p => ({ type: 'photo' as const, url: p.url }));
     localStorage.setItem('slideshowMedia', JSON.stringify(mediaItems));
   };
+
+  useEffect(() => {
+    try {
+      const stored =
+        window.sessionStorage.getItem('slideshow_music_track') ||
+        window.localStorage.getItem('slideshow_music_track');
+      if (!stored) return;
+      const parsed = JSON.parse(stored) as { id?: string } | null;
+      if (parsed?.id) setSelectedTrackId(parsed.id);
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.muted = isMuted;
+    if (!selectedTrack) {
+      audio.pause();
+      audio.removeAttribute('src');
+      return;
+    }
+    if (audio.src !== selectedTrack.audioUrl) {
+      audio.src = selectedTrack.audioUrl;
+      audio.currentTime = 0;
+    }
+    audio.loop = true;
+    if (isPlaying) {
+      void audio.play().catch(() => {});
+    } else {
+      audio.pause();
+    }
+  }, [selectedTrack, isPlaying, isMuted]);
 
   const handlePhotoDateChange = (photoId: string, date: string) => {
     setPhotos(prev => {
@@ -993,6 +1032,7 @@ function SlideshowContent() {
         </>
       )}
 
+      <audio ref={audioRef} preload="auto" />
       {/* Bottom Navigation - Home, HEAVEN, Music, Slideshow */}
       <div style={{position:'fixed',bottom:0,left:0,right:0,background:'rgba(255,255,255,0.05)',backdropFilter:'blur(20px)',borderTop:'1px solid rgba(255,255,255,0.1)',paddingTop:'10px',paddingBottom:'calc(env(safe-area-inset-bottom, 0px) + 10px)',paddingLeft:'max(16px, env(safe-area-inset-left, 0px))',paddingRight:'max(16px, env(safe-area-inset-right, 0px))',display:'flex',justifyContent:'space-around',zIndex:100}}>
         <button onClick={()=>router.push('/')} style={{background:'transparent',border:'none',color:'white',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:'4px'}}>

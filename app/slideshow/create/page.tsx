@@ -434,6 +434,12 @@ export default function SlideshowCreatePage() {
                           JSON.stringify({ id: track.id })
                         );
                       } catch {}
+                      try {
+                        window.localStorage.setItem(
+                          "slideshow_music_track",
+                          JSON.stringify({ id: track.id })
+                        );
+                      } catch {}
                     }}
                   >
                     <div className="flex items-center justify-between">
