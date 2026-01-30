@@ -48,7 +48,7 @@ export default function MemorialPreviewPage() {
   }, [searchParams]);
 
   useEffect(() => {
-    router.prefetch("/memorial/back-preview");
+    router.prefetch("/memorial/card-back");
     const image = new Image();
     image.src = "/sky background rear.jpg";
   }, [router]);
@@ -138,7 +138,7 @@ export default function MemorialPreviewPage() {
             type="button"
             onClick={() =>
               router.push(
-                `/memorial/back-preview${[
+                `/memorial/card-back${[
                   fullName ? `name=${encodeURIComponent(fullName)}` : "",
                   birthDate ? `birth=${encodeURIComponent(birthDate)}` : "",
                   deathDate ? `death=${encodeURIComponent(deathDate)}` : "",
