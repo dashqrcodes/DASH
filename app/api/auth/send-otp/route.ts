@@ -4,6 +4,8 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const otpTestNumber = process.env.OTP_TEST_NUMBER;
+const otpTestCode = process.env.OTP_TEST_CODE || "123456";
 
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error(
@@ -48,6 +50,16 @@ export async function POST(request: NextRequest) {
     
     // Normalize phone number to E.164 format
     const normalizedPhone = normalizePhoneNumber(phone);
+
+    if (otpTestNumber && normalizedPhone === otpTestNumber) {
+      return NextResponse.json({
+        success: true,
+        message: "Verification code sent successfully",
+        phone: normalizedPhone,
+        testCode: otpTestCode,
+        bypass: true,
+      });
+    }
     
     // Validate E.164 format (starts with +, followed by 1-15 digits)
     if (!/^\+[1-9]\d{1,14}$/.test(normalizedPhone)) {

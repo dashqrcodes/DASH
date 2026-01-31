@@ -4,6 +4,8 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const otpTestNumber = process.env.OTP_TEST_NUMBER;
+const otpTestCode = process.env.OTP_TEST_CODE || "123456";
 
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error(
@@ -51,6 +53,20 @@ export async function POST(request: NextRequest) {
     
     // Normalize phone number
     const normalizedPhone = normalizePhoneNumber(phone);
+
+    if (
+      otpTestNumber &&
+      normalizedPhone === otpTestNumber &&
+      token === otpTestCode
+    ) {
+      return NextResponse.json({
+        success: true,
+        message: "Verification successful",
+        user: null,
+        session: null,
+        bypass: true,
+      });
+    }
     
     // Create Supabase client with anon key
     if (!supabaseUrl || !supabaseAnonKey) {
