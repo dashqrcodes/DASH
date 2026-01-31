@@ -45,7 +45,7 @@ export default function HomePage() {
 
   useEffect(() => {
     router.prefetch("/start");
-    router.prefetch("/memorial/start");
+    router.prefetch("/memorial/accept");
   }, [router]);
 
   useEffect(() => {
@@ -147,12 +147,12 @@ export default function HomePage() {
               Mortuary
             </Link>
             <Link
-              href="/memorial/start"
+              href="/memorial/accept"
               onClick={(e) => {
                 e.preventDefault();
                 setMode("consumer");
                 setIsTransitioning(true);
-                router.push("/memorial/start");
+                router.push("/memorial/accept");
               }}
               className={`relative z-10 flex-1 rounded-full px-5 py-2 text-center text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 ${
                 mode === "consumer" ? "text-gray-900" : "text-white/80 hover:text-white"
