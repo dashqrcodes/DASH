@@ -83,7 +83,8 @@ export default function FinalApprovalPage() {
       });
     }
 
-    router.push(`/memorial/order/success${buildParams()}`);
+    const nextUrl = `/memorial/order/success${buildParams()}`;
+    router.push(`/memorial/accept?next=${encodeURIComponent(nextUrl)}`);
   };
 
   return (

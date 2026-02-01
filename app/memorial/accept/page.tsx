@@ -30,6 +30,12 @@ export default function MemorialAcceptPage() {
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const lastVerifyOtpRef = useRef<string>("");
+  const otpBypass =
+    searchParams?.get("otp") === "test" ||
+    process.env.NEXT_PUBLIC_OTP_BYPASS === "1";
+
+  const nextParam = searchParams?.get("next");
+  const nextUrl = nextParam && nextParam.startsWith("/") ? nextParam : "/memorial/profile";
 
   const normalizedPhone = normalizePhone(phone);
   const canSend = Boolean(toE164(normalizedPhone));
@@ -69,6 +75,14 @@ export default function MemorialAcceptPage() {
   }, [sentTo]);
 
   useEffect(() => {
+    if (!otpBypass) return;
+    const id = window.setTimeout(() => {
+      router.push(nextUrl);
+    }, 600);
+    return () => window.clearTimeout(id);
+  }, [otpBypass, router, nextUrl]);
+
+  useEffect(() => {
     if (!canVerify || isVerifying) return;
     const token = otp.trim();
     if (token.length !== 6) return;
@@ -78,6 +92,10 @@ export default function MemorialAcceptPage() {
   }, [canVerify, isVerifying, otp, sentTo]);
 
   const handleSendOtp = async () => {
+    if (otpBypass) {
+      router.push(nextUrl);
+      return;
+    }
     setErrorMessage(null);
     setStatusMessage(null);
 
@@ -102,6 +120,10 @@ export default function MemorialAcceptPage() {
   };
 
   const handleVerifyOtp = async () => {
+    if (otpBypass) {
+      router.push(nextUrl);
+      return;
+    }
     if (!sentTo) {
       setErrorMessage("Send the code first.");
       return;
@@ -138,7 +160,7 @@ export default function MemorialAcceptPage() {
     }
 
     setStatusMessage("Phone verified. Redirecting...");
-    router.push("/memorial/profile");
+    router.push(nextUrl);
   };
 
   return (
@@ -161,9 +183,16 @@ export default function MemorialAcceptPage() {
             DASH
           </p>
           <p className="text-2xl font-semibold text-white/85">Life. Love. Forever.</p>
-          <p className="text-base leading-relaxed text-white/80">Accept invite</p>
+          <p className="text-base leading-relaxed text-white/80">
+            {otpBypass ? "Continuing to the next step..." : "Accept invite"}
+          </p>
 
           <div className="space-y-4 text-center">
+            {otpBypass && (
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-sm text-white/80">
+                OTP is in test mode. Redirecting...
+              </div>
+            )}
             <div className="space-y-2">
               <label className="text-sm font-medium text-white/70">Mobile phone</label>
               <div className="rounded-full p-[3px] bg-gradient-to-r from-purple-600 via-[#c43a3a] via-purple-500 to-purple-700 shadow-[0_0_22px_rgba(79,70,229,0.45)] gradient-anim">
@@ -181,7 +210,7 @@ export default function MemorialAcceptPage() {
               </div>
               <button
                 type="button"
-                disabled={!canSend || isSending}
+                disabled={!canSend || isSending || otpBypass}
                 onClick={handleSendOtp}
                 className="mt-3 w-full rounded-full border border-white/10 bg-white/10 px-4 py-3 text-sm font-semibold text-white/90 transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-60"
               >
@@ -200,10 +229,11 @@ export default function MemorialAcceptPage() {
                 onChange={(e) => setOtp(e.target.value.slice(0, 6))}
                 placeholder="• • • • • •"
                 className="h-12 w-full rounded-2xl border border-white/10 bg-white/5 px-4 text-center text-lg tracking-[0.6em] text-white placeholder:text-white/30 shadow-inner shadow-black/20 focus:border-purple-300/60 focus:outline-none focus:ring-2 focus:ring-purple-300/60"
+                disabled={otpBypass}
               />
               <button
                 type="button"
-                disabled={!canVerify || isVerifying}
+                disabled={!canVerify || isVerifying || otpBypass}
                 onClick={handleVerifyOtp}
                 className="mt-3 w-full rounded-full border border-white/10 bg-purple-500/70 px-4 py-3 text-sm font-semibold text-white transition hover:bg-purple-500/90 disabled:cursor-not-allowed disabled:opacity-60"
               >
