@@ -29,7 +29,7 @@ export default function HomePage() {
               Mortuary
             </Link>
             <Link
-              href="/memorial/accept"
+              href="/memorial/profile"
               className="relative z-10 flex-1 rounded-full px-5 py-2 text-center text-sm font-semibold text-gray-900 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
             >
               Family
