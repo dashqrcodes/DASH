@@ -19,24 +19,15 @@ export default function MemorialAcceptPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const lastRequestedRef = useRef<string>("");
   const lastVerifyOtpRef = useRef<string>("");
+  const [step, setStep] = useState<"email" | "code">("email");
+  const otpInputRef = useRef<HTMLInputElement | null>(null);
+  const otpSlots = Array.from({ length: 6 });
 
   const nextParam = searchParams?.get("next");
   const nextUrl = nextParam && nextParam.startsWith("/") ? nextParam : "/memorial/profile";
 
   const canSend = isValidEmail(email);
   const canVerify = otp.trim().length === 6 && Boolean(sentTo);
-
-  useEffect(() => {
-    const storedNext = typeof window !== "undefined" ? window.sessionStorage.getItem("otp_next") : "";
-    if (!nextParam && storedNext) {
-      // keep fallback for magic link redirects
-      window.sessionStorage.setItem("otp_next", storedNext);
-    } else if (nextParam) {
-      try {
-        window.sessionStorage.setItem("otp_next", nextUrl);
-      } catch {}
-    }
-  }, [nextParam, nextUrl]);
 
   useEffect(() => {
     if (!nextParam) return;
@@ -53,6 +44,12 @@ export default function MemorialAcceptPage() {
     lastVerifyOtpRef.current = token;
     handleVerifyCode();
   }, [canVerify, isVerifying, otp, sentTo]);
+
+  useEffect(() => {
+    if (step === "code") {
+      otpInputRef.current?.focus();
+    }
+  }, [step]);
 
   const handleSendCode = async () => {
     setErrorMessage(null);
@@ -88,6 +85,7 @@ export default function MemorialAcceptPage() {
     setSentTo(normalizedEmail);
     setOtp("");
     setStatusMessage(`Code sent to ${normalizedEmail}. Check your email.`);
+    setStep("code");
   };
 
   const handleVerifyCode = async () => {
@@ -142,7 +140,7 @@ export default function MemorialAcceptPage() {
           </p>
           <p className="text-2xl font-semibold text-white/85">Life. Love. Forever.</p>
           <p className="text-base leading-relaxed text-white/80">
-            Enter your email to continue
+            {step === "email" ? "Enter your email to continue" : "Enter the 6-digit code"}
           </p>
 
           <div className="space-y-5 text-center">
@@ -159,36 +157,60 @@ export default function MemorialAcceptPage() {
                 />
               </div>
             </div>
+            {step === "code" && (
+              <div className="space-y-2">
+                <div className="text-xs text-white/60">6-digit code</div>
+                <label
+                  htmlFor="otp-code-input"
+                  className="relative flex items-center justify-between gap-2 rounded-2xl bg-white/5 px-3 py-3 text-white/90 ring-1 ring-white/10"
+                >
+                  <input
+                    id="otp-code-input"
+                    ref={otpInputRef}
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    value={otp}
+                    onChange={(e) => {
+                      const nextValue = e.target.value.replace(/\D/g, "").slice(0, 6);
+                      setOtp(nextValue);
+                    }}
+                    className="absolute inset-0 h-full w-full opacity-0"
+                    aria-label="6-digit code"
+                  />
+                  {otpSlots.map((_, index) => (
+                    <div
+                      key={`otp-slot-${index}`}
+                      className="flex h-10 w-10 items-center justify-center rounded-xl bg-black/30 text-lg font-semibold text-white ring-1 ring-white/10"
+                    >
+                      {otp[index] ?? ""}
+                    </div>
+                  ))}
+                </label>
+              </div>
+            )}
             <button
               type="button"
-              disabled={!canSend || isSending}
-              onClick={handleSendCode}
-              className="w-full rounded-full border border-white/10 bg-white/10 px-4 py-3 text-sm font-semibold text-white/90 transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={
+                step === "email" ? !canSend || isSending : !canVerify || isVerifying
+              }
+              onClick={() => {
+                if (step === "email") {
+                  handleSendCode();
+                } else {
+                  handleVerifyCode();
+                }
+              }}
+              className="w-full rounded-full border border-white/10 bg-white/10 px-4 py-3 text-sm font-semibold text-white/90 transition active:scale-95 hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isSending ? "Sending code..." : "Send code"}
+              {step === "email"
+                ? isSending
+                  ? "Sending code..."
+                  : "Send code"
+                : isVerifying
+                  ? "Verifying..."
+                  : "Verify code"}
             </button>
-
-            <div className="space-y-2">
-              <input
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                autoComplete="one-time-code"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value.slice(0, 6))}
-                placeholder="Enter 6-digit code"
-                className="h-12 w-full rounded-full border border-white/10 bg-white/5 px-4 text-center text-base tracking-[0.3em] text-white placeholder:text-white/40 shadow-inner shadow-black/20 focus:border-purple-300/60 focus:outline-none focus:ring-2 focus:ring-purple-300/60"
-                disabled={!sentTo}
-              />
-              <button
-                type="button"
-                disabled={!canVerify || isVerifying}
-                onClick={handleVerifyCode}
-                className="w-full rounded-full border border-white/10 bg-purple-500/70 px-4 py-3 text-sm font-semibold text-white transition hover:bg-purple-500/90 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isVerifying ? "Verifying..." : "Verify code"}
-              </button>
-            </div>
             {(statusMessage || errorMessage) && (
               <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80">
                 {errorMessage ? <span className="text-rose-300">{errorMessage}</span> : statusMessage}

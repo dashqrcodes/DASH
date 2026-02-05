@@ -191,14 +191,17 @@ function SlideshowContent() {
   };
 
   const handleCreateSlideshow = () => {
-    // Check if permissions are already granted
-    const permissionsGranted = localStorage.getItem('permissionsGranted') === 'true';
-    if (permissionsGranted) {
-      setShowPhotoBottomSheet(true);
-      setSheetHeight(0.65); // Start at 65% height
-    } else {
-      setShowPermissionModal(true);
-    }
+    const target = slugParam
+      ? `/slideshow/create?slug=${encodeURIComponent(slugParam)}`
+      : "/slideshow/create";
+    router.push(target);
+    if (typeof window === "undefined") return;
+    window.setTimeout(() => {
+      const current = `${window.location.pathname}${window.location.search}`;
+      if (current !== target) {
+        window.location.assign(target);
+      }
+    }, 50);
   };
 
   const handleSheetDragStart = (e: React.TouchEvent) => {

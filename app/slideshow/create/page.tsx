@@ -52,7 +52,9 @@ export default function SlideshowCreatePage() {
     currentLang === "es"
       ? {
           addMusic: "+ Música",
+          musicAdded: "Música añadida",
           addPhotos: "+ Fotos",
+          backToSlideshow: "Volver al slideshow",
           uploadLimit: "Límite de carga total 500MB.",
           maxPhotos: "Máximo 300 fotos por ahora.",
           play: "Reproducir",
@@ -61,7 +63,9 @@ export default function SlideshowCreatePage() {
         }
       : {
           addMusic: "+ Music",
+          musicAdded: "Music added",
           addPhotos: "+ Photos",
+          backToSlideshow: "Back to slideshow",
           uploadLimit: "Max total upload 500MB.",
           maxPhotos: "Maximum 300 photos for now.",
           play: "Play",
@@ -384,7 +388,7 @@ export default function SlideshowCreatePage() {
                 className={primaryButtonClass}
                 onClick={() => setShowMusicPicker(true)}
               >
-                {strings.addMusic}
+                {selectedTrack ? `${strings.musicAdded} ✓` : strings.addMusic}
               </button>
               <button
                 type="button"
@@ -441,7 +445,7 @@ export default function SlideshowCreatePage() {
                 className="rounded-full bg-white/10 px-3 py-1 text-xs text-white/70"
                 onClick={() => setShowMusicPicker(false)}
               >
-                Close
+                Back
               </button>
             </div>
             <div className="space-y-3">
@@ -477,7 +481,19 @@ export default function SlideshowCreatePage() {
                         <div className="text-sm font-semibold text-white">{track.title}</div>
                         <div className="text-xs text-white/60">{track.artist}</div>
                       </div>
-                      <div className="text-xs text-white/50">{track.duration}</div>
+                      <div className="flex items-center gap-2 text-xs text-white/50">
+                        <span>{track.duration}</span>
+                        <span
+                          className={`flex h-6 w-6 items-center justify-center rounded-full border text-[13px] ${
+                            isSelected
+                              ? "border-indigo-300/80 bg-indigo-500/30 text-white"
+                              : "border-white/20 text-white/60"
+                          }`}
+                          aria-hidden="true"
+                        >
+                          {isSelected ? "✓" : "+"}
+                        </span>
+                      </div>
                     </div>
                     <div className="mt-2 text-[11px] text-white/50">{track.licenseName}</div>
                   </button>
@@ -510,6 +526,13 @@ export default function SlideshowCreatePage() {
                 </div>
               </div>
             )}
+            <button
+              type="button"
+              className="mt-5 w-full rounded-full border border-white/10 bg-white/10 px-4 py-3 text-sm font-semibold text-white/80 transition hover:bg-white/20"
+              onClick={() => setShowMusicPicker(false)}
+            >
+              {strings.backToSlideshow}
+            </button>
           </div>
         </div>
       )}
