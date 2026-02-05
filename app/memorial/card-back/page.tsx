@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { resolveLang } from "@/lib/utils/lang";
 
 const primaryButtonClass =
   "h-12 w-full rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-500 text-base font-semibold text-white shadow-[0_12px_32px_rgba(99,102,241,0.35)] transition duration-200 hover:brightness-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-purple-300/60";
@@ -55,7 +56,7 @@ const formatShortMonth = (value: string) => {
 export default function MemorialCardBackPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const currentLang = searchParams?.get("lang") === "es" ? "es" : "en";
+  const currentLang = resolveLang(searchParams);
   const [memorialName, setMemorialName] = useState(searchParams?.get("name") || "");
   const [birthDate, setBirthDate] = useState(searchParams?.get("birth") || "");
   const [deathDate, setDeathDate] = useState(searchParams?.get("death") || "");

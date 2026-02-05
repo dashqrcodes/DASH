@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { resolveLang } from "@/lib/utils/lang";
 
 type Step = "phone" | "otp" | "welcome";
 
@@ -29,7 +30,7 @@ const inferCounselorName = (value: string) => {
 };
 
 const primaryButtonClass =
-  "h-12 w-full rounded-full bg-gray-900 text-base font-semibold text-white shadow-lg shadow-gray-200/80 transition hover:-translate-y-0.5 hover:shadow-xl hover:shadow-gray-200/90 focus:outline-none focus:ring-2 focus:ring-gray-300 disabled:translate-y-0 disabled:bg-gray-200 disabled:text-gray-500 disabled:shadow-none";
+  "h-12 w-full rounded-full bg-gray-900 text-base font-semibold text-white shadow-lg shadow-gray-200/80 transition hover:-translate-y-0.5 hover:shadow-xl hover:shadow-gray-200/90 active:scale-95 active:translate-y-0 focus:outline-none focus:ring-2 focus:ring-gray-300 disabled:translate-y-0 disabled:bg-gray-200 disabled:text-gray-500 disabled:shadow-none";
 
 export default function StartPage() {
   const router = useRouter();
@@ -39,7 +40,7 @@ export default function StartPage() {
   const [otp, setOtp] = useState("");
   const [counselorName, setCounselorName] = useState("Counselor");
   const [mounted, setMounted] = useState(false);
-  const currentLang = searchParams?.get("lang") === "es" ? "es" : "en";
+  const currentLang = resolveLang(searchParams);
   const isSpanish = currentLang === "es";
 
   useEffect(() => {

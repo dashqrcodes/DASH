@@ -2,11 +2,12 @@
 export const dynamic = "force-dynamic";
 
 import CounselorLanguageToggle from "../../components/CounselorLanguageToggle";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { resolveLang } from "@/lib/utils/lang";
 
 const primaryButtonClass =
-  "h-12 w-full rounded-full bg-gray-900 text-base font-semibold text-white shadow-lg shadow-gray-200/80 transition hover:-translate-y-0.5 hover:shadow-xl hover:shadow-gray-200/90 focus:outline-none focus:ring-2 focus:ring-gray-300";
+  "h-12 w-full rounded-full bg-gray-900 text-base font-semibold text-white shadow-lg shadow-gray-200/80 transition hover:-translate-y-0.5 hover:shadow-xl hover:shadow-gray-200/90 active:scale-95 active:translate-y-0 focus:outline-none focus:ring-2 focus:ring-gray-300";
 
 const normalizePhone = (value: string) => value.replace(/\D/g, "");
 const formatPhone = (value: string) => {
@@ -19,10 +20,8 @@ const formatPhone = (value: string) => {
 
 export default function CounselorPage() {
   const router = useRouter();
-  const currentLang =
-    typeof window !== "undefined" && new URLSearchParams(window.location.search).get("lang") === "es"
-      ? "es"
-      : "en";
+  const searchParams = useSearchParams();
+  const currentLang = resolveLang(searchParams);
   const [familyPhone, setFamilyPhone] = useState("");
 
   return (

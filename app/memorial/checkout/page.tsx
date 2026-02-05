@@ -2,9 +2,10 @@
 export const dynamic = "force-dynamic";
 
 import { useRouter, useSearchParams } from "next/navigation";
+import { resolveLang } from "@/lib/utils/lang";
 
 const primaryButtonClass =
-  "h-12 w-full rounded-full bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 text-base font-semibold text-white shadow-[0_12px_32px_rgba(16,185,129,0.35)] transition duration-200 hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-green-300/60";
+  "h-12 w-full rounded-full bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 text-base font-semibold text-white shadow-[0_12px_32px_rgba(16,185,129,0.35)] transition duration-200 hover:brightness-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-green-300/60";
 
 const cardClass =
   "rounded-3xl bg-white p-6 shadow-[0_12px_32px_rgba(0,0,0,0.08)] ring-1 ring-gray-100 space-y-4";
@@ -12,7 +13,7 @@ const cardClass =
 export default function MemorialCheckoutPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const currentLang = searchParams?.get("lang") === "es" ? "es" : "en";
+  const currentLang = resolveLang(searchParams);
   const memorialName = searchParams?.get("name") || "";
   const birth = searchParams?.get("birth") || "";
   const death = searchParams?.get("death") || "";

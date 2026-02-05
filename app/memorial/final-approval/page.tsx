@@ -3,17 +3,18 @@ export const dynamic = "force-dynamic";
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { resolveLang } from "@/lib/utils/lang";
 
 const approveButtonClass =
-  "h-12 px-6 rounded-full bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 text-sm font-semibold text-white shadow-[0_12px_32px_rgba(16,185,129,0.35)] transition duration-200 hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-green-300/60";
+  "h-12 px-6 rounded-full bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 text-sm font-semibold text-white shadow-[0_12px_32px_rgba(16,185,129,0.35)] transition duration-200 hover:brightness-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-green-300/60";
 
 const changeButtonClass =
-  "h-12 px-6 rounded-full bg-gradient-to-r from-rose-500 via-red-500 to-orange-500 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(244,63,94,0.35)] transition duration-200 hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-rose-200/60";
+  "h-12 px-6 rounded-full bg-gradient-to-r from-rose-500 via-red-500 to-orange-500 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(244,63,94,0.35)] transition duration-200 hover:brightness-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-rose-200/60";
 
 export default function FinalApprovalPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const currentLang = searchParams?.get("lang") === "es" ? "es" : "en";
+  const currentLang = resolveLang(searchParams);
   const name = searchParams?.get("name");
   const birth = searchParams?.get("birth");
   const death = searchParams?.get("death");

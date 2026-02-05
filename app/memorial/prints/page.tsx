@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 const primaryButtonClass =
-  "h-12 w-full rounded-full bg-gray-900 text-base font-semibold text-white shadow-lg shadow-gray-200/80 transition hover:-translate-y-0.5 hover:shadow-xl hover:shadow-gray-200/90 focus:outline-none focus:ring-2 focus:ring-gray-300";
+  "h-12 w-full rounded-full bg-gray-900 text-base font-semibold text-white shadow-lg shadow-gray-200/80 transition hover:-translate-y-0.5 hover:shadow-xl hover:shadow-gray-200/90 active:scale-95 active:translate-y-0 focus:outline-none focus:ring-2 focus:ring-gray-300";
 
 const cardClass = "rounded-3xl bg-gray-50 p-6 shadow-sm ring-1 ring-gray-100 space-y-4";
 
@@ -118,7 +118,6 @@ export default function MemorialPrintsPage() {
                       className={`relative h-6 w-11 rounded-full transition ${
                         active ? "bg-gray-900" : "bg-gray-200"
                       }`}
-                      aria-pressed={active}
                       aria-label={`Toggle ${item.label}`}
                     >
                       <span

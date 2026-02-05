@@ -4,9 +4,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { buildCloudinaryFaceCropUrl } from "@/lib/utils/cloudinary";
 import { convertToJpeg720p } from "@/lib/utils/clientImage";
+import { resolveLang } from "@/lib/utils/lang";
 
 const primaryButtonClass =
-  "h-12 w-full rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-500 text-base font-semibold text-white shadow-[0_12px_32px_rgba(99,102,241,0.35)] transition duration-200 hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-purple-300/60";
+  "h-12 w-full rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-500 text-base font-semibold text-white shadow-[0_12px_32px_rgba(99,102,241,0.35)] transition duration-200 hover:brightness-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-purple-300/60";
 
 const fieldLabel = "text-sm font-medium text-gray-100 pl-1";
 const inputBase =
@@ -132,7 +133,7 @@ export default function MemorialDetailsPage() {
     }
   };
 
-  const currentLang = searchParams?.get("lang") === "es" ? "es" : "en";
+  const currentLang = resolveLang(searchParams);
   const previewPhotoUrl = photoUrl
     ? buildCloudinaryFaceCropUrl(photoUrl, { aspectRatio: "2:3", width: 1200 })
     : "";
@@ -448,6 +449,34 @@ export default function MemorialDetailsPage() {
           />
         </label>
         <div className="space-y-8">
+          {/* Language toggle */}
+          <div className="flex items-center justify-center">
+            <div className="relative flex w-full rounded-full bg-white/5 p-1 ring-1 ring-white/10 backdrop-blur-xl shadow-inner shadow-black/40">
+              <span
+                className={`absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-full bg-white shadow-sm transition-transform duration-200 ${
+                  currentLang === "es" ? "translate-x-full" : "translate-x-0"
+                }`}
+              />
+              <button
+                type="button"
+                onClick={() => updateLanguage("en")}
+                className={`relative z-10 flex-1 rounded-full px-4 py-2 text-sm font-semibold transition ${
+                  currentLang === "en" ? "text-gray-900" : "text-white/75 hover:text-white"
+                }`}
+              >
+                English
+              </button>
+              <button
+                type="button"
+                onClick={() => updateLanguage("es")}
+                className={`relative z-10 flex-1 rounded-full px-4 py-2 text-sm font-semibold transition ${
+                  currentLang === "es" ? "text-gray-900" : "text-white/75 hover:text-white"
+                }`}
+              >
+                Español
+              </button>
+            </div>
+          </div>
 
           {/* Name */}
           <div className="space-y-2">
@@ -525,64 +554,35 @@ export default function MemorialDetailsPage() {
             ))}
           </datalist>
 
-          {/* Language toggle */}
-          <div className="pt-2 flex items-center justify-center">
-            <div className="relative flex w-full rounded-full bg-white/5 p-1 ring-1 ring-white/10 backdrop-blur-xl shadow-inner shadow-black/40">
-              <span
-                className={`absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-full bg-white shadow-sm transition-transform duration-200 ${
-                  currentLang === "es" ? "translate-x-full" : "translate-x-0"
-                }`}
-              />
-              <button
-                type="button"
-                onClick={() => updateLanguage("en")}
-                className={`relative z-10 flex-1 rounded-full px-4 py-2 text-sm font-semibold transition ${
-                  currentLang === "en" ? "text-gray-900" : "text-white/75 hover:text-white"
-                }`}
-              >
-                English
-              </button>
-              <button
-                type="button"
-                onClick={() => updateLanguage("es")}
-                className={`relative z-10 flex-1 rounded-full px-4 py-2 text-sm font-semibold transition ${
-                  currentLang === "es" ? "text-gray-900" : "text-white/75 hover:text-white"
-                }`}
-              >
-                Español
-              </button>
-            </div>
+          <div className="space-y-3 pt-2">
+            {formError && <p className="text-center text-sm text-red-300">{formError}</p>}
+            <button
+              type="button"
+              onClick={() => {
+                if (!fullName || !sunrise || !sunset) {
+                  setFormError(strings.missingFields);
+                  return;
+                }
+                const computedSlug = slugify(fullName);
+                const shouldIncludePhoto =
+                  photoUrl &&
+                  !photoUrl.startsWith("data:") &&
+                  !photoUrl.startsWith("blob:");
+                router.push(
+                  `/memorial/card-front?lang=${currentLang}${
+                    fullName ? `&name=${encodeURIComponent(fullName)}` : ""
+                  }${sunrise ? `&birth=${encodeURIComponent(sunrise)}` : ""}${
+                    sunset ? `&death=${encodeURIComponent(sunset)}` : ""
+                  }${computedSlug ? `&slug=${encodeURIComponent(computedSlug)}` : ""}${
+                    shouldIncludePhoto ? `&photo=${encodeURIComponent(photoUrl)}` : ""
+                  }`
+                );
+              }}
+              className={primaryButtonClass}
+            >
+              {strings.next}
+            </button>
           </div>
-        </div>
-
-        <div className="fixed inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/80 to-transparent px-6 pb-6 pt-6">
-          {formError && <p className="mb-3 text-center text-sm text-red-300">{formError}</p>}
-          <button
-            type="button"
-            onClick={() => {
-              if (!fullName || !sunrise || !sunset) {
-                setFormError(strings.missingFields);
-                return;
-              }
-              const computedSlug = slugify(fullName);
-              const shouldIncludePhoto =
-                photoUrl &&
-                !photoUrl.startsWith("data:") &&
-                !photoUrl.startsWith("blob:");
-              router.push(
-                `/memorial/card-front?lang=${currentLang}${
-                  fullName ? `&name=${encodeURIComponent(fullName)}` : ""
-                }${sunrise ? `&birth=${encodeURIComponent(sunrise)}` : ""}${
-                  sunset ? `&death=${encodeURIComponent(sunset)}` : ""
-                }${computedSlug ? `&slug=${encodeURIComponent(computedSlug)}` : ""}${
-                  shouldIncludePhoto ? `&photo=${encodeURIComponent(photoUrl)}` : ""
-                }`
-              );
-            }}
-            className={primaryButtonClass}
-          >
-            {strings.next}
-          </button>
         </div>
       </div>
       <style jsx>{`

@@ -2,22 +2,21 @@
 export const dynamic = "force-dynamic";
 
 import CounselorLanguageToggle from "../../../components/CounselorLanguageToggle";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { resolveLang } from "@/lib/utils/lang";
 
 type PriceOption = "500" | "350" | "250";
 
 const primaryButtonClass =
-  "h-12 w-full rounded-full bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 text-base font-semibold text-white shadow-[0_12px_32px_rgba(16,185,129,0.35)] transition duration-200 hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-green-300/60";
+  "h-12 w-full rounded-full bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 text-base font-semibold text-white shadow-[0_12px_32px_rgba(16,185,129,0.35)] transition duration-200 hover:brightness-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-green-300/60";
 
 export default function FamilyIntakePage() {
   const router = useRouter();
   const [price, setPrice] = useState<PriceOption>("350");
   const [familyPhone, setFamilyPhone] = useState("");
-  const currentLang =
-    typeof window !== "undefined" && new URLSearchParams(window.location.search).get("lang") === "es"
-      ? "es"
-      : "en";
+  const searchParams = useSearchParams();
+  const currentLang = resolveLang(searchParams);
 
   const normalizePhone = (value: string) => value.replace(/\D/g, "");
   const formatPhone = (value: string) => {

@@ -6,14 +6,15 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { buildCloudinaryTransformUrl } from "@/lib/utils/cloudinary";
 import { convertToJpeg720p } from "@/lib/utils/clientImage";
 import { musicTracks } from "@/lib/data/musicTracks";
+import { resolveLang } from "@/lib/utils/lang";
 
 const primaryButtonClass =
-  "h-12 w-full rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-500 text-base font-semibold text-white shadow-[0_12px_32px_rgba(99,102,241,0.35)] transition duration-200 hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-purple-300/60";
+  "h-12 w-full rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-500 text-base font-semibold text-white shadow-[0_12px_32px_rgba(99,102,241,0.35)] transition duration-200 hover:brightness-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-purple-300/60";
 
 export default function SlideshowCreatePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const currentLang = searchParams?.get("lang") === "es" ? "es" : "en";
+  const currentLang = resolveLang(searchParams);
   const memorialName = searchParams?.get("name") || "";
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [draftSlug, setDraftSlug] = useState("");
