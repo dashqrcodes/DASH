@@ -3,7 +3,6 @@ export const dynamic = "force-dynamic";
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { supabase } from "@/lib/supabase";
 
 const isValidEmail = (value: string) =>
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim().toLowerCase());
@@ -26,7 +25,6 @@ export default function MemorialAcceptPage() {
 
   const canSend = isValidEmail(email);
   const canVerify = otp.trim().length === 6 && Boolean(sentTo);
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://dashmemories.com";
 
   useEffect(() => {
     const storedNext = typeof window !== "undefined" ? window.sessionStorage.getItem("otp_next") : "";
@@ -41,29 +39,11 @@ export default function MemorialAcceptPage() {
   }, [nextParam, nextUrl]);
 
   useEffect(() => {
-    let active = true;
-    const checkSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (!active) return;
-      if (data?.session) {
-        const storedNext = window.sessionStorage.getItem("otp_next");
-        const target = storedNext || nextUrl;
-        router.push(`/counselor/faceid?next=${encodeURIComponent(target)}`);
-      }
-    };
-    checkSession();
-    const { data: subscription } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
-        const storedNext = window.sessionStorage.getItem("otp_next");
-        const target = storedNext || nextUrl;
-        router.push(`/counselor/faceid?next=${encodeURIComponent(target)}`);
-      }
-    });
-    return () => {
-      active = false;
-      subscription?.subscription?.unsubscribe();
-    };
-  }, [router, nextUrl]);
+    if (!nextParam) return;
+    try {
+      window.sessionStorage.setItem("otp_next", nextUrl);
+    } catch {}
+  }, [nextParam, nextUrl]);
 
   useEffect(() => {
     if (!canVerify || isVerifying) return;
@@ -88,16 +68,22 @@ export default function MemorialAcceptPage() {
     lastRequestedRef.current = normalizedEmail;
 
     setIsSending(true);
-    const { error } = await supabase.auth.signInWithOtp({
-      email: normalizedEmail,
-      options: { shouldCreateUser: true },
-    });
-    setIsSending(false);
-
-    if (error) {
-      setErrorMessage(error.message || "Unable to send code. Please try again.");
+    try {
+      const response = await fetch("/api/auth/email-otp/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: normalizedEmail }),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data?.error || "Unable to send code. Please try again.");
+      }
+    } catch (error: any) {
+      setErrorMessage(error?.message || "Unable to send code. Please try again.");
+      setIsSending(false);
       return;
     }
+    setIsSending(false);
 
     setSentTo(normalizedEmail);
     setOtp("");
@@ -114,18 +100,22 @@ export default function MemorialAcceptPage() {
     setStatusMessage(null);
     setIsVerifying(true);
 
-    const { error } = await supabase.auth.verifyOtp({
-      email: sentTo,
-      token: otp.trim(),
-      type: "email",
-    });
-
-    setIsVerifying(false);
-
-    if (error) {
-      setErrorMessage(error.message || "Invalid code. Please try again.");
+    try {
+      const response = await fetch("/api/auth/email-otp/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: sentTo, code: otp.trim() }),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data?.error || "Invalid code. Please try again.");
+      }
+    } catch (error: any) {
+      setErrorMessage(error?.message || "Invalid code. Please try again.");
+      setIsVerifying(false);
       return;
     }
+    setIsVerifying(false);
 
     const target = nextUrl;
     router.push(`/counselor/faceid?next=${encodeURIComponent(target)}`);
