@@ -36,6 +36,31 @@ async function fetchMoments(slug: string): Promise<StoryMoment[]> {
   return data as StoryMoment[];
 }
 
+type MemorialDraft = {
+  slug: string | null;
+  full_name: string | null;
+  birth_date: string | null;
+  death_date: string | null;
+  photo_url: string | null;
+};
+
+async function fetchDraft(slug: string): Promise<MemorialDraft | null> {
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from('memorial_drafts')
+    .select('slug, full_name, birth_date, death_date, photo_url')
+    .eq('slug', slug)
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return data as MemorialDraft;
+}
+
 interface HeavenPersonPageProps {
   params: {
     personSlug: string;
@@ -44,17 +69,24 @@ interface HeavenPersonPageProps {
 
 export default async function HeavenPersonPage({ params }: HeavenPersonPageProps) {
   // Fetch directly from Supabase - no cache, no localStorage, no fallbacks
-  const [story, moments] = await Promise.all([
+  const [story, moments, draft] = await Promise.all([
     fetchPerson(params.personSlug),
     fetchMoments(params.personSlug),
+    fetchDraft(params.personSlug),
   ]);
 
   // Simple "Not found" if no record exists
-  if (!story) {
+  if (!story && !draft) {
     notFound();
   }
 
-  const playbackId = story.mux_asset_id ? await getMuxPlaybackId(story.mux_asset_id) : null;
+  const displayName = story?.name || draft?.full_name || params.personSlug;
+  const displayPhoto = story?.photo_url || draft?.photo_url || null;
+  const playbackId = story?.mux_asset_id ? await getMuxPlaybackId(story.mux_asset_id) : null;
+  const displayDates =
+    draft?.birth_date || draft?.death_date
+      ? `${draft?.birth_date || ''}${draft?.birth_date && draft?.death_date ? ' – ' : ''}${draft?.death_date || ''}`
+      : '';
 
   return (
     <div style={{ minHeight: '100vh', background: '#020617', color: '#e2e8f0', padding: '32px 16px' }}>
@@ -63,13 +95,18 @@ export default async function HeavenPersonPage({ params }: HeavenPersonPageProps
           <p style={{ textTransform: 'uppercase', letterSpacing: '0.35em', fontSize: '12px', color: '#38bdf8' }}>
             Timeless Transparency Tribute
           </p>
-          <h1 style={{ fontSize: '48px', margin: '8px 0', color: '#f8fafc' }}>{story.name}</h1>
-          {story.story_text && (
+          <h1 style={{ fontSize: '48px', margin: '8px 0', color: '#f8fafc' }}>{displayName}</h1>
+          {displayDates && (
+            <p style={{ fontSize: '16px', lineHeight: 1.6, color: '#cbd5f5' }}>{displayDates}</p>
+          )}
+          {story?.story_text && (
             <p style={{ fontSize: '18px', lineHeight: 1.6, color: '#cbd5f5' }}>{story.story_text}</p>
           )}
           <div style={{ marginTop: '20px' }}>
             <Link
-              href={`/_dashmemories/slideshow?slug=${params.personSlug}&name=${encodeURIComponent(story.name)}`}
+              href={`/_dashmemories/slideshow?slug=${params.personSlug}&name=${encodeURIComponent(
+                displayName
+              )}`}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -89,9 +126,9 @@ export default async function HeavenPersonPage({ params }: HeavenPersonPageProps
           </div>
         </header>
 
-        {story.photo_url && (
+        {displayPhoto && (
           <div style={{ borderRadius: '24px', overflow: 'hidden', background: '#0f172a' }}>
-            <img src={story.photo_url} alt={story.name} style={{ width: '100%', display: 'block' }} />
+            <img src={displayPhoto} alt={displayName} style={{ width: '100%', display: 'block' }} />
           </div>
         )}
 
@@ -101,7 +138,7 @@ export default async function HeavenPersonPage({ params }: HeavenPersonPageProps
               controls
               playsInline
               style={{ width: '100%', display: 'block' }}
-              poster={story.photo_url || undefined}
+              poster={displayPhoto || undefined}
             >
               <source src={`https://stream.mux.com/${playbackId}.m3u8`} type="application/x-mpegURL" />
             </video>
