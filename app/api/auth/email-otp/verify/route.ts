@@ -46,7 +46,31 @@ export async function POST(req: NextRequest) {
       .update({ used_at: new Date().toISOString() })
       .eq("id", data.id);
 
-    return NextResponse.json({ success: true });
+    const { data: existingUser, error: userLookupError } = await supabaseAdmin
+      .from("users")
+      .select("id")
+      .eq("email", normalizedEmail)
+      .maybeSingle();
+
+    if (userLookupError) {
+      return NextResponse.json({ error: "Unable to create account." }, { status: 500 });
+    }
+
+    let userId = existingUser?.id || null;
+    if (!userId) {
+      const { data: createdUser, error: userCreateError } = await supabaseAdmin
+        .from("users")
+        .insert({ email: normalizedEmail })
+        .select("id")
+        .single();
+
+      if (userCreateError || !createdUser?.id) {
+        return NextResponse.json({ error: "Unable to create account." }, { status: 500 });
+      }
+      userId = createdUser.id;
+    }
+
+    return NextResponse.json({ success: true, userId, email: normalizedEmail });
   } catch (error: any) {
     return NextResponse.json(
       { error: error?.message || "Verification failed." },

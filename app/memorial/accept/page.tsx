@@ -108,6 +108,17 @@ export default function MemorialAcceptPage() {
         const data = await response.json().catch(() => ({}));
         throw new Error(data?.error || "Invalid code. Please try again.");
       }
+      const data = await response.json().catch(() => ({}));
+      if (data?.userId) {
+        try {
+          window.localStorage.setItem("dash_user_id", data.userId);
+          window.localStorage.setItem("dash_user_email", sentTo);
+        } catch {}
+        try {
+          window.sessionStorage.setItem("dash_user_id", data.userId);
+          window.sessionStorage.setItem("dash_user_email", sentTo);
+        } catch {}
+      }
     } catch (error: any) {
       setErrorMessage(error?.message || "Invalid code. Please try again.");
       setIsVerifying(false);

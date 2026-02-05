@@ -22,6 +22,14 @@ export default function MemorialPreviewPage() {
     ? buildCloudinaryFaceCropUrl(photoUrl, { aspectRatio: "2:3", width: 1200 })
     : "";
 
+  const readStoredValue = (key: string) => {
+    try {
+      return window.sessionStorage.getItem(key) || window.localStorage.getItem(key) || "";
+    } catch {
+      return "";
+    }
+  };
+
   useEffect(() => {
     const name = searchParams?.get("name")?.trim() || "";
     const birth = searchParams?.get("birth")?.trim() || "";
@@ -35,10 +43,10 @@ export default function MemorialPreviewPage() {
 
     if (!name || !birth || !death || !photo) {
       try {
-        const storedName = window.sessionStorage.getItem("memorial_full_name") || "";
-        const storedBirth = window.sessionStorage.getItem("memorial_birth_date") || "";
-        const storedDeath = window.sessionStorage.getItem("memorial_death_date") || "";
-        const storedPhoto = window.sessionStorage.getItem("memorial_photo_url") || "";
+        const storedName = readStoredValue("memorial_full_name");
+        const storedBirth = readStoredValue("memorial_birth_date");
+        const storedDeath = readStoredValue("memorial_death_date");
+        const storedPhoto = readStoredValue("memorial_photo_url");
         if (!name && storedName) setFullName(storedName);
         if (!birth && storedBirth) setBirthDate(storedBirth);
         if (!death && storedDeath) setDeathDate(storedDeath);

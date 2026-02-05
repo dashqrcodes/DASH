@@ -54,7 +54,10 @@ export default function MemorialCheckoutPage() {
   const handleCheckout = async () => {
     let photoUrl = "";
     try {
-      photoUrl = window.sessionStorage.getItem("memorial_photo_url") || "";
+      photoUrl =
+        window.sessionStorage.getItem("memorial_photo_url") ||
+        window.localStorage.getItem("memorial_photo_url") ||
+        "";
     } catch {}
 
     try {

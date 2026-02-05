@@ -12,11 +12,12 @@ const fieldLabel = "text-sm font-medium text-gray-100 pl-1";
 const inputBase =
   "h-12 w-full rounded-full border border-white/10 bg-white/5 px-4 text-base text-white placeholder:text-white/50 backdrop-blur-lg transition duration-200 focus:border-white/30 focus:outline-none focus:ring-2 focus:ring-purple-300/40";
 
-const toTitleCase = (value: string) =>
+const capitalizeWords = (value: string) =>
   value
-    .toLowerCase()
     .replace(/\s+/g, " ")
-    .replace(/\b\w/g, (char) => char.toUpperCase());
+    .split(" ")
+    .map((word) => (word ? word[0].toUpperCase() + word.slice(1) : ""))
+    .join(" ");
 
 const slugify = (value: string) =>
   value
@@ -111,6 +112,25 @@ export default function MemorialDetailsPage() {
   const [sunset, setSunset] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [accountId, setAccountId] = useState<string | null>(null);
+  const [accountEmail, setAccountEmail] = useState<string | null>(null);
+
+  const persistValue = (key: string, value: string) => {
+    try {
+      window.sessionStorage.setItem(key, value);
+    } catch {}
+    try {
+      window.localStorage.setItem(key, value);
+    } catch {}
+  };
+
+  const readStoredValue = (key: string) => {
+    try {
+      return window.sessionStorage.getItem(key) || window.localStorage.getItem(key) || "";
+    } catch {
+      return "";
+    }
+  };
 
   const currentLang = searchParams?.get("lang") === "es" ? "es" : "en";
   const previewPhotoUrl = photoUrl
@@ -119,6 +139,21 @@ export default function MemorialDetailsPage() {
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    try {
+      const storedId =
+        window.localStorage.getItem("dash_user_id") ||
+        window.sessionStorage.getItem("dash_user_id") ||
+        "";
+      const storedEmail =
+        window.localStorage.getItem("dash_user_email") ||
+        window.sessionStorage.getItem("dash_user_email") ||
+        "";
+      if (storedId) setAccountId(storedId);
+      if (storedEmail) setAccountEmail(storedEmail);
+    } catch {}
   }, []);
 
   useEffect(() => {
@@ -133,34 +168,26 @@ export default function MemorialDetailsPage() {
 
     if (paramsName) {
       setFullName(paramsName);
-      try {
-        window.sessionStorage.setItem("memorial_full_name", paramsName);
-      } catch {}
+      persistValue("memorial_full_name", paramsName);
     }
     if (paramsBirth) {
       setSunrise(paramsBirth);
-      try {
-        window.sessionStorage.setItem("memorial_birth_date", paramsBirth);
-      } catch {}
+      persistValue("memorial_birth_date", paramsBirth);
     }
     if (paramsDeath) {
       setSunset(paramsDeath);
-      try {
-        window.sessionStorage.setItem("memorial_death_date", paramsDeath);
-      } catch {}
+      persistValue("memorial_death_date", paramsDeath);
     }
     if (paramsPhoto) {
       setPhotoUrl(paramsPhoto);
-      try {
-        window.sessionStorage.setItem("memorial_photo_url", paramsPhoto);
-      } catch {}
+      persistValue("memorial_photo_url", paramsPhoto);
     }
 
     try {
-      const storedName = window.sessionStorage.getItem("memorial_full_name") || "";
-      const storedBirth = window.sessionStorage.getItem("memorial_birth_date") || "";
-      const storedDeath = window.sessionStorage.getItem("memorial_death_date") || "";
-      const storedPhoto = window.sessionStorage.getItem("memorial_photo_url") || "";
+      const storedName = readStoredValue("memorial_full_name");
+      const storedBirth = readStoredValue("memorial_birth_date");
+      const storedDeath = readStoredValue("memorial_death_date");
+      const storedPhoto = readStoredValue("memorial_photo_url");
       if (!fullName && storedName) setFullName(storedName);
       if (!sunrise && storedBirth) {
         setSunrise(storedBirth);
@@ -171,6 +198,78 @@ export default function MemorialDetailsPage() {
       if (!photoUrl && storedPhoto) setPhotoUrl(storedPhoto);
     } catch {}
   }, [searchParams]);
+
+  useEffect(() => {
+    if (!accountId && !accountEmail) return;
+    if (fullName || sunrise || sunset || photoUrl) return;
+    const controller = new AbortController();
+    const query = accountId
+      ? `userId=${encodeURIComponent(accountId)}`
+      : `email=${encodeURIComponent(accountEmail || "")}`;
+    fetch(`/api/drafts/get?${query}`, { signal: controller.signal })
+      .then(async (res) => {
+        if (!res.ok) return null;
+        const data = await res.json();
+        return data?.draft || null;
+      })
+      .then((draft) => {
+        if (!draft) return;
+        if (draft.full_name && !fullName) {
+          setFullName(draft.full_name);
+          persistValue("memorial_full_name", draft.full_name);
+        }
+        if (draft.birth_date && !sunrise) {
+          setSunrise(draft.birth_date);
+          persistValue("memorial_birth_date", draft.birth_date);
+        }
+        if (draft.death_date && !sunset) {
+          setSunset(draft.death_date);
+          persistValue("memorial_death_date", draft.death_date);
+        }
+        if (draft.photo_url && !photoUrl) {
+          setPhotoUrl(draft.photo_url);
+          persistValue("memorial_photo_url", draft.photo_url);
+        }
+        if (draft.slug) {
+          persistValue("memorial_slug", draft.slug);
+        }
+      })
+      .catch(() => {});
+
+    return () => controller.abort();
+  }, [accountId, accountEmail, fullName, sunrise, sunset, photoUrl]);
+
+  useEffect(() => {
+    if (!accountId || !accountEmail) return;
+    if (!fullName && !sunrise && !sunset && !photoUrl) return;
+    const slugFromStorage = readStoredValue("memorial_slug");
+    const computedSlug = slugFromStorage || (fullName ? slugify(fullName) : "");
+    if (computedSlug && !slugFromStorage) {
+      persistValue("memorial_slug", computedSlug);
+    }
+
+    const isRemotePhoto =
+      photoUrl && !photoUrl.startsWith("blob:") && !photoUrl.startsWith("data:");
+    const payload = {
+      userId: accountId,
+      email: accountEmail,
+      slug: computedSlug,
+      fullName,
+      birthDate: sunrise,
+      deathDate: sunset,
+      photoUrl: isRemotePhoto ? photoUrl : "",
+    };
+
+    const timeoutId = window.setTimeout(() => {
+      fetch("/api/drafts/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }).catch(() => {});
+    }, 600);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [accountId, accountEmail, fullName, sunrise, sunset, photoUrl]);
 
   const strings =
     currentLang === "es"
@@ -230,9 +329,7 @@ export default function MemorialDetailsPage() {
 
     const previewUrl = URL.createObjectURL(processedFile);
     setPhotoUrl(previewUrl);
-    try {
-      window.sessionStorage.setItem("memorial_photo_url", previewUrl);
-    } catch {}
+    persistValue("memorial_photo_url", previewUrl);
 
     const formData = new FormData();
     formData.append("file", processedFile);
@@ -268,9 +365,7 @@ export default function MemorialDetailsPage() {
             } catch {}
           }
           setPhotoUrl(json.photoUrl);
-          try {
-            window.sessionStorage.setItem("memorial_photo_url", json.photoUrl);
-          } catch {}
+          persistValue("memorial_photo_url", json.photoUrl);
         } else {
           setPhotoError(strings.uploadFailed);
         }
@@ -363,22 +458,17 @@ export default function MemorialDetailsPage() {
               value={fullName}
               onChange={(event) => {
                 const value = event.target.value;
-                setFullName(value);
+                const normalized = capitalizeWords(value);
+                setFullName(normalized);
                 setFormError(null);
-                const nextSlug = slugify(value);
-                try {
-                  window.sessionStorage.setItem("memorial_slug", nextSlug);
-                } catch {}
-                try {
-                  window.sessionStorage.setItem("memorial_full_name", value);
-                } catch {}
+                const nextSlug = slugify(normalized);
+                persistValue("memorial_slug", nextSlug);
+                persistValue("memorial_full_name", normalized);
               }}
               onBlur={() => {
-                const formatted = toTitleCase(fullName);
+                const formatted = capitalizeWords(fullName);
                 setFullName(formatted);
-                try {
-                  window.sessionStorage.setItem("memorial_full_name", formatted);
-                } catch {}
+                persistValue("memorial_full_name", formatted);
               }}
               className={inputBase}
             />
@@ -397,16 +487,12 @@ export default function MemorialDetailsPage() {
                   const value = formatDateInput(event.target.value);
                   setSunrise(value);
                   setFormError(null);
-                  try {
-                    window.sessionStorage.setItem("memorial_birth_date", value);
-                  } catch {}
+                  persistValue("memorial_birth_date", value);
                 }}
                 onBlur={() => {
                   const formatted = formatDateOnBlur(sunrise);
                   setSunrise(formatted);
-                  try {
-                    window.sessionStorage.setItem("memorial_birth_date", formatted);
-                  } catch {}
+                  persistValue("memorial_birth_date", formatted);
                 }}
                 className={inputBase}
               />
@@ -422,16 +508,12 @@ export default function MemorialDetailsPage() {
                   const value = formatDateInput(event.target.value);
                   setSunset(value);
                   setFormError(null);
-                  try {
-                    window.sessionStorage.setItem("memorial_death_date", value);
-                  } catch {}
+                  persistValue("memorial_death_date", value);
                 }}
                 onBlur={() => {
                   const formatted = formatDateOnBlur(sunset);
                   setSunset(formatted);
-                  try {
-                    window.sessionStorage.setItem("memorial_death_date", formatted);
-                  } catch {}
+                  persistValue("memorial_death_date", formatted);
                 }}
                 className={inputBase}
               />

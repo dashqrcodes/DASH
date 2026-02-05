@@ -72,6 +72,14 @@ export default function MemorialCardBackPage() {
   const displayBirthDate = formatShortMonth(birthDate);
   const displayDeathDate = formatShortMonth(deathDate);
 
+  const readStoredValue = (key: string) => {
+    try {
+      return window.sessionStorage.getItem(key) || window.localStorage.getItem(key) || "";
+    } catch {
+      return "";
+    }
+  };
+
   useEffect(() => {
     const name = searchParams?.get("name") || "";
     const birth = searchParams?.get("birth") || "";
@@ -88,10 +96,10 @@ export default function MemorialCardBackPage() {
 
     if (!name || !birth || !death || !slugParam) {
       try {
-        const storedName = window.sessionStorage.getItem("memorial_full_name") || "";
-        const storedBirth = window.sessionStorage.getItem("memorial_birth_date") || "";
-        const storedDeath = window.sessionStorage.getItem("memorial_death_date") || "";
-        const storedSlug = window.sessionStorage.getItem("memorial_slug") || "";
+        const storedName = readStoredValue("memorial_full_name");
+        const storedBirth = readStoredValue("memorial_birth_date");
+        const storedDeath = readStoredValue("memorial_death_date");
+        const storedSlug = readStoredValue("memorial_slug");
         if (!name && storedName) setMemorialName(storedName);
         if (!birth && storedBirth) setBirthDate(storedBirth);
         if (!death && storedDeath) setDeathDate(storedDeath);

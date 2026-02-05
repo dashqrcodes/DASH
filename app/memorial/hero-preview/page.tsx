@@ -22,6 +22,14 @@ export default function HeroPreviewPage() {
   });
   const [slug, setSlug] = useState("");
 
+  const readStoredValue = (key: string) => {
+    try {
+      return window.sessionStorage.getItem(key) || window.localStorage.getItem(key) || "";
+    } catch {
+      return "";
+    }
+  };
+
   useEffect(() => {
     let next = { ...cardData };
     let nextSlug = "";
@@ -38,11 +46,11 @@ export default function HeroPreviewPage() {
 
     if (!pName || !pBirth || !pDeath || !pPhoto) {
       try {
-        const storedName = window.sessionStorage.getItem("memorial_full_name") || "";
-        const storedBirth = window.sessionStorage.getItem("memorial_birth_date") || "";
-        const storedDeath = window.sessionStorage.getItem("memorial_death_date") || "";
-        const storedPhoto = window.sessionStorage.getItem("memorial_photo_url") || "";
-        const storedSlug = window.sessionStorage.getItem("memorial_slug") || "";
+        const storedName = readStoredValue("memorial_full_name");
+        const storedBirth = readStoredValue("memorial_birth_date");
+        const storedDeath = readStoredValue("memorial_death_date");
+        const storedPhoto = readStoredValue("memorial_photo_url");
+        const storedSlug = readStoredValue("memorial_slug");
         if (!pName && storedName) next.fullName = storedName;
         if (!pBirth && storedBirth) next.birthDate = storedBirth;
         if (!pDeath && storedDeath) next.deathDate = storedDeath;

@@ -59,7 +59,7 @@ export default function FinalApprovalPage() {
 
     const getStoredValue = (key: string) => {
       try {
-        return window.sessionStorage.getItem(key) || "";
+        return window.sessionStorage.getItem(key) || window.localStorage.getItem(key) || "";
       } catch {
         return "";
       }
