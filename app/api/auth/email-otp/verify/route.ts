@@ -23,28 +23,40 @@ export async function POST(req: NextRequest) {
       .eq("email", normalizedEmail)
       .is("used_at", null)
       .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .limit(5);
 
-    if (error || !data) {
+    if (error || !data || data.length === 0) {
       return NextResponse.json({ error: "Invalid code." }, { status: 400 });
-    }
-
-    const expiresAt = new Date(data.expires_at).getTime();
-    if (Number.isNaN(expiresAt) || Date.now() > expiresAt) {
-      return NextResponse.json({ error: "Code expired." }, { status: 400 });
     }
 
     const secret = process.env.OTP_SECRET || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "otp";
     const codeHash = hashOtp(normalizedEmail, token, secret);
-    if (codeHash !== data.code_hash) {
-      return NextResponse.json({ error: "Invalid code." }, { status: 400 });
+    const now = Date.now();
+    let matchedId: string | null = null;
+    let hasUnexpired = false;
+
+    for (const row of data) {
+      const expiresAt = new Date(row.expires_at).getTime();
+      if (!Number.isNaN(expiresAt) && now <= expiresAt) {
+        hasUnexpired = true;
+        if (row.code_hash === codeHash) {
+          matchedId = row.id;
+          break;
+        }
+      }
+    }
+
+    if (!matchedId) {
+      return NextResponse.json(
+        { error: hasUnexpired ? "Invalid code." : "Code expired." },
+        { status: 400 }
+      );
     }
 
     await supabaseAdmin
       .from("email_otps")
       .update({ used_at: new Date().toISOString() })
-      .eq("id", data.id);
+      .eq("id", matchedId);
 
     const { data: existingUser, error: userLookupError } = await supabaseAdmin
       .from("users")
