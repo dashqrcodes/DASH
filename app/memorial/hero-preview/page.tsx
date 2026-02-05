@@ -84,6 +84,16 @@ export default function HeroPreviewPage() {
     return qs ? `?${qs}` : "";
   };
 
+  const pushWithFallback = (target: string) => {
+    router.push(target);
+    if (typeof window === "undefined") return;
+    window.setTimeout(() => {
+      if (window.location.href !== target) {
+        window.location.href = target;
+      }
+    }, 300);
+  };
+
   const strings =
     currentLang === "es"
       ? {
@@ -172,21 +182,20 @@ export default function HeroPreviewPage() {
       <div className="fixed inset-x-0 bottom-0 bg-gradient-to-t from-[#0b0b0d] via-[#0b0b0d]/90 to-transparent px-6 pb-6 pt-6">
         <button
           type="button"
-          onClick={() =>
-            router.push(
-              `/memorial/final-approval${[
-                memorialName ? `name=${encodeURIComponent(memorialName)}` : "",
-                birthDate ? `birth=${encodeURIComponent(birthDate)}` : "",
-                deathDate ? `death=${encodeURIComponent(deathDate)}` : "",
-                slug ? `slug=${encodeURIComponent(slug)}` : "",
-                cardData.photoUrl ? `photo=${encodeURIComponent(cardData.photoUrl)}` : "",
-                `lang=${currentLang}`,
-              ]
-                .filter(Boolean)
-                .join("&")
-                .replace(/^/, "?")}`
-            )
-          }
+          onClick={() => {
+            const target = `/memorial/final-approval${[
+              memorialName ? `name=${encodeURIComponent(memorialName)}` : "",
+              birthDate ? `birth=${encodeURIComponent(birthDate)}` : "",
+              deathDate ? `death=${encodeURIComponent(deathDate)}` : "",
+              slug ? `slug=${encodeURIComponent(slug)}` : "",
+              cardData.photoUrl ? `photo=${encodeURIComponent(cardData.photoUrl)}` : "",
+              `lang=${currentLang}`,
+            ]
+              .filter(Boolean)
+              .join("&")
+              .replace(/^/, "?")}`;
+            pushWithFallback(target);
+          }}
           className={primaryButtonClass}
         >
           {strings.next}

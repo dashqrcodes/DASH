@@ -142,8 +142,19 @@ export default function MemorialCardBackPage() {
           honoring: "Honoring your loved one with dignity and respect.",
         };
 
+  const pushWithFallback = (target: string) => {
+    router.push(target);
+    if (typeof window === "undefined") return;
+    window.setTimeout(() => {
+      if (window.location.href !== target) {
+        window.location.href = target;
+      }
+    }, 300);
+  };
+
   const handleApprove = () => {
-    router.push(`/memorial/hero-preview${buildQueryString()}`);
+    const target = `/memorial/hero-preview${buildQueryString()}`;
+    pushWithFallback(target);
   };
 
   return (

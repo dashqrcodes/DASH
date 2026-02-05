@@ -12,16 +12,20 @@ export default function MemorialAcceptPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
+  const [otp, setOtp] = useState("");
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const lastRequestedRef = useRef<string>("");
+  const lastVerifyOtpRef = useRef<string>("");
 
   const nextParam = searchParams?.get("next");
   const nextUrl = nextParam && nextParam.startsWith("/") ? nextParam : "/memorial/profile";
 
   const canSend = isValidEmail(email);
+  const canVerify = otp.trim().length === 6 && Boolean(sentTo);
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://dashmemories.com";
 
   useEffect(() => {
@@ -61,7 +65,16 @@ export default function MemorialAcceptPage() {
     };
   }, [router, nextUrl]);
 
-  const handleSendLink = async () => {
+  useEffect(() => {
+    if (!canVerify || isVerifying) return;
+    const token = otp.trim();
+    if (token.length !== 6) return;
+    if (lastVerifyOtpRef.current === token) return;
+    lastVerifyOtpRef.current = token;
+    handleVerifyCode();
+  }, [canVerify, isVerifying, otp, sentTo]);
+
+  const handleSendCode = async () => {
     setErrorMessage(null);
     setStatusMessage(null);
 
@@ -75,20 +88,47 @@ export default function MemorialAcceptPage() {
     lastRequestedRef.current = normalizedEmail;
 
     setIsSending(true);
-    const redirectUrl = `${appUrl}/memorial/accept?next=${encodeURIComponent(nextUrl)}&mode=magic`;
     const { error } = await supabase.auth.signInWithOtp({
       email: normalizedEmail,
-      options: { emailRedirectTo: redirectUrl },
+      options: { shouldCreateUser: true },
     });
     setIsSending(false);
 
     if (error) {
-      setErrorMessage(error.message || "Unable to send link. Please try again.");
+      setErrorMessage(error.message || "Unable to send code. Please try again.");
       return;
     }
 
     setSentTo(normalizedEmail);
-    setStatusMessage(`Magic link sent to ${normalizedEmail}. Check your inbox.`);
+    setOtp("");
+    setStatusMessage(`Code sent to ${normalizedEmail}. Check your email.`);
+  };
+
+  const handleVerifyCode = async () => {
+    if (!sentTo) {
+      setErrorMessage("Send the code first.");
+      return;
+    }
+
+    setErrorMessage(null);
+    setStatusMessage(null);
+    setIsVerifying(true);
+
+    const { error } = await supabase.auth.verifyOtp({
+      email: sentTo,
+      token: otp.trim(),
+      type: "email",
+    });
+
+    setIsVerifying(false);
+
+    if (error) {
+      setErrorMessage(error.message || "Invalid code. Please try again.");
+      return;
+    }
+
+    const target = nextUrl;
+    router.push(`/counselor/faceid?next=${encodeURIComponent(target)}`);
   };
 
   return (
@@ -132,11 +172,33 @@ export default function MemorialAcceptPage() {
             <button
               type="button"
               disabled={!canSend || isSending}
-              onClick={handleSendLink}
+              onClick={handleSendCode}
               className="w-full rounded-full border border-white/10 bg-white/10 px-4 py-3 text-sm font-semibold text-white/90 transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isSending ? "Sending link..." : "Send magic link"}
+              {isSending ? "Sending code..." : "Send code"}
             </button>
+
+            <div className="space-y-2">
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                autoComplete="one-time-code"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value.slice(0, 6))}
+                placeholder="Enter 6-digit code"
+                className="h-12 w-full rounded-full border border-white/10 bg-white/5 px-4 text-center text-base tracking-[0.3em] text-white placeholder:text-white/40 shadow-inner shadow-black/20 focus:border-purple-300/60 focus:outline-none focus:ring-2 focus:ring-purple-300/60"
+                disabled={!sentTo}
+              />
+              <button
+                type="button"
+                disabled={!canVerify || isVerifying}
+                onClick={handleVerifyCode}
+                className="w-full rounded-full border border-white/10 bg-purple-500/70 px-4 py-3 text-sm font-semibold text-white transition hover:bg-purple-500/90 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isVerifying ? "Verifying..." : "Verify code"}
+              </button>
+            </div>
             {(statusMessage || errorMessage) && (
               <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80">
                 {errorMessage ? <span className="text-rose-300">{errorMessage}</span> : statusMessage}
