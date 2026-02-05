@@ -67,6 +67,26 @@ export default async function HeavenPersonPage({ params }: HeavenPersonPageProps
           {story.story_text && (
             <p style={{ fontSize: '18px', lineHeight: 1.6, color: '#cbd5f5' }}>{story.story_text}</p>
           )}
+          <div style={{ marginTop: '20px' }}>
+            <Link
+              href={`/_dashmemories/slideshow?slug=${params.personSlug}&name=${encodeURIComponent(story.name)}`}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '12px 20px',
+                borderRadius: '999px',
+                background: 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
+                color: '#f8fafc',
+                textDecoration: 'none',
+                fontWeight: 600,
+                fontSize: '14px',
+                boxShadow: '0 8px 24px rgba(102,126,234,0.35)',
+              }}
+            >
+              ▶ View Slideshow
+            </Link>
+          </div>
         </header>
 
         {story.photo_url && (

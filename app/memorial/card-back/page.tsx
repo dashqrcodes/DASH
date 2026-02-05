@@ -65,7 +65,7 @@ export default function MemorialCardBackPage() {
   const [counselorPhone, setCounselorPhone] = useState(
     searchParams?.get("counselorPhone") || "323-476-8005"
   );
-  const slug = searchParams?.get("slug") || "";
+  const [slug, setSlug] = useState(searchParams?.get("slug") || "");
   const [passageIndex, setPassageIndex] = useState(0);
   const bodyText = passages[passageIndex].text;
   const bodyCredit = passages[passageIndex].credit;
@@ -78,20 +78,24 @@ export default function MemorialCardBackPage() {
     const death = searchParams?.get("death") || "";
     const counselor = searchParams?.get("counselorName") || "";
     const phone = searchParams?.get("counselorPhone") || "";
+    const slugParam = searchParams?.get("slug") || "";
     if (name) setMemorialName(name);
     if (birth) setBirthDate(birth);
     if (death) setDeathDate(death);
     if (counselor) setCounselorName(counselor);
     if (phone) setCounselorPhone(phone);
+    if (slugParam) setSlug(slugParam);
 
-    if (!name || !birth || !death) {
+    if (!name || !birth || !death || !slugParam) {
       try {
         const storedName = window.sessionStorage.getItem("memorial_full_name") || "";
         const storedBirth = window.sessionStorage.getItem("memorial_birth_date") || "";
         const storedDeath = window.sessionStorage.getItem("memorial_death_date") || "";
+        const storedSlug = window.sessionStorage.getItem("memorial_slug") || "";
         if (!name && storedName) setMemorialName(storedName);
         if (!birth && storedBirth) setBirthDate(storedBirth);
         if (!death && storedDeath) setDeathDate(storedDeath);
+        if (!slugParam && storedSlug) setSlug(storedSlug);
       } catch {}
     }
   }, [searchParams]);
@@ -110,6 +114,12 @@ export default function MemorialCardBackPage() {
     const qs = params.toString();
     return qs ? `?${qs}` : "";
   };
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://dashmemories.com";
+  const qrTargetUrl = slug ? `${appUrl}/heaven/${slug}` : "";
+  const qrPreviewUrl = qrTargetUrl
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(qrTargetUrl)}`
+    : "/qr-dark-purple.svg";
 
   const strings =
     currentLang === "es"
@@ -200,7 +210,7 @@ export default function MemorialCardBackPage() {
                   </div>
                   <div className="flex items-center justify-center">
                     <img
-                      src="/qr-dark-purple.svg"
+                      src={qrPreviewUrl}
                       alt="QR preview"
                       className="h-[18.75%] w-[18.75%] min-h-[48px] min-w-[48px] max-h-[64px] max-w-[64px] drop-shadow-[0_4px_10px_rgba(88,28,135,0.35)]"
                     />

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/utils/stripe';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { migrateTempVideo } from '@/lib/utils/videoMigration';
+import { sendPrintPdfEmail } from '@/lib/utils/emailPdf';
 
 export const runtime = 'nodejs';
 
@@ -81,7 +82,15 @@ export async function POST(req: NextRequest) {
       });
 
       // Step 3: Email PDF to vendor
-      await sendPDFToVendor(pdfBuffer, slug, session.customer_email);
+      const testEmail = process.env.TEST_PDF_EMAIL;
+      const recipientEmail = testEmail || process.env.PRINT_SHOP_EMAIL || 'printshop@example.com';
+      await sendPrintPdfEmail({
+        pdfBuffer,
+        slug,
+        recipientEmail,
+        customerEmail: session.customer_email,
+        subjectPrefix: testEmail ? 'Test Print PDF' : 'New Acrylic Order',
+      });
 
       // Step 4: Update draft status to 'paid'
       await supabaseAdmin
@@ -102,43 +111,5 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ received: true });
 }
 
-async function sendPDFToVendor(
-  pdfBuffer: Buffer,
-  slug: string,
-  customerEmail?: string | null
-) {
-  try {
-    const nodemailer = await import('nodemailer');
-    const transporter = nodemailer.default.createTransport({
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: parseInt(process.env.SMTP_PORT || '587'),
-      secure: false,
-      auth: {
-        user: process.env.SMTP_USER || '',
-        pass: process.env.SMTP_PASS || '',
-      },
-    });
-
-    const vendorEmail = process.env.PRINT_SHOP_EMAIL || 'printshop@example.com';
-    
-    await transporter.sendMail({
-      from: process.env.SMTP_FROM || 'noreply@dash.gift',
-      to: vendorEmail,
-      subject: `New Acrylic Order - ${slug}`,
-      text: `A new acrylic transparency gift order has been received.\n\nOrder ID: ${slug}\nCustomer Email: ${customerEmail || 'N/A'}\n\nPDF attached for printing.`,
-      attachments: [
-        {
-          filename: `acrylic-order-${slug}.pdf`,
-          content: pdfBuffer,
-        },
-      ],
-    });
-
-    console.log('PDF sent to vendor:', vendorEmail);
-    return true;
-  } catch (error) {
-    console.error('Failed to send PDF to vendor:', error);
-    return false;
-  }
-}
+ 
 

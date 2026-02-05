@@ -6,6 +6,8 @@ export const runtime = 'nodejs';
 
 const DPI = 72;
 const IN = (v: number) => v * DPI;
+const CARD_WIDTH_IN = 4;
+const CARD_HEIGHT_IN = 6;
 
 export async function POST(req: NextRequest) {
   try {
@@ -19,18 +21,24 @@ export async function POST(req: NextRequest) {
       fetch(qrUrl).then((r) => r.arrayBuffer()).then((b) => Buffer.from(b)),
     ]);
 
-    const doc = new PDFDocument({ size: [IN(6), IN(6)], margin: 0 });
+    const doc = new PDFDocument({
+      size: [IN(CARD_WIDTH_IN), IN(CARD_HEIGHT_IN)],
+      margin: 0,
+    });
     const chunks: Buffer[] = [];
     doc.on('data', (c: Buffer) => chunks.push(c));
     const done = new Promise<Buffer>((resolve) => doc.on('end', () => resolve(Buffer.concat(chunks))));
 
-    // Full-bleed photo
-    doc.image(photoBuf, 0, 0, { width: IN(6), height: IN(6) });
+    // Full-bleed photo (4"x6")
+    doc.image(photoBuf, 0, 0, { width: IN(CARD_WIDTH_IN), height: IN(CARD_HEIGHT_IN) });
 
     // QR at bottom-left: 0.75" square with 0.5" padding
     const qrSize = IN(0.75);
     const pad = IN(0.5);
-    doc.image(qrBuf, pad, IN(6) - pad - qrSize, { width: qrSize, height: qrSize });
+    doc.image(qrBuf, pad, IN(CARD_HEIGHT_IN) - pad - qrSize, {
+      width: qrSize,
+      height: qrSize,
+    });
 
     doc.end();
     const pdfBuffer = await done;

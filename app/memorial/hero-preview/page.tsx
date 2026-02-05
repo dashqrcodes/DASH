@@ -66,6 +66,11 @@ export default function HeroPreviewPage() {
   const previewPhotoUrl = cardData.photoUrl
     ? buildCloudinaryFaceCropUrl(cardData.photoUrl, { aspectRatio: "2:3", width: 1400 })
     : "";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://dashmemories.com";
+  const qrTargetUrl = slug ? `${appUrl}/heaven/${slug}` : "";
+  const qrPreviewUrl = qrTargetUrl
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(qrTargetUrl)}`
+    : "/qr-dark-purple.svg";
 
   const buildQueryString = () => {
     const params = new URLSearchParams();
@@ -147,7 +152,7 @@ export default function HeroPreviewPage() {
                 </div>
                 <div className="flex items-center justify-center">
                   <img
-                    src="/qr-dark-purple.svg"
+                    src={qrPreviewUrl}
                     alt="QR preview"
                     className="h-[7.5%] w-[7.5%] min-h-[30px] min-w-[30px] max-h-[36px] max-w-[36px] drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)]"
                   />

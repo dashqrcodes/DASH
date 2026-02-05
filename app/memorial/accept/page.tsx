@@ -5,162 +5,90 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
-const normalizePhone = (value: string) => value.replace(/\D/g, "");
-const formatPhone = (value: string) => {
-  const digits = normalizePhone(value).slice(0, 10);
-  const part1 = digits.slice(0, 3);
-  const part2 = digits.slice(3, 6);
-  const part3 = digits.slice(6, 10);
-  return [part1, part2, part3].filter(Boolean).join("-");
-};
-const toE164 = (digits: string) => {
-  if (digits.length === 10) return `+1${digits}`;
-  if (digits.length === 11 && digits.startsWith("1")) return `+${digits}`;
-  return null;
-};
+const isValidEmail = (value: string) =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim().toLowerCase());
 
 export default function MemorialAcceptPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [phone, setPhone] = useState("");
-  const [otp, setOtp] = useState("");
+  const [email, setEmail] = useState("");
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
-  const [isVerifying, setIsVerifying] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const lastVerifyOtpRef = useRef<string>("");
-  const otpBypass =
-    searchParams?.get("otp") === "test" ||
-    process.env.NEXT_PUBLIC_OTP_BYPASS === "1";
+  const lastRequestedRef = useRef<string>("");
 
   const nextParam = searchParams?.get("next");
   const nextUrl = nextParam && nextParam.startsWith("/") ? nextParam : "/memorial/profile";
 
-  const normalizedPhone = normalizePhone(phone);
-  const canSend = Boolean(toE164(normalizedPhone));
-  const canVerify = otp.trim().length === 6 && Boolean(sentTo);
+  const canSend = isValidEmail(email);
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://dashmemories.com";
 
   useEffect(() => {
-    if (!sentTo) return;
-    if (typeof window === "undefined") return;
-    if (!("OTPCredential" in window)) return;
-
-    const controller = new AbortController();
-    const abortListener = () => controller.abort();
-    window.addEventListener("blur", abortListener);
-
-    navigator.credentials
-      .get({
-        // @ts-ignore - Web OTP is not in TS lib types yet
-        otp: { transport: ["sms"] },
-        signal: controller.signal,
-      })
-      .then((credential: any) => {
-        if (credential?.code) {
-          setOtp(credential.code);
-        }
-      })
-      .catch(() => {
-        // Ignore - user canceled or browser doesn't support it
-      })
-      .finally(() => {
-        window.removeEventListener("blur", abortListener);
-      });
-
-    return () => {
-      controller.abort();
-      window.removeEventListener("blur", abortListener);
-    };
-  }, [sentTo]);
-
-  useEffect(() => {
-    if (!otpBypass) return;
-    const id = window.setTimeout(() => {
-      router.push(nextUrl);
-    }, 600);
-    return () => window.clearTimeout(id);
-  }, [otpBypass, router, nextUrl]);
-
-  useEffect(() => {
-    if (!canVerify || isVerifying) return;
-    const token = otp.trim();
-    if (token.length !== 6) return;
-    if (lastVerifyOtpRef.current === token) return;
-    lastVerifyOtpRef.current = token;
-    handleVerifyOtp();
-  }, [canVerify, isVerifying, otp, sentTo]);
-
-  const handleSendOtp = async () => {
-    if (otpBypass) {
-      router.push(nextUrl);
-      return;
+    const storedNext = typeof window !== "undefined" ? window.sessionStorage.getItem("otp_next") : "";
+    if (!nextParam && storedNext) {
+      // keep fallback for magic link redirects
+      window.sessionStorage.setItem("otp_next", storedNext);
+    } else if (nextParam) {
+      try {
+        window.sessionStorage.setItem("otp_next", nextUrl);
+      } catch {}
     }
+  }, [nextParam, nextUrl]);
+
+  useEffect(() => {
+    let active = true;
+    const checkSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!active) return;
+      if (data?.session) {
+        const storedNext = window.sessionStorage.getItem("otp_next");
+        const target = storedNext || nextUrl;
+        router.push(`/counselor/faceid?next=${encodeURIComponent(target)}`);
+      }
+    };
+    checkSession();
+    const { data: subscription } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        const storedNext = window.sessionStorage.getItem("otp_next");
+        const target = storedNext || nextUrl;
+        router.push(`/counselor/faceid?next=${encodeURIComponent(target)}`);
+      }
+    });
+    return () => {
+      active = false;
+      subscription?.subscription?.unsubscribe();
+    };
+  }, [router, nextUrl]);
+
+  const handleSendLink = async () => {
     setErrorMessage(null);
     setStatusMessage(null);
 
-    const e164 = toE164(normalizedPhone);
-    if (!e164) {
-      setErrorMessage("Enter a valid 10-digit US mobile number.");
+    if (!canSend) {
+      setErrorMessage("Enter a valid email address.");
       return;
     }
 
+    const normalizedEmail = email.trim().toLowerCase();
+    if (lastRequestedRef.current === normalizedEmail) return;
+    lastRequestedRef.current = normalizedEmail;
+
     setIsSending(true);
-    const { error } = await supabase.auth.signInWithOtp({ phone: e164 });
+    const redirectUrl = `${appUrl}/memorial/accept?next=${encodeURIComponent(nextUrl)}&mode=magic`;
+    const { error } = await supabase.auth.signInWithOtp({
+      email: normalizedEmail,
+      options: { emailRedirectTo: redirectUrl },
+    });
     setIsSending(false);
 
     if (error) {
-      setErrorMessage(error.message || "Unable to send code. Please try again.");
+      setErrorMessage(error.message || "Unable to send link. Please try again.");
       return;
     }
 
-    setSentTo(e164);
-    setOtp("");
-    setStatusMessage(`Code sent to ${e164}. Enter the 6-digit code.`);
-  };
-
-  const handleVerifyOtp = async () => {
-    if (otpBypass) {
-      router.push(nextUrl);
-      return;
-    }
-    if (!sentTo) {
-      setErrorMessage("Send the code first.");
-      return;
-    }
-
-    setErrorMessage(null);
-    setStatusMessage(null);
-    setIsVerifying(true);
-
-    const { error } = await supabase.auth.verifyOtp({
-      phone: sentTo,
-      token: otp.trim(),
-      type: "sms",
-    });
-
-    setIsVerifying(false);
-
-    if (error) {
-      setErrorMessage(error.message || "Invalid code. Please try again.");
-      return;
-    }
-
-    const { data: userData } = await supabase.auth.getUser();
-    if (userData?.user) {
-      await supabase
-        .from("users")
-        .upsert(
-          {
-            id: userData.user.id,
-            phone: sentTo,
-          },
-          { onConflict: "phone" }
-        );
-    }
-
-    setStatusMessage("Phone verified. Redirecting...");
-    router.push(nextUrl);
+    setSentTo(normalizedEmail);
+    setStatusMessage(`Magic link sent to ${normalizedEmail}. Check your inbox.`);
   };
 
   return (
@@ -184,62 +112,31 @@ export default function MemorialAcceptPage() {
           </p>
           <p className="text-2xl font-semibold text-white/85">Life. Love. Forever.</p>
           <p className="text-base leading-relaxed text-white/80">
-            {otpBypass ? "Continuing to the next step..." : "Accept invite"}
+            Enter your email to continue
           </p>
 
-          <div className="space-y-4 text-center">
-            {otpBypass && (
-              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-sm text-white/80">
-                OTP is in test mode. Redirecting...
+          <div className="space-y-5 text-center">
+            <div className="rounded-full p-[3px] bg-gradient-to-r from-purple-600 via-[#c43a3a] via-purple-500 to-purple-700 shadow-[0_0_22px_rgba(79,70,229,0.45)] gradient-anim">
+              <div className="relative overflow-hidden rounded-full bg-gradient-to-b from-[#0c0f1a] via-[#0b0d17] to-[#090b12]">
+                <span className="pointer-events-none absolute inset-0 z-0 overflow-hidden" />
+                <input
+                  type="email"
+                  inputMode="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@email.com"
+                  className="relative z-10 h-12 w-full rounded-full border border-transparent bg-transparent px-4 text-base text-white text-center placeholder:text-white/40 shadow-inner shadow-black/30 focus:border-purple-300/60 focus:outline-none focus:ring-2 focus:ring-purple-300/60"
+                />
               </div>
-            )}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-white/70">Mobile phone</label>
-              <div className="rounded-full p-[3px] bg-gradient-to-r from-purple-600 via-[#c43a3a] via-purple-500 to-purple-700 shadow-[0_0_22px_rgba(79,70,229,0.45)] gradient-anim">
-                <div className="relative overflow-hidden rounded-full bg-gradient-to-b from-[#0c0f1a] via-[#0b0d17] to-[#090b12]">
-                  <span className="pointer-events-none absolute inset-0 z-0 overflow-hidden" />
-                  <input
-                    type="tel"
-                    inputMode="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(formatPhone(e.target.value))}
-                    placeholder="e.g.323-555-0199"
-                    className="relative z-10 h-12 w-full rounded-full border border-transparent bg-transparent px-4 text-base text-white text-center placeholder:text-white/40 shadow-inner shadow-black/30 focus:border-purple-300/60 focus:outline-none focus:ring-2 focus:ring-purple-300/60"
-                  />
-                </div>
-              </div>
-              <button
-                type="button"
-                disabled={!canSend || isSending || otpBypass}
-                onClick={handleSendOtp}
-                className="mt-3 w-full rounded-full border border-white/10 bg-white/10 px-4 py-3 text-sm font-semibold text-white/90 transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isSending ? "Sending code..." : "Send code"}
-              </button>
             </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-white/70">Verification code (OTP)</label>
-              <input
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                autoComplete="one-time-code"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value.slice(0, 6))}
-                placeholder="• • • • • •"
-                className="h-12 w-full rounded-2xl border border-white/10 bg-white/5 px-4 text-center text-lg tracking-[0.6em] text-white placeholder:text-white/30 shadow-inner shadow-black/20 focus:border-purple-300/60 focus:outline-none focus:ring-2 focus:ring-purple-300/60"
-                disabled={otpBypass}
-              />
-              <button
-                type="button"
-                disabled={!canVerify || isVerifying || otpBypass}
-                onClick={handleVerifyOtp}
-                className="mt-3 w-full rounded-full border border-white/10 bg-purple-500/70 px-4 py-3 text-sm font-semibold text-white transition hover:bg-purple-500/90 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isVerifying ? "Verifying..." : "Verify code"}
-              </button>
-            </div>
+            <button
+              type="button"
+              disabled={!canSend || isSending}
+              onClick={handleSendLink}
+              className="w-full rounded-full border border-white/10 bg-white/10 px-4 py-3 text-sm font-semibold text-white/90 transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isSending ? "Sending link..." : "Send magic link"}
+            </button>
             {(statusMessage || errorMessage) && (
               <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80">
                 {errorMessage ? <span className="text-rose-300">{errorMessage}</span> : statusMessage}

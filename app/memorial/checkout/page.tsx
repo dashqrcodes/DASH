@@ -13,6 +13,10 @@ export default function MemorialCheckoutPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const currentLang = searchParams?.get("lang") === "es" ? "es" : "en";
+  const memorialName = searchParams?.get("name") || "";
+  const birth = searchParams?.get("birth") || "";
+  const death = searchParams?.get("death") || "";
+  const slug = searchParams?.get("slug") || "";
 
   const strings =
     currentLang === "es"
@@ -48,11 +52,10 @@ export default function MemorialCheckoutPage() {
         };
 
   const handleCheckout = async () => {
-    const memorialId =
-      searchParams?.get("memorialId") ||
-      searchParams?.get("id") ||
-      searchParams?.get("slug") ||
-      "memorial-id-missing";
+    let photoUrl = "";
+    try {
+      photoUrl = window.sessionStorage.getItem("memorial_photo_url") || "";
+    } catch {}
 
     try {
       const response = await fetch("/api/checkout", {
@@ -60,7 +63,15 @@ export default function MemorialCheckoutPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ memorial_id: memorialId }),
+        body: JSON.stringify({
+          memorial_id: slug || "memorial-id-missing",
+          slug,
+          photoUrl,
+          name: memorialName,
+          birth,
+          death,
+          lang: currentLang,
+        }),
       });
 
       if (!response.ok) return;

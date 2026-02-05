@@ -37,6 +37,7 @@ function SlideshowContent() {
     () => musicTracks.find((track) => track.id === selectedTrackId) || null,
     [selectedTrackId]
   );
+  const slugParam = searchParams?.get('slug') || '';
 
   useEffect(() => {
     try {
@@ -63,6 +64,32 @@ function SlideshowContent() {
       setLanguage(savedLanguage);
     }
   }, []);
+  useEffect(() => {
+    if (!slugParam) return;
+    let active = true;
+    const loadFromSlug = async () => {
+      try {
+        const res = await fetch(`/api/slideshow/list?slug=${encodeURIComponent(slugParam)}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const urls = Array.isArray(data?.urls) ? data.urls : [];
+        if (!active || urls.length === 0) return;
+        const mapped = urls.map((url: string, index: number) => ({
+          id: `${Date.now()}-${index}`,
+          url,
+          file: null,
+          preview: url,
+        }));
+        setPhotos(mapped);
+        const mediaItems = urls.map((url: string) => ({ type: 'photo' as const, url }));
+        localStorage.setItem('slideshowMedia', JSON.stringify(mediaItems));
+      } catch {}
+    };
+    loadFromSlug();
+    return () => {
+      active = false;
+    };
+  }, [slugParam]);
   const [permissions, setPermissions] = useState({
     faceId: false,
     microphone: false,
@@ -309,6 +336,12 @@ function SlideshowContent() {
       if (parsed?.id) setSelectedTrackId(parsed.id);
     } catch {}
   }, []);
+
+  useEffect(() => {
+    if (!selectedTrackId && musicTracks.length > 0) {
+      setSelectedTrackId(musicTracks[0].id);
+    }
+  }, [selectedTrackId]);
 
   useEffect(() => {
     const audio = audioRef.current;

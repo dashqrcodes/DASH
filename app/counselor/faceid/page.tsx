@@ -10,6 +10,8 @@ export default function CounselorFaceIdPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const currentLang = searchParams?.get("lang") === "es" ? "es" : "en";
+  const nextParam = searchParams?.get("next");
+  const nextUrl = nextParam && nextParam.startsWith("/") ? nextParam : "/memorial/profile";
 
   return (
     <main className="relative min-h-screen bg-white text-gray-900">
@@ -37,14 +39,14 @@ export default function CounselorFaceIdPage() {
         <div className="mt-8 w-full flex flex-col items-center">
           <button
             type="button"
-            onClick={() => router.push(`/counselor/pricing?lang=${currentLang}`)}
+            onClick={() => router.push(nextUrl)}
             className={primaryButtonClass + " w-full"}
           >
             Enable Face ID
           </button>
           <button
             type="button"
-            onClick={() => router.push(`/counselor/pricing?lang=${currentLang}`)}
+            onClick={() => router.push(nextUrl)}
             className="mt-8 w-full text-center text-sm font-medium text-gray-600 underline underline-offset-4 pb-1"
           >
             Skip for now. I will manually input my credentials.
