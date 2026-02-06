@@ -44,6 +44,18 @@ const images: string[] = [
      audio.volume = initialVolume;
    }, [muted]);
 
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const previousBody = document.body.style.backgroundColor;
+    const previousHtml = document.documentElement.style.backgroundColor;
+    document.body.style.backgroundColor = "#000";
+    document.documentElement.style.backgroundColor = "#000";
+    return () => {
+      document.body.style.backgroundColor = previousBody;
+      document.documentElement.style.backgroundColor = previousHtml;
+    };
+  }, []);
+
    useEffect(() => {
      const audio = audioRef.current;
      if (!audio) return;
