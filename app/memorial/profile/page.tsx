@@ -433,7 +433,7 @@ export default function MemorialDetailsPage() {
         ))}
       </div>
 
-      <div className="relative mx-auto flex min-h-screen w-full max-w-md flex-col px-6 pb-28 pt-[56vh]">
+      <div className="relative mx-auto flex min-h-screen w-full max-w-md flex-col px-6 pb-36 pt-[52vh]">
         <label
           htmlFor="memorial-photo"
           className="absolute inset-x-0 top-0 h-[56vh] min-h-[340px] z-20 cursor-pointer"
@@ -449,34 +449,6 @@ export default function MemorialDetailsPage() {
           />
         </label>
         <div className="space-y-8">
-          {/* Language toggle */}
-          <div className="flex items-center justify-center">
-            <div className="relative flex w-full rounded-full bg-white/5 p-1 ring-1 ring-white/10 backdrop-blur-xl shadow-inner shadow-black/40">
-              <span
-                className={`absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-full bg-white shadow-sm transition-transform duration-200 ${
-                  currentLang === "es" ? "translate-x-full" : "translate-x-0"
-                }`}
-              />
-              <button
-                type="button"
-                onClick={() => updateLanguage("en")}
-                className={`relative z-10 flex-1 rounded-full px-4 py-2 text-sm font-semibold transition ${
-                  currentLang === "en" ? "text-gray-900" : "text-white/75 hover:text-white"
-                }`}
-              >
-                English
-              </button>
-              <button
-                type="button"
-                onClick={() => updateLanguage("es")}
-                className={`relative z-10 flex-1 rounded-full px-4 py-2 text-sm font-semibold transition ${
-                  currentLang === "es" ? "text-gray-900" : "text-white/75 hover:text-white"
-                }`}
-              >
-                Español
-              </button>
-            </div>
-          </div>
 
           {/* Name */}
           <div className="space-y-2">
@@ -554,7 +526,7 @@ export default function MemorialDetailsPage() {
             ))}
           </datalist>
 
-          <div className="space-y-3 pt-2">
+          <div className="space-y-3 pt-2 pb-6">
             {formError && <p className="text-center text-sm text-red-300">{formError}</p>}
             <button
               type="button"

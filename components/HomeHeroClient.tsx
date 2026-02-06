@@ -2,8 +2,8 @@
 
  import { useEffect, useMemo, useRef, useState } from "react";
 
- const images: string[] = [
-   "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1400&q=80",
+const images: string[] = [
+  "https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&w=1400&q=80",
    "https://images.unsplash.com/photo-1504151932400-72d4384f04b3?auto=format&fit=crop&w=1400&q=80",
    "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=1400&q=80",
    "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=1400&q=80",
@@ -90,7 +90,8 @@
              }}
            />
          ))}
-         <div className="absolute inset-0 bg-gradient-to-b from-black/65 via-black/55 to-black/75" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/65 via-black/55 to-black/75" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,0,0,0)_35%,rgba(0,0,0,0.45)_100%)]" />
        </div>
 
        <audio ref={audioRef} loop muted className="hidden" src={audioSrc} />
