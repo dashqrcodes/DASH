@@ -25,8 +25,8 @@ export default function HomeLanguageToggle() {
   }, [lang, router, searchParams]);
 
   return (
-    <>
-      <div className="mt-8 flex items-center justify-center">
+    <div className="w-full pt-6">
+      <div className="flex items-center justify-center">
         <div className="relative flex items-center rounded-full bg-white/10 px-1 py-1 ring-1 ring-white/15 backdrop-blur">
           <div
             className={`absolute inset-y-1 w-1/2 rounded-full bg-white shadow-lg transition-transform duration-200 ${
@@ -53,15 +53,6 @@ export default function HomeLanguageToggle() {
           </button>
         </div>
       </div>
-
-      <div className="mt-auto w-full pb-16 pt-12">
-        <Link
-          href={`/memorial/profile?lang=${lang}`}
-          className="mx-auto flex h-12 w-full max-w-xs items-center justify-center rounded-full bg-white text-base font-semibold text-gray-900 shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
-        >
-          Start
-        </Link>
-      </div>
-    </>
+    </div>
   );
 }

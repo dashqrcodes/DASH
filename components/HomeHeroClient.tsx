@@ -48,11 +48,20 @@ const images: string[] = [
     if (typeof document === "undefined") return;
     const previousBody = document.body.style.backgroundColor;
     const previousHtml = document.documentElement.style.backgroundColor;
+    const previousOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+    const previousTouchAction = document.body.style.touchAction;
     document.body.style.backgroundColor = "#000";
     document.documentElement.style.backgroundColor = "#000";
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.touchAction = "none";
     return () => {
       document.body.style.backgroundColor = previousBody;
       document.documentElement.style.backgroundColor = previousHtml;
+      document.body.style.overflow = previousOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+      document.body.style.touchAction = previousTouchAction;
     };
   }, []);
 
