@@ -37,6 +37,10 @@ export default function MemorialAcceptPage() {
   }, [nextParam, nextUrl]);
 
   useEffect(() => {
+    router.prefetch("/counselor/faceid");
+  }, [router]);
+
+  useEffect(() => {
     if (!canVerify || isVerifying) return;
     const token = otp.trim();
     if (token.length !== 6) return;
@@ -88,6 +92,17 @@ export default function MemorialAcceptPage() {
     setStep("code");
   };
 
+  const pushWithFallback = (target: string) => {
+    router.push(target);
+    if (typeof window === "undefined") return;
+    window.setTimeout(() => {
+      const current = `${window.location.pathname}${window.location.search}`;
+      if (current !== target) {
+        window.location.assign(target);
+      }
+    }, 50);
+  };
+
   const handleVerifyCode = async () => {
     if (!sentTo) {
       setErrorMessage("Send the code first.");
@@ -127,7 +142,8 @@ export default function MemorialAcceptPage() {
     setIsVerifying(false);
 
     const target = nextUrl;
-    router.push(`/counselor/faceid?next=${encodeURIComponent(target)}`);
+    const path = `/counselor/faceid?next=${encodeURIComponent(target)}`;
+    pushWithFallback(path);
   };
 
   return (

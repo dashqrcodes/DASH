@@ -305,6 +305,17 @@ export default function MemorialDetailsPage() {
     router.replace(`/memorial/profile?${params.toString()}`);
   };
 
+  const pushWithFallback = (target: string) => {
+    router.push(target);
+    if (typeof window === "undefined") return;
+    window.setTimeout(() => {
+      const current = `${window.location.pathname}${window.location.search}`;
+      if (current !== target) {
+        window.location.assign(target);
+      }
+    }, 50);
+  };
+
   const handlePhotoChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -540,15 +551,14 @@ export default function MemorialDetailsPage() {
                   photoUrl &&
                   !photoUrl.startsWith("data:") &&
                   !photoUrl.startsWith("blob:");
-                router.push(
-                  `/memorial/card-front?lang=${currentLang}${
-                    fullName ? `&name=${encodeURIComponent(fullName)}` : ""
-                  }${sunrise ? `&birth=${encodeURIComponent(sunrise)}` : ""}${
-                    sunset ? `&death=${encodeURIComponent(sunset)}` : ""
-                  }${computedSlug ? `&slug=${encodeURIComponent(computedSlug)}` : ""}${
-                    shouldIncludePhoto ? `&photo=${encodeURIComponent(photoUrl)}` : ""
-                  }`
-                );
+                const target = `/memorial/card-front?lang=${currentLang}${
+                  fullName ? `&name=${encodeURIComponent(fullName)}` : ""
+                }${sunrise ? `&birth=${encodeURIComponent(sunrise)}` : ""}${
+                  sunset ? `&death=${encodeURIComponent(sunset)}` : ""
+                }${computedSlug ? `&slug=${encodeURIComponent(computedSlug)}` : ""}${
+                  shouldIncludePhoto ? `&photo=${encodeURIComponent(photoUrl)}` : ""
+                }`;
+                pushWithFallback(target);
               }}
               className={primaryButtonClass}
             >

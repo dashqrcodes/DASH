@@ -69,6 +69,10 @@ export default function HeroPreviewPage() {
     router.prefetch("/memorial/final-approval");
   }, [router]);
 
+  useEffect(() => {
+    router.prefetch("/memorial/card-back");
+  }, [router]);
+
   const memorialName = cardData.fullName;
   const birthDate = cardData.birthDate;
   const deathDate = cardData.deathDate;
@@ -97,10 +101,11 @@ export default function HeroPreviewPage() {
     router.push(target);
     if (typeof window === "undefined") return;
     window.setTimeout(() => {
-      if (window.location.href !== target) {
-        window.location.href = target;
+      const current = `${window.location.pathname}${window.location.search}`;
+      if (current !== target) {
+        window.location.assign(target);
       }
-    }, 300);
+    }, 50);
   };
 
   const strings =
@@ -133,7 +138,7 @@ export default function HeroPreviewPage() {
             type="button"
             aria-label="Back"
             className="flex h-10 w-10 items-center justify-center rounded-full bg-white/5 ring-1 ring-white/10 backdrop-blur-xl transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-purple-300/60"
-            onClick={() => router.push(`/memorial/card-back${buildQueryString()}`)}
+            onClick={() => pushWithFallback(`/memorial/card-back${buildQueryString()}`)}
           >
             ←
           </button>

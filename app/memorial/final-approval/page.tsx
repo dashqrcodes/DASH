@@ -26,6 +26,10 @@ export default function FinalApprovalPage() {
     router.prefetch("/memorial/order/success");
   }, [router]);
 
+  useEffect(() => {
+    router.prefetch("/memorial/accept");
+  }, [router]);
+
   const buildParams = () => {
     const parts = [
       name ? `name=${encodeURIComponent(name)}` : "",
@@ -54,6 +58,17 @@ export default function FinalApprovalPage() {
           approve: "Approve",
           saving: "Saving...",
         };
+
+  const pushWithFallback = (target: string) => {
+    router.push(target);
+    if (typeof window === "undefined") return;
+    window.setTimeout(() => {
+      const current = `${window.location.pathname}${window.location.search}`;
+      if (current !== target) {
+        window.location.assign(target);
+      }
+    }, 50);
+  };
 
   const handleApprove = () => {
     setIsSaving(true);
@@ -85,7 +100,7 @@ export default function FinalApprovalPage() {
     }
 
     const nextUrl = `/memorial/order/success${buildParams()}`;
-    router.push(`/memorial/accept?next=${encodeURIComponent(nextUrl)}`);
+    pushWithFallback(`/memorial/accept?next=${encodeURIComponent(nextUrl)}`);
   };
 
   return (
@@ -105,7 +120,7 @@ export default function FinalApprovalPage() {
           <button
             type="button"
             className={changeButtonClass + " w-full"}
-            onClick={() => router.push(`/memorial/hero-preview${buildParams()}`)}
+            onClick={() => pushWithFallback(`/memorial/hero-preview${buildParams()}`)}
           >
             {strings.change}
           </button>
