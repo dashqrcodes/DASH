@@ -123,13 +123,12 @@ const images: string[] = [
 
        <audio ref={audioRef} loop muted className="hidden" src={audioSrc} />
 
-       <button
-         type="button"
-         onClick={() => setMuted((m) => !m)}
-         className="fixed bottom-5 right-5 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-white ring-1 ring-white/25 backdrop-blur shadow-lg transition hover:bg-white/25"
-       >
-         {muted ? "🔇" : "🔊"}
-       </button>
+      <button
+        type="button"
+        onClick={() => setMuted((m) => !m)}
+        className="sr-only"
+        aria-label={muted ? "Unmute" : "Mute"}
+      />
      </>
    );
  }
