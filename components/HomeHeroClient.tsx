@@ -95,7 +95,13 @@ const images: string[] = [
 
    return (
      <>
-      <div className="fixed inset-0">
+      <div
+        className="fixed inset-0"
+        style={{
+          top: "calc(env(safe-area-inset-top) * -1)",
+          bottom: "calc(env(safe-area-inset-bottom) * -1)",
+        }}
+      >
          {slides.map((slide) => (
            <div
              key={slide.url}
@@ -112,7 +118,7 @@ const images: string[] = [
            />
          ))}
         <div className="absolute inset-0 bg-gradient-to-b from-black/65 via-black/55 to-black/75" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,0,0,0)_35%,rgba(0,0,0,0.45)_100%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,0,0,0)_25%,rgba(0,0,0,0.55)_70%,rgba(0,0,0,0.85)_100%)]" />
        </div>
 
        <audio ref={audioRef} loop muted className="hidden" src={audioSrc} />
