@@ -95,7 +95,7 @@ const images: string[] = [
 
    return (
      <>
-       <div className="absolute inset-0">
+      <div className="fixed inset-0">
          {slides.map((slide) => (
            <div
              key={slide.url}
