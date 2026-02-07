@@ -10,6 +10,8 @@
     "test": "echo \"No tests configured\""
   },
   "dependencies": {
+    "@simplewebauthn/browser": "^13.2.2",
+    "@simplewebauthn/server": "^13.2.2",
     "@stripe/stripe-js": "^8.5.3",
     "@supabase/supabase-js": "^2.78.0",
     "@types/nodemailer": "^7.0.3",
