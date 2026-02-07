@@ -82,7 +82,11 @@ export default function FinalApprovalPage() {
 
     const effectiveSlug = slug || getStoredValue("memorial_slug");
     const effectivePhoto = photo || getStoredValue("memorial_photo_url");
-    const qrUrl = effectiveSlug ? `https://dashmemories.com/heaven/${effectiveSlug}` : "";
+    const qrUrl = effectiveSlug
+      ? `https://api.qrserver.com/v1/create-qr-code/?size=600x600&color=88-28-135&bgcolor=transparent&data=${encodeURIComponent(
+          `https://dashmemories.com/heaven/${effectiveSlug}`
+        )}`
+      : "";
 
     if (effectiveSlug && effectivePhoto && qrUrl) {
       void fetch("/api/generate-print-pdf", {
