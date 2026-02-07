@@ -65,12 +65,11 @@ export default function MemorialPreviewPage() {
   const pushWithFallback = (target: string) => {
     router.push(target);
     if (typeof window === "undefined") return;
+    const current = `${window.location.pathname}${window.location.search}`;
+    if (current === target) return;
     window.setTimeout(() => {
-      const current = `${window.location.pathname}${window.location.search}`;
-      if (current !== target) {
-        window.location.assign(target);
-      }
-    }, 50);
+      window.location.assign(target);
+    }, 10);
   };
 
   const strings =
