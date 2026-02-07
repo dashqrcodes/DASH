@@ -17,7 +17,7 @@ export default function MemorialAcceptPage() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const lastRequestedRef = useRef<string>("");
+  const lastRequestedAtRef = useRef<number>(0);
   const lastVerifyOtpRef = useRef<string>("");
   const [step, setStep] = useState<"email" | "code">("email");
   const otpInputRef = useRef<HTMLInputElement | null>(null);
@@ -65,8 +65,12 @@ export default function MemorialAcceptPage() {
     }
 
     const normalizedEmail = email.trim().toLowerCase();
-    if (lastRequestedRef.current === normalizedEmail) return;
-    lastRequestedRef.current = normalizedEmail;
+    const now = Date.now();
+    if (now - lastRequestedAtRef.current < 15000) {
+      setStatusMessage("Please wait a moment before requesting another code.");
+      return;
+    }
+    lastRequestedAtRef.current = now;
 
     setIsSending(true);
     try {
@@ -79,6 +83,10 @@ export default function MemorialAcceptPage() {
         const data = await response.json().catch(() => ({}));
         throw new Error(data?.error || "Unable to send code. Please try again.");
       }
+      const data = await response.json().catch(() => ({}));
+      if (data?.debugCode) {
+        setStatusMessage(`Code sent to ${normalizedEmail}. Debug code: ${data.debugCode}`);
+      }
     } catch (error: any) {
       setErrorMessage(error?.message || "Unable to send code. Please try again.");
       setIsSending(false);
@@ -88,7 +96,9 @@ export default function MemorialAcceptPage() {
 
     setSentTo(normalizedEmail);
     setOtp("");
-    setStatusMessage(`Code sent to ${normalizedEmail}. Check your email.`);
+    if (!statusMessage) {
+      setStatusMessage(`Code sent to ${normalizedEmail}. Check your email.`);
+    }
     setStep("code");
   };
 
@@ -213,6 +223,13 @@ export default function MemorialAcceptPage() {
                     </div>
                   ))}
                 </label>
+                <button
+                  type="button"
+                  onClick={handleSendCode}
+                  className="mt-3 text-xs text-white/70 transition hover:text-white"
+                >
+                  Resend code
+                </button>
               </div>
             )}
             <button

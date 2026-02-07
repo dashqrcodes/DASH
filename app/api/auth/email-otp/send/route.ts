@@ -21,6 +21,14 @@ export async function POST(req: NextRequest) {
     const codeHash = hashOtp(normalizedEmail, code, secret);
     const expiresAt = getOtpExpiry();
 
+    const cleanupCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    await supabaseAdmin
+      .from("email_otps")
+      .delete()
+      .eq("email", normalizedEmail)
+      .or(`expires_at.lt.${new Date().toISOString()},used_at.not.is.null`)
+      .lt("created_at", cleanupCutoff);
+
     const { error } = await supabaseAdmin.from("email_otps").insert({
       email: normalizedEmail,
       code_hash: codeHash,
@@ -33,7 +41,11 @@ export async function POST(req: NextRequest) {
 
     await sendEmailOtp({ recipientEmail: normalizedEmail, code });
 
-    return NextResponse.json({ success: true });
+    const debugEnabled = process.env.OTP_DEBUG_CODE === "true";
+    return NextResponse.json({
+      success: true,
+      ...(debugEnabled ? { debugCode: code } : {}),
+    });
   } catch (error: any) {
     return NextResponse.json(
       { error: error?.message || "Failed to send OTP." },

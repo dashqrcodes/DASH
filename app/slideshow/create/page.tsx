@@ -263,6 +263,36 @@ export default function SlideshowCreatePage() {
     });
   };
 
+  const handleRemovePhoto = (id: string) => {
+    setPhotoItems((prev) => {
+      const nextItems = prev.filter((item) => item.id !== id);
+      const removed = prev.find((item) => item.id === id);
+      if (removed?.localUrl?.startsWith("blob:")) {
+        try {
+          URL.revokeObjectURL(removed.localUrl);
+        } catch {}
+      }
+      if (removed?.remoteUrl) {
+        try {
+          const existing = window.sessionStorage.getItem("slideshow_photo_urls");
+          const list = existing ? (JSON.parse(existing) as string[]) : [];
+          window.sessionStorage.setItem(
+            "slideshow_photo_urls",
+            JSON.stringify(list.filter((url) => url !== removed.remoteUrl))
+          );
+        } catch {}
+      }
+      if (removed?.status === "uploading") {
+        setUploadingCount((count) => Math.max(0, count - 1));
+      }
+      setCurrentIndex((index) => {
+        const maxIndex = Math.max(0, nextItems.length - 1);
+        return Math.min(index, maxIndex);
+      });
+      return nextItems;
+    });
+  };
+
   const handleBack = () => {
     const qs = searchParams?.toString() || "";
     if (typeof window !== "undefined" && window.history.length > 1) {
@@ -405,6 +435,31 @@ export default function SlideshowCreatePage() {
               </p>
             )}
             {uploadError && <p className="text-center text-xs text-red-300">{uploadError}</p>}
+            {photoItems.length > 0 && (
+              <div className="grid grid-cols-3 gap-2 pt-2">
+                {photoItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className="relative aspect-square overflow-hidden rounded-xl ring-1 ring-white/10"
+                  >
+                    <img
+                      src={item.remoteUrl || item.localUrl}
+                      alt=""
+                      className="h-full w-full object-cover"
+                      aria-hidden="true"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemovePhoto(item.id)}
+                      className="absolute left-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/70 text-xs text-white ring-1 ring-white/30 transition hover:bg-black/80"
+                      aria-label="Remove photo"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
