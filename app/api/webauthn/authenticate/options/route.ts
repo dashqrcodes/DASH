@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
     }
 
     const allowCredentials = passkeys.map((key) => ({
-      id: isoBase64URL.toBuffer(key.credential_id),
+      id: key.credential_id,
       type: "public-key" as const,
       transports: key.transports || undefined,
     }));
