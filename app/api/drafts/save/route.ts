@@ -18,11 +18,15 @@ export async function POST(req: NextRequest) {
     if (!userId || !email) {
       return NextResponse.json({ error: "Missing account info." }, { status: 400 });
     }
+    if (!slug) {
+      return NextResponse.json({ error: "Missing memorial slug." }, { status: 400 });
+    }
 
     const payload = {
       user_id: userId,
       email,
-      slug: slug || null,
+      slug,
+      status: "draft",
       full_name: fullName || null,
       birth_date: birthDate || null,
       death_date: deathDate || null,
@@ -31,8 +35,8 @@ export async function POST(req: NextRequest) {
     };
 
     const { error } = await supabaseAdmin
-      .from("memorial_drafts")
-      .upsert(payload, { onConflict: "user_id" });
+      .from("drafts")
+      .upsert(payload, { onConflict: "slug" });
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });

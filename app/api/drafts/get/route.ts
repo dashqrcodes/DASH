@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
   }
 
   const query = supabaseAdmin
-    .from("memorial_drafts")
+    .from("drafts")
     .select("slug, full_name, birth_date, death_date, photo_url, email")
     .order("updated_at", { ascending: false })
     .limit(1);

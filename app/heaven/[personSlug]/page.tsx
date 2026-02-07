@@ -47,7 +47,7 @@ type MemorialDraft = {
 async function fetchDraft(slug: string): Promise<MemorialDraft | null> {
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
-    .from('memorial_drafts')
+    .from('drafts')
     .select('slug, full_name, birth_date, death_date, photo_url')
     .eq('slug', slug)
     .order('updated_at', { ascending: false })
