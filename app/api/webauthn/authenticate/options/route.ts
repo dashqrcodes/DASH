@@ -17,14 +17,15 @@ export async function POST(req: NextRequest) {
     const { userId, email } = await req.json();
     const normalizedEmail = String(email || "").trim().toLowerCase();
 
-    let user = null as { id: string; email: string | null } | null;
+    type UserRecord = { id: string; email: string | null };
+    let user: UserRecord | null = null;
     if (userId) {
       const { data } = await supabaseAdmin
         .from("users")
         .select("id, email")
         .eq("id", userId)
         .maybeSingle();
-      if (data) user = data as typeof user;
+      if (data) user = data as UserRecord;
     }
 
     if (!user && normalizedEmail) {
@@ -33,7 +34,7 @@ export async function POST(req: NextRequest) {
         .select("id, email")
         .eq("email", normalizedEmail)
         .maybeSingle();
-      if (data) user = data as typeof user;
+      if (data) user = data as UserRecord;
     }
 
     if (!user) {

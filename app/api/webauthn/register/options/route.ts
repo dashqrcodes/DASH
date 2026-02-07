@@ -21,14 +21,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing user." }, { status: 400 });
     }
 
-    let user = null as { id: string; email: string | null } | null;
+    type UserRecord = { id: string; email: string | null };
+    let user: UserRecord | null = null;
     if (userId) {
       const { data } = await supabaseAdmin
         .from("users")
         .select("id, email")
         .eq("id", userId)
         .maybeSingle();
-      if (data) user = data as typeof user;
+      if (data) user = data as UserRecord;
     }
 
     if (!user && normalizedEmail) {
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest) {
         .select("id, email")
         .eq("email", normalizedEmail)
         .maybeSingle();
-      if (data) user = data as typeof user;
+      if (data) user = data as UserRecord;
     }
 
     if (!user && normalizedEmail) {
@@ -46,7 +47,7 @@ export async function POST(req: NextRequest) {
         .insert({ email: normalizedEmail })
         .select("id, email")
         .single();
-      if (created) user = created as typeof user;
+      if (created) user = created as UserRecord;
     }
 
     if (!user) {
