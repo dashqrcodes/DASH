@@ -26,15 +26,17 @@ export default function SlideshowCreatePage() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadingCount, setUploadingCount] = useState(0);
-  const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
+  const [selectedTrackIds, setSelectedTrackIds] = useState<string[]>([]);
+  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [showMusicPicker, setShowMusicPicker] = useState(false);
   const lastIndexRef = useRef(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const slideshowTransform = "f_auto,q_auto,c_fill,g_faces,ar_16:9,w_1280,h_720";
-  const selectedTrack = useMemo(
-    () => musicTracks.find((track) => track.id === selectedTrackId) || null,
-    [selectedTrackId]
-  );
+  const selectedTracks = useMemo(() => {
+    const map = new Map(musicTracks.map((track) => [track.id, track]));
+    return selectedTrackIds.map((id) => map.get(id)).filter(Boolean) as typeof musicTracks;
+  }, [selectedTrackIds]);
+  const currentTrack = selectedTracks[currentTrackIndex] || null;
   const playbackUrls = useMemo(
     () =>
       photoItems.map((item) =>
@@ -141,32 +143,60 @@ export default function SlideshowCreatePage() {
 
   useEffect(() => {
     try {
-      const stored = window.sessionStorage.getItem("slideshow_music_track");
-      if (!stored) return;
-      const parsed = JSON.parse(stored) as { id?: string } | null;
-      if (parsed?.id) setSelectedTrackId(parsed.id);
+      const stored =
+        window.sessionStorage.getItem("slideshow_music_tracks") ||
+        window.localStorage.getItem("slideshow_music_tracks");
+      if (!stored) {
+        const legacy =
+          window.sessionStorage.getItem("slideshow_music_track") ||
+          window.localStorage.getItem("slideshow_music_track");
+        if (!legacy) return;
+        const parsedLegacy = JSON.parse(legacy) as { id?: string } | null;
+        if (parsedLegacy?.id) setSelectedTrackIds([parsedLegacy.id]);
+        return;
+      }
+      const parsed = JSON.parse(stored) as { ids?: string[] } | null;
+      if (Array.isArray(parsed?.ids)) setSelectedTrackIds(parsed.ids);
     } catch {}
   }, []);
 
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
-    if (!selectedTrack) {
+    if (!currentTrack) {
       audio.pause();
       audio.removeAttribute("src");
       return;
     }
-    if (audio.src !== selectedTrack.audioUrl) {
-      audio.src = selectedTrack.audioUrl;
+    if (audio.src !== currentTrack.audioUrl) {
+      audio.src = currentTrack.audioUrl;
       audio.currentTime = 0;
     }
-    audio.loop = true;
+    audio.loop = selectedTracks.length <= 1;
     if (isPlaying) {
       void audio.play().catch(() => {});
     } else {
       audio.pause();
     }
-  }, [selectedTrack, isPlaying]);
+  }, [currentTrack, isPlaying, selectedTracks.length]);
+
+  useEffect(() => {
+    if (currentTrackIndex >= selectedTracks.length) {
+      setCurrentTrackIndex(0);
+    }
+  }, [currentTrackIndex, selectedTracks.length]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || selectedTracks.length <= 1) return;
+    const handleEnded = () => {
+      setCurrentTrackIndex((prev) => (prev + 1) % selectedTracks.length);
+    };
+    audio.addEventListener("ended", handleEnded);
+    return () => {
+      audio.removeEventListener("ended", handleEnded);
+    };
+  }, [selectedTracks.length]);
 
   const uploadToCloudinary = async (file: File, index: number, id: string, localUrl: string) => {
     try {
@@ -319,16 +349,6 @@ export default function SlideshowCreatePage() {
 
   return (
     <main className="relative min-h-screen bg-[#0b0b0d] text-white">
-      {/* Floating stars */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        {Array.from({ length: 16 }).map((_, idx) => (
-          <span
-            key={idx}
-            className={`star star-${idx + 1} absolute h-[2px] w-[2px] rounded-full bg-white/60 animate-float-slow`}
-          />
-        ))}
-      </div>
-
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-16 left-6 h-64 w-64 rounded-full bg-gradient-to-br from-indigo-500/25 via-purple-500/20 to-blue-400/10 blur-3xl" />
         <div className="absolute bottom-0 right-6 h-56 w-56 rounded-full bg-gradient-to-br from-blue-500/20 via-purple-500/15 to-indigo-400/10 blur-3xl" />
@@ -419,7 +439,7 @@ export default function SlideshowCreatePage() {
                 className={primaryButtonClass}
                 onClick={() => setShowMusicPicker(true)}
               >
-                {selectedTrack ? `${strings.musicAdded} ✓` : strings.addMusic}
+                {selectedTrackIds.length > 0 ? `${strings.musicAdded} ✓` : strings.addMusic}
               </button>
               <button
                 type="button"
@@ -487,13 +507,13 @@ export default function SlideshowCreatePage() {
       </div>
       <audio ref={audioRef} preload="auto" />
       {showMusicPicker && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-6">
-          <div className="w-full max-w-lg rounded-3xl bg-[#111117] p-6 shadow-2xl ring-1 ring-white/10">
-            <div className="mb-4 flex items-center justify-between">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-4">
+          <div className="flex h-[90svh] w-full max-w-lg flex-col rounded-3xl bg-[#111117] shadow-2xl ring-1 ring-white/10">
+            <div className="flex items-start justify-between gap-3 px-5 pt-5">
               <div>
                 <h2 className="text-lg font-semibold text-white">Choose music</h2>
                 <p className="text-xs text-white/60">
-                  Royalty-free tracks for slideshow playback
+                  Tap to add multiple tracks to the playlist
                 </p>
               </div>
               <button
@@ -504,9 +524,9 @@ export default function SlideshowCreatePage() {
                 Back
               </button>
             </div>
-            <div className="space-y-3">
+            <div className="flex-1 space-y-3 overflow-y-auto px-5 pb-5 pt-4">
               {musicTracks.map((track) => {
-                const isSelected = track.id === selectedTrackId;
+                const isSelected = selectedTrackIds.includes(track.id);
                 return (
                   <button
                     key={track.id}
@@ -517,18 +537,30 @@ export default function SlideshowCreatePage() {
                         : "border-white/10 bg-white/5 hover:border-white/20"
                     }`}
                     onClick={() => {
-                      setSelectedTrackId(track.id);
-                      try {
-                        window.sessionStorage.setItem(
-                          "slideshow_music_track",
-                          JSON.stringify({ id: track.id })
+                      setSelectedTrackIds((prev) => {
+                        const next = prev.includes(track.id)
+                          ? prev.filter((id) => id !== track.id)
+                          : [...prev, track.id];
+                        setCurrentTrackIndex((index) =>
+                          next.length === 0 ? 0 : Math.min(index, next.length - 1)
                         );
-                      } catch {}
+                        try {
+                          window.sessionStorage.setItem(
+                            "slideshow_music_tracks",
+                            JSON.stringify({ ids: next })
+                          );
+                        } catch {}
+                        try {
+                          window.localStorage.setItem(
+                            "slideshow_music_tracks",
+                            JSON.stringify({ ids: next })
+                          );
+                        } catch {}
+                        return next;
+                      });
                       try {
-                        window.localStorage.setItem(
-                          "slideshow_music_track",
-                          JSON.stringify({ id: track.id })
-                        );
+                        window.sessionStorage.removeItem("slideshow_music_track");
+                        window.localStorage.removeItem("slideshow_music_track");
                       } catch {}
                     }}
                   >
@@ -556,39 +588,44 @@ export default function SlideshowCreatePage() {
                 );
               })}
             </div>
-            {selectedTrack && (
+            {selectedTracks.length > 0 && (
               <div className="mt-4 rounded-2xl bg-white/5 px-4 py-3 text-xs text-white/70">
                 <div>
                   Selected:{" "}
-                  <span className="font-semibold text-white">{selectedTrack.title}</span>
+                  <span className="font-semibold text-white">{selectedTracks.length}</span>{" "}
+                  track{selectedTracks.length === 1 ? "" : "s"}
                 </div>
-                <div className="mt-1 flex items-center gap-3 text-[11px] text-white/60">
-                  <a
-                    className="underline decoration-dotted"
-                    href={selectedTrack.licenseUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    License
-                  </a>
-                  <a
-                    className="underline decoration-dotted"
-                    href={selectedTrack.sourceUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Source
-                  </a>
-                </div>
+                {selectedTracks.length === 1 && currentTrack && (
+                  <div className="mt-1 flex items-center gap-3 text-[11px] text-white/60">
+                    <a
+                      className="underline decoration-dotted"
+                      href={currentTrack.licenseUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      License
+                    </a>
+                    <a
+                      className="underline decoration-dotted"
+                      href={currentTrack.sourceUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Source
+                    </a>
+                  </div>
+                )}
               </div>
             )}
-            <button
-              type="button"
-              className="mt-5 w-full rounded-full border border-white/10 bg-white/10 px-4 py-3 text-sm font-semibold text-white/80 transition hover:bg-white/20"
-              onClick={() => setShowMusicPicker(false)}
-            >
-              {strings.backToSlideshow}
-            </button>
+            <div className="px-5 pb-5">
+              <button
+                type="button"
+                className="mt-2 w-full rounded-full border border-white/10 bg-white/10 px-4 py-3 text-sm font-semibold text-white/80 transition hover:bg-white/20"
+                onClick={() => setShowMusicPicker(false)}
+              >
+                {strings.backToSlideshow}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -614,123 +651,6 @@ export default function SlideshowCreatePage() {
         }
         .animate-fade-out {
           animation: fade-out 700ms ease;
-        }
-        @keyframes float-slow {
-          0% {
-            transform: translateY(20px);
-            opacity: 0;
-          }
-          20% {
-            opacity: 0.5;
-          }
-          80% {
-            opacity: 0.5;
-          }
-          100% {
-            transform: translateY(-40px);
-            opacity: 0;
-          }
-        }
-        .animate-float-slow {
-          animation-name: float-slow;
-          animation-timing-function: ease-in-out;
-          animation-iteration-count: infinite;
-        }
-        .star-1 {
-          left: 8%;
-          top: 18%;
-          animation-delay: 0s;
-          animation-duration: 12s;
-        }
-        .star-2 {
-          left: 16%;
-          top: 62%;
-          animation-delay: 1s;
-          animation-duration: 14s;
-        }
-        .star-3 {
-          left: 28%;
-          top: 34%;
-          animation-delay: 2s;
-          animation-duration: 11s;
-        }
-        .star-4 {
-          left: 40%;
-          top: 78%;
-          animation-delay: 3s;
-          animation-duration: 16s;
-        }
-        .star-5 {
-          left: 52%;
-          top: 22%;
-          animation-delay: 4s;
-          animation-duration: 13s;
-        }
-        .star-6 {
-          left: 64%;
-          top: 55%;
-          animation-delay: 5s;
-          animation-duration: 12s;
-        }
-        .star-7 {
-          left: 78%;
-          top: 38%;
-          animation-delay: 6s;
-          animation-duration: 15s;
-        }
-        .star-8 {
-          left: 90%;
-          top: 70%;
-          animation-delay: 7s;
-          animation-duration: 18s;
-        }
-        .star-9 {
-          left: 6%;
-          top: 44%;
-          animation-delay: 2.5s;
-          animation-duration: 17s;
-        }
-        .star-10 {
-          left: 22%;
-          top: 12%;
-          animation-delay: 1.5s;
-          animation-duration: 10s;
-        }
-        .star-11 {
-          left: 36%;
-          top: 58%;
-          animation-delay: 4.5s;
-          animation-duration: 14s;
-        }
-        .star-12 {
-          left: 50%;
-          top: 10%;
-          animation-delay: 5.5s;
-          animation-duration: 12s;
-        }
-        .star-13 {
-          left: 62%;
-          top: 80%;
-          animation-delay: 6.5s;
-          animation-duration: 15s;
-        }
-        .star-14 {
-          left: 74%;
-          top: 16%;
-          animation-delay: 7.5s;
-          animation-duration: 19s;
-        }
-        .star-15 {
-          left: 86%;
-          top: 28%;
-          animation-delay: 8.5s;
-          animation-duration: 13s;
-        }
-        .star-16 {
-          left: 96%;
-          top: 46%;
-          animation-delay: 9.5s;
-          animation-duration: 16s;
         }
       `}</style>
     </main>

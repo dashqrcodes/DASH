@@ -31,12 +31,14 @@ function SlideshowContent() {
   const [photos, setPhotos] = useState<Array<{id: string, url: string, file: File | null, date?: string, preview?: string}>>([]);
   const [language, setLanguage] = useState<'en' | 'es'>('en');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
+  const [selectedTrackIds, setSelectedTrackIds] = useState<string[]>([]);
+  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const selectedTrack = useMemo(
-    () => musicTracks.find((track) => track.id === selectedTrackId) || null,
-    [selectedTrackId]
-  );
+  const selectedTracks = useMemo(() => {
+    const map = new Map(musicTracks.map((track) => [track.id, track]));
+    return selectedTrackIds.map((id) => map.get(id)).filter(Boolean) as typeof musicTracks;
+  }, [selectedTrackIds]);
+  const currentTrack = selectedTracks[currentTrackIndex] || null;
   const slugParam = searchParams?.get('slug') || '';
 
   useEffect(() => {
@@ -332,40 +334,66 @@ function SlideshowContent() {
   useEffect(() => {
     try {
       const stored =
-        window.sessionStorage.getItem('slideshow_music_track') ||
-        window.localStorage.getItem('slideshow_music_track');
-      if (!stored) return;
-      const parsed = JSON.parse(stored) as { id?: string } | null;
-      if (parsed?.id) setSelectedTrackId(parsed.id);
+        window.sessionStorage.getItem('slideshow_music_tracks') ||
+        window.localStorage.getItem('slideshow_music_tracks');
+      if (!stored) {
+        const legacy =
+          window.sessionStorage.getItem('slideshow_music_track') ||
+          window.localStorage.getItem('slideshow_music_track');
+        if (!legacy) return;
+        const parsedLegacy = JSON.parse(legacy) as { id?: string } | null;
+        if (parsedLegacy?.id) setSelectedTrackIds([parsedLegacy.id]);
+        return;
+      }
+      const parsed = JSON.parse(stored) as { ids?: string[] } | null;
+      if (Array.isArray(parsed?.ids)) setSelectedTrackIds(parsed.ids);
     } catch {}
   }, []);
 
   useEffect(() => {
-    if (!selectedTrackId && musicTracks.length > 0) {
-      setSelectedTrackId(musicTracks[0].id);
+    if (selectedTrackIds.length === 0 && musicTracks.length > 0) {
+      setSelectedTrackIds([musicTracks[0].id]);
     }
-  }, [selectedTrackId]);
+  }, [selectedTrackIds.length]);
 
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
     audio.muted = isMuted;
-    if (!selectedTrack) {
+    if (!currentTrack) {
       audio.pause();
       audio.removeAttribute('src');
       return;
     }
-    if (audio.src !== selectedTrack.audioUrl) {
-      audio.src = selectedTrack.audioUrl;
+    if (audio.src !== currentTrack.audioUrl) {
+      audio.src = currentTrack.audioUrl;
       audio.currentTime = 0;
     }
-    audio.loop = true;
+    audio.loop = selectedTracks.length <= 1;
     if (isPlaying) {
       void audio.play().catch(() => {});
     } else {
       audio.pause();
     }
-  }, [selectedTrack, isPlaying, isMuted]);
+  }, [currentTrack, isPlaying, isMuted, selectedTracks.length]);
+
+  useEffect(() => {
+    if (currentTrackIndex >= selectedTracks.length) {
+      setCurrentTrackIndex(0);
+    }
+  }, [currentTrackIndex, selectedTracks.length]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || selectedTracks.length <= 1) return;
+    const handleEnded = () => {
+      setCurrentTrackIndex((prev) => (prev + 1) % selectedTracks.length);
+    };
+    audio.addEventListener('ended', handleEnded);
+    return () => {
+      audio.removeEventListener('ended', handleEnded);
+    };
+  }, [selectedTracks.length]);
 
   const handlePhotoDateChange = (photoId: string, date: string) => {
     setPhotos(prev => {

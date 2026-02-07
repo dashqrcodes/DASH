@@ -19,22 +19,6 @@ export default function MemorialExperiencePage() {
       >
         ←
       </button>
-      {/* Floating stars */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        {Array.from({ length: 30 }).map((_, idx) => (
-          <span
-            key={idx}
-            className="absolute h-[2px] w-[2px] rounded-full bg-white/60 animate-float-slow"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 6}s`,
-              animationDuration: `${10 + Math.random() * 6}s`,
-            }}
-          />
-        ))}
-      </div>
-
       {/* Angled photo grid removed for cleaner background */}
 
       {/* Content */}
@@ -62,28 +46,6 @@ export default function MemorialExperiencePage() {
       </div>
 
       <style jsx>{`
-        @keyframes float-slow {
-          0% {
-            transform: translateY(20px);
-            opacity: 0;
-          }
-          20% {
-            opacity: 0.5;
-          }
-          80% {
-            opacity: 0.5;
-          }
-          100% {
-            transform: translateY(-40px);
-            opacity: 0;
-          }
-        }
-        .animate-float-slow {
-          animation-name: float-slow;
-          animation-timing-function: ease-in-out;
-          animation-iteration-count: infinite;
-        }
-
         @keyframes drift-slow {
           0% {
             transform: translate3d(0, 0, 0);

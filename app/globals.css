@@ -79,6 +79,26 @@
   }
 }
 
+@layer base {
+  button,
+  [role="button"],
+  a {
+    @apply transition;
+    touch-action: manipulation;
+  }
+
+  button:active,
+  [role="button"]:active,
+  a:active {
+    transform: scale(0.98);
+  }
+}
+
+/* Disable floating stars globally */
+.star {
+  display: none !important;
+}
+
 html {
   background: #000;
 }

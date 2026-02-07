@@ -157,9 +157,6 @@ export default function MemorialAcceptPage() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-gradient-to-b from-[#0c0f1a] via-[#0b0d17] to-[#090b12] text-white">
-      {/* Floating stars placeholder */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden" />
-
       <button
         type="button"
         aria-label="Back"
