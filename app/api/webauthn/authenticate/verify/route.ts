@@ -56,9 +56,9 @@ export async function POST(req: NextRequest) {
       expectedChallenge: challengeRow.challenge,
       expectedOrigin: origin,
       expectedRPID: rpID,
-      authenticator: {
-        credentialID: isoBase64URL.toBuffer(stored.credential_id),
-        credentialPublicKey: isoBase64URL.toBuffer(stored.public_key),
+      credential: {
+        id: stored.credential_id,
+        publicKey: isoBase64URL.toBuffer(stored.public_key),
         counter: stored.counter || 0,
       },
       requireUserVerification: false,
