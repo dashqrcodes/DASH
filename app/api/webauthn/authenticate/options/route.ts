@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
     const origin = getOrigin();
     const rpID = new URL(origin).hostname;
 
-    const options = generateAuthenticationOptions({
+    const options = await generateAuthenticationOptions({
       rpID,
       timeout: 60000,
       userVerification: "preferred",
