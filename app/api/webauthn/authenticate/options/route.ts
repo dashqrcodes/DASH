@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { generateAuthenticationOptions } from "@simplewebauthn/server";
-import { isoBase64URL } from "@simplewebauthn/server/helpers";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 const getOrigin = () => {

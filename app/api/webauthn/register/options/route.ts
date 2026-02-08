@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { generateRegistrationOptions } from "@simplewebauthn/server";
-import { isoBase64URL } from "@simplewebauthn/server/helpers";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 const getOrigin = () => {
@@ -61,17 +60,17 @@ export async function POST(req: NextRequest) {
 
     const excludeCredentials =
       existing?.map((row) => ({
-        id: isoBase64URL.toBuffer(row.credential_id),
-        type: "public-key" as const,
+        id: row.credential_id,
+        transports: undefined,
       })) || [];
 
     const origin = getOrigin();
     const rpID = new URL(origin).hostname;
 
-    const options = generateRegistrationOptions({
+    const options = await generateRegistrationOptions({
       rpName: "DASH Memories",
       rpID,
-      userID: user.id,
+      userID: new TextEncoder().encode(user.id),
       userName: user.email || normalizedEmail || "dash-user",
       userDisplayName: user.email || normalizedEmail || "DASH User",
       timeout: 60000,
