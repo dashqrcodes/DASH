@@ -20,6 +20,8 @@ export default function CounselorFaceIdPage() {
   const [isSupported, setIsSupported] = useState(true);
   const [isEnrolling, setIsEnrolling] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [hasPasskey, setHasPasskey] = useState(false);
+  const [passkeyCount, setPasskeyCount] = useState(0);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -35,6 +37,21 @@ export default function CounselorFaceIdPage() {
       if (storedEmail) setUserEmail(storedEmail);
     } catch {}
   }, []);
+
+  useEffect(() => {
+    if (!userId && !userEmail) return;
+    fetch("/api/webauthn/status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, email: userEmail }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        setHasPasskey(Boolean(data?.hasPasskey));
+        setPasskeyCount(Number(data?.count || 0));
+      })
+      .catch(() => {});
+  }, [userId, userEmail]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -81,6 +98,8 @@ export default function CounselorFaceIdPage() {
         throw new Error(verifyData?.error || "Unable to verify Face ID.");
       }
       setStatusMessage("Face ID enabled.");
+      setHasPasskey(true);
+      setPasskeyCount((count) => count + 1);
       router.push(nextUrl);
     } catch (error: any) {
       setErrorMessage(error?.message || "Unable to enable Face ID.");
@@ -167,10 +186,15 @@ export default function CounselorFaceIdPage() {
             type="button"
             onClick={handleAuthenticate}
             className="mt-4 w-full rounded-full border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-800 shadow-sm transition hover:bg-gray-50 active:scale-95"
-            disabled={isAuthenticating}
+            disabled={isAuthenticating || !hasPasskey}
           >
             {isAuthenticating ? "Verifying..." : "Use Face ID to Continue"}
           </button>
+          <p className="mt-2 text-xs text-gray-500">
+            {hasPasskey
+              ? `Passkey ready (${passkeyCount})`
+              : "No passkey yet. Enable Face ID first."}
+          </p>
           {(statusMessage || errorMessage) && (
             <div className="mt-4 w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700">
               {errorMessage ? (
