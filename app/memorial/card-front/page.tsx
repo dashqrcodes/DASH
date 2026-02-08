@@ -18,9 +18,10 @@ export default function MemorialPreviewPage() {
   const [birthDate, setBirthDate] = useState(searchParams?.get("birth")?.trim() || "");
   const [deathDate, setDeathDate] = useState(searchParams?.get("death")?.trim() || "");
   const [photoUrl, setPhotoUrl] = useState(searchParams?.get("photo") || "");
+  const [previewWidth, setPreviewWidth] = useState(1200);
   const slug = searchParams?.get("slug") || "";
   const previewPhotoUrl = photoUrl
-    ? buildCloudinaryFaceCropUrl(photoUrl, { aspectRatio: "2:3", width: 1200 })
+    ? buildCloudinaryFaceCropUrl(photoUrl, { aspectRatio: "2:3", width: previewWidth })
     : "";
 
   const readStoredValue = (key: string) => {
@@ -71,6 +72,12 @@ export default function MemorialPreviewPage() {
     const image = new Image();
     image.src = "/sky background rear.jpg";
   }, [router]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const width = window.innerWidth;
+    setPreviewWidth(width < 480 ? 900 : 1200);
+  }, []);
 
   useEffect(() => {
     if (fullName) persistValue("memorial_full_name", fullName);

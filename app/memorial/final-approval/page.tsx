@@ -45,9 +45,6 @@ export default function FinalApprovalPage() {
 
   const buildParams = () => {
     const parts = [
-      effectiveName ? `name=${encodeURIComponent(effectiveName)}` : "",
-      effectiveBirth ? `birth=${encodeURIComponent(effectiveBirth)}` : "",
-      effectiveDeath ? `death=${encodeURIComponent(effectiveDeath)}` : "",
       effectiveSlug ? `slug=${encodeURIComponent(effectiveSlug)}` : "",
       `lang=${currentLang}`,
     ].filter(Boolean);

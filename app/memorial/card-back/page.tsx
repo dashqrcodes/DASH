@@ -138,9 +138,6 @@ export default function MemorialCardBackPage() {
 
   const buildQueryString = () => {
     const params = new URLSearchParams();
-    if (memorialName) params.set("name", memorialName);
-    if (birthDate) params.set("birth", birthDate);
-    if (deathDate) params.set("death", deathDate);
     if (slug) params.set("slug", slug);
     params.set("lang", currentLang);
     const qs = params.toString();

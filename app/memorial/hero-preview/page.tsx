@@ -22,6 +22,7 @@ export default function HeroPreviewPage() {
     photoUrl: "",
   });
   const [slug, setSlug] = useState("");
+  const [previewWidth, setPreviewWidth] = useState(1400);
 
   const readStoredValue = (key: string) => {
     try {
@@ -101,11 +102,17 @@ export default function HeroPreviewPage() {
     router.prefetch("/memorial/card-back");
   }, [router]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const width = window.innerWidth;
+    setPreviewWidth(width < 480 ? 1100 : 1400);
+  }, []);
+
   const memorialName = cardData.fullName;
   const birthDate = cardData.birthDate;
   const deathDate = cardData.deathDate;
   const previewPhotoUrl = cardData.photoUrl
-    ? buildCloudinaryFaceCropUrl(cardData.photoUrl, { aspectRatio: "2:3", width: 1400 })
+    ? buildCloudinaryFaceCropUrl(cardData.photoUrl, { aspectRatio: "2:3", width: previewWidth })
     : "";
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://dashmemories.com";
   const qrTargetUrl = slug ? `${appUrl}/heaven/${slug}` : "";
@@ -115,9 +122,6 @@ export default function HeroPreviewPage() {
 
   const buildQueryString = () => {
     const params = new URLSearchParams();
-    if (memorialName) params.set("name", memorialName);
-    if (birthDate) params.set("birth", birthDate);
-    if (deathDate) params.set("death", deathDate);
     if (slug) params.set("slug", slug);
     params.set("lang", currentLang);
     const qs = params.toString();

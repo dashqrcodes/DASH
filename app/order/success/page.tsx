@@ -67,9 +67,6 @@ export default function OrderSuccessPage() {
             onClick={() =>
               router.push(
                 `/slideshow/create${[
-                  memorialName ? `name=${encodeURIComponent(memorialName)}` : "",
-                  birthDate ? `birth=${encodeURIComponent(birthDate)}` : "",
-                  deathDate ? `death=${encodeURIComponent(deathDate)}` : "",
                   slug ? `slug=${encodeURIComponent(slug)}` : "",
                   `lang=${currentLang}`,
                 ]

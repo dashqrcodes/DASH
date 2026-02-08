@@ -15,7 +15,7 @@ export default function SlideshowCreatePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const currentLang = resolveLang(searchParams);
-  const memorialName = searchParams?.get("name") || "";
+  const [memorialName, setMemorialName] = useState(searchParams?.get("name") || "");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [draftSlug, setDraftSlug] = useState("");
   const [photoItems, setPhotoItems] = useState<
@@ -113,6 +113,21 @@ export default function SlideshowCreatePage() {
       } catch {}
     }
     setDraftSlug(nextSlug);
+  }, [searchParams]);
+
+  useEffect(() => {
+    const fromQuery = searchParams?.get("name") || "";
+    if (fromQuery) {
+      setMemorialName(fromQuery);
+      return;
+    }
+    try {
+      const stored =
+        window.sessionStorage.getItem("memorial_full_name") ||
+        window.localStorage.getItem("memorial_full_name") ||
+        "";
+      if (stored) setMemorialName(stored);
+    } catch {}
   }, [searchParams]);
 
   useEffect(() => {

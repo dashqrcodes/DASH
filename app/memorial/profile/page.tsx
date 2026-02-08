@@ -108,11 +108,13 @@ export default function MemorialDetailsPage() {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
+  const [previewWidth, setPreviewWidth] = useState(1200);
   const [fullName, setFullName] = useState("");
   const [sunrise, setSunrise] = useState("");
   const [sunset, setSunset] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
   const [accountId, setAccountId] = useState<string | null>(null);
   const [accountEmail, setAccountEmail] = useState<string | null>(null);
 
@@ -135,11 +137,17 @@ export default function MemorialDetailsPage() {
 
   const currentLang = resolveLang(searchParams);
   const previewPhotoUrl = photoUrl
-    ? buildCloudinaryFaceCropUrl(photoUrl, { aspectRatio: "2:3", width: 1200 })
+    ? buildCloudinaryFaceCropUrl(photoUrl, { aspectRatio: "2:3", width: previewWidth })
     : "";
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const width = window.innerWidth;
+    setPreviewWidth(width < 480 ? 900 : 1200);
   }, []);
 
   useEffect(() => {
@@ -159,6 +167,8 @@ export default function MemorialDetailsPage() {
 
   useEffect(() => {
     router.prefetch("/memorial/card-front");
+    const image = new Image();
+    image.src = "/sky background rear.jpg";
   }, [router]);
 
   useEffect(() => {
@@ -241,6 +251,7 @@ export default function MemorialDetailsPage() {
   }, [accountId, accountEmail, fullName, sunrise, sunset, photoUrl]);
 
   useEffect(() => {
+    if (isNavigating) return;
     if (!accountId || !accountEmail) return;
     if (!fullName && !sunrise && !sunset && !photoUrl) return;
     const slugFromStorage = readStoredValue("memorial_slug");
@@ -537,17 +548,17 @@ export default function MemorialDetailsPage() {
                   return;
                 }
                 const computedSlug = slugify(fullName);
-                const shouldIncludePhoto =
-                  photoUrl &&
-                  !photoUrl.startsWith("data:") &&
-                  !photoUrl.startsWith("blob:");
-                const target = `/memorial/card-front?lang=${currentLang}${
-                  fullName ? `&name=${encodeURIComponent(fullName)}` : ""
-                }${sunrise ? `&birth=${encodeURIComponent(sunrise)}` : ""}${
-                  sunset ? `&death=${encodeURIComponent(sunset)}` : ""
-                }${computedSlug ? `&slug=${encodeURIComponent(computedSlug)}` : ""}${
-                  shouldIncludePhoto ? `&photo=${encodeURIComponent(photoUrl)}` : ""
-                }`;
+                if (computedSlug) {
+                  persistValue("memorial_slug", computedSlug);
+                }
+                setIsNavigating(true);
+                const target = `/memorial/card-front${[
+                  computedSlug ? `slug=${encodeURIComponent(computedSlug)}` : "",
+                  `lang=${currentLang}`,
+                ]
+                  .filter(Boolean)
+                  .join("&")
+                  .replace(/^/, "?")}`;
                 pushWithFallback(target);
               }}
               className={primaryButtonClass}
