@@ -31,6 +31,16 @@ export default function HeroPreviewPage() {
     }
   };
 
+  const persistValue = (key: string, value: string) => {
+    if (!value) return;
+    try {
+      window.sessionStorage.setItem(key, value);
+    } catch {}
+    try {
+      window.localStorage.setItem(key, value);
+    } catch {}
+  };
+
   useEffect(() => {
     let next = { ...cardData };
     let nextSlug = "";
@@ -66,6 +76,24 @@ export default function HeroPreviewPage() {
   }, [searchParams]);
 
   useEffect(() => {
+    if (cardData.fullName) persistValue("memorial_full_name", cardData.fullName);
+    if (cardData.birthDate) persistValue("memorial_birth_date", cardData.birthDate);
+    if (cardData.deathDate) persistValue("memorial_death_date", cardData.deathDate);
+    if (cardData.photoUrl) persistValue("memorial_photo_url", cardData.photoUrl);
+    if (slug) persistValue("memorial_slug", slug);
+  }, [cardData, slug]);
+
+  useEffect(() => {
+    if (!slug) return;
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://dashmemories.com";
+    const qrTargetUrl = `${appUrl}/heaven/${slug}`;
+    const qrPrefetch = new Image();
+    qrPrefetch.src = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&color=88-28-135&bgcolor=255-255-255&data=${encodeURIComponent(
+      qrTargetUrl
+    )}`;
+  }, [slug]);
+
+  useEffect(() => {
     router.prefetch("/memorial/final-approval");
   }, [router]);
 
@@ -91,7 +119,6 @@ export default function HeroPreviewPage() {
     if (birthDate) params.set("birth", birthDate);
     if (deathDate) params.set("death", deathDate);
     if (slug) params.set("slug", slug);
-    if (cardData.photoUrl) params.set("photo", cardData.photoUrl);
     params.set("lang", currentLang);
     const qs = params.toString();
     return qs ? `?${qs}` : "";

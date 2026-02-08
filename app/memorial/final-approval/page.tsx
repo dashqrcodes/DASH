@@ -22,6 +22,19 @@ export default function FinalApprovalPage() {
   const photo = searchParams?.get("photo");
   const [isSaving, setIsSaving] = useState(false);
 
+  const getStoredValue = (key: string) => {
+    try {
+      return window.sessionStorage.getItem(key) || window.localStorage.getItem(key) || "";
+    } catch {
+      return "";
+    }
+  };
+
+  const effectiveName = name || getStoredValue("memorial_full_name");
+  const effectiveBirth = birth || getStoredValue("memorial_birth_date");
+  const effectiveDeath = death || getStoredValue("memorial_death_date");
+  const effectiveSlug = slug || getStoredValue("memorial_slug");
+
   useEffect(() => {
     router.prefetch("/memorial/order/success");
   }, [router]);
@@ -32,11 +45,10 @@ export default function FinalApprovalPage() {
 
   const buildParams = () => {
     const parts = [
-      name ? `name=${encodeURIComponent(name)}` : "",
-      birth ? `birth=${encodeURIComponent(birth)}` : "",
-      death ? `death=${encodeURIComponent(death)}` : "",
-      slug ? `slug=${encodeURIComponent(slug)}` : "",
-      photo ? `photo=${encodeURIComponent(photo)}` : "",
+      effectiveName ? `name=${encodeURIComponent(effectiveName)}` : "",
+      effectiveBirth ? `birth=${encodeURIComponent(effectiveBirth)}` : "",
+      effectiveDeath ? `death=${encodeURIComponent(effectiveDeath)}` : "",
+      effectiveSlug ? `slug=${encodeURIComponent(effectiveSlug)}` : "",
       `lang=${currentLang}`,
     ].filter(Boolean);
     return parts.length ? `?${parts.join("&")}` : "";
@@ -72,15 +84,6 @@ export default function FinalApprovalPage() {
   const handleApprove = () => {
     setIsSaving(true);
 
-    const getStoredValue = (key: string) => {
-      try {
-        return window.sessionStorage.getItem(key) || window.localStorage.getItem(key) || "";
-      } catch {
-        return "";
-      }
-    };
-
-    const effectiveSlug = slug || getStoredValue("memorial_slug");
     const effectivePhoto = photo || getStoredValue("memorial_photo_url");
     const qrUrl = effectiveSlug
       ? `https://api.qrserver.com/v1/create-qr-code/?size=600x600&color=88-28-135&bgcolor=transparent&data=${encodeURIComponent(

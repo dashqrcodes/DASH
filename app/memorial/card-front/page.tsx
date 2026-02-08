@@ -31,6 +31,16 @@ export default function MemorialPreviewPage() {
     }
   };
 
+  const persistValue = (key: string, value: string) => {
+    if (!value) return;
+    try {
+      window.sessionStorage.setItem(key, value);
+    } catch {}
+    try {
+      window.localStorage.setItem(key, value);
+    } catch {}
+  };
+
   useEffect(() => {
     const name = searchParams?.get("name")?.trim() || "";
     const birth = searchParams?.get("birth")?.trim() || "";
@@ -61,6 +71,24 @@ export default function MemorialPreviewPage() {
     const image = new Image();
     image.src = "/sky background rear.jpg";
   }, [router]);
+
+  useEffect(() => {
+    if (fullName) persistValue("memorial_full_name", fullName);
+    if (birthDate) persistValue("memorial_birth_date", birthDate);
+    if (deathDate) persistValue("memorial_death_date", deathDate);
+    if (photoUrl) persistValue("memorial_photo_url", photoUrl);
+    if (slug) persistValue("memorial_slug", slug);
+  }, [fullName, birthDate, deathDate, photoUrl, slug]);
+
+  useEffect(() => {
+    if (!slug) return;
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://dashmemories.com";
+    const qrTargetUrl = `${appUrl}/heaven/${slug}`;
+    const qrPrefetch = new Image();
+    qrPrefetch.src = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&color=88-28-135&bgcolor=transparent&data=${encodeURIComponent(
+      qrTargetUrl
+    )}`;
+  }, [slug]);
 
   const pushWithFallback = (target: string) => {
     if (typeof window !== "undefined") {
@@ -158,13 +186,7 @@ export default function MemorialPreviewPage() {
             onClick={() =>
               pushWithFallback(
                 `/memorial/card-back${[
-                  fullName ? `name=${encodeURIComponent(fullName)}` : "",
-                  birthDate ? `birth=${encodeURIComponent(birthDate)}` : "",
-                  deathDate ? `death=${encodeURIComponent(deathDate)}` : "",
                   slug ? `slug=${encodeURIComponent(slug)}` : "",
-                  photoUrl && !photoUrl.startsWith("data:") && !photoUrl.startsWith("blob:")
-                    ? `photo=${encodeURIComponent(photoUrl)}`
-                    : "",
                   `lang=${currentLang}`,
                 ]
                   .filter(Boolean)

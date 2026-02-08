@@ -81,6 +81,16 @@ export default function MemorialCardBackPage() {
     }
   };
 
+  const persistValue = (key: string, value: string) => {
+    if (!value) return;
+    try {
+      window.sessionStorage.setItem(key, value);
+    } catch {}
+    try {
+      window.localStorage.setItem(key, value);
+    } catch {}
+  };
+
   useEffect(() => {
     const name = searchParams?.get("name") || "";
     const birth = searchParams?.get("birth") || "";
@@ -95,19 +105,32 @@ export default function MemorialCardBackPage() {
     if (phone) setCounselorPhone(phone);
     if (slugParam) setSlug(slugParam);
 
-    if (!name || !birth || !death || !slugParam) {
+    if (!name || !birth || !death || !slugParam || !counselor || !phone) {
       try {
         const storedName = readStoredValue("memorial_full_name");
         const storedBirth = readStoredValue("memorial_birth_date");
         const storedDeath = readStoredValue("memorial_death_date");
         const storedSlug = readStoredValue("memorial_slug");
+        const storedCounselor = readStoredValue("memorial_counselor_name");
+        const storedPhone = readStoredValue("memorial_counselor_phone");
         if (!name && storedName) setMemorialName(storedName);
         if (!birth && storedBirth) setBirthDate(storedBirth);
         if (!death && storedDeath) setDeathDate(storedDeath);
         if (!slugParam && storedSlug) setSlug(storedSlug);
+        if (!counselor && storedCounselor) setCounselorName(storedCounselor);
+        if (!phone && storedPhone) setCounselorPhone(storedPhone);
       } catch {}
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    if (memorialName) persistValue("memorial_full_name", memorialName);
+    if (birthDate) persistValue("memorial_birth_date", birthDate);
+    if (deathDate) persistValue("memorial_death_date", deathDate);
+    if (slug) persistValue("memorial_slug", slug);
+    if (counselorName) persistValue("memorial_counselor_name", counselorName);
+    if (counselorPhone) persistValue("memorial_counselor_phone", counselorPhone);
+  }, [memorialName, birthDate, deathDate, slug, counselorName, counselorPhone]);
 
   useEffect(() => {
     router.prefetch("/memorial/hero-preview");

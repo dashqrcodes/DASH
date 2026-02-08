@@ -12,10 +12,20 @@ export default function OrderSuccessPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const currentLang = resolveLang(searchParams);
-  const memorialName = searchParams?.get("name") || "";
-  const birthDate = searchParams?.get("birth") || "";
-  const deathDate = searchParams?.get("death") || "";
-  const slug = searchParams?.get("slug") || "";
+  const readStoredValue = (key: string) => {
+    try {
+      return window.sessionStorage.getItem(key) || window.localStorage.getItem(key) || "";
+    } catch {
+      return "";
+    }
+  };
+  const memorialName =
+    searchParams?.get("name") || readStoredValue("memorial_full_name") || "";
+  const birthDate =
+    searchParams?.get("birth") || readStoredValue("memorial_birth_date") || "";
+  const deathDate =
+    searchParams?.get("death") || readStoredValue("memorial_death_date") || "";
+  const slug = searchParams?.get("slug") || readStoredValue("memorial_slug") || "";
 
   const strings =
     currentLang === "es"
