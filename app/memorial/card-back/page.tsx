@@ -152,13 +152,13 @@ export default function MemorialCardBackPage() {
         };
 
   const pushWithFallback = (target: string) => {
-    router.push(target);
-    if (typeof window === "undefined") return;
-    const current = `${window.location.pathname}${window.location.search}`;
-    if (current === target) return;
-    window.setTimeout(() => {
+    if (typeof window !== "undefined") {
+      const current = `${window.location.pathname}${window.location.search}`;
+      if (current === target) return;
       window.location.assign(target);
-    }, 10);
+      return;
+    }
+    router.push(target);
   };
 
   const handleApprove = () => {
