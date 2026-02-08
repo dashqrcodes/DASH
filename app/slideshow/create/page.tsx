@@ -369,133 +369,141 @@ export default function SlideshowCreatePage() {
         <div className="absolute bottom-0 right-6 h-56 w-56 rounded-full bg-gradient-to-br from-blue-500/20 via-purple-500/15 to-indigo-400/10 blur-3xl" />
       </div>
 
-      <div className="relative mx-auto flex min-h-screen w-full max-w-4xl flex-col px-6 pb-24 pt-10">
-        {/* Top Nav */}
-        <header className="mb-10 flex items-center justify-between text-sm text-white/80">
-          <button
-            type="button"
-            aria-label="Back"
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/5 ring-1 ring-white/10 backdrop-blur-xl transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-purple-300/60"
-            onClick={handleBack}
-          >
-            ←
-          </button>
-          <div className="flex-1 text-center">
-            <p className="text-lg font-semibold text-white">{memorialName}</p>
-          </div>
-          <div className="h-10 w-10" />
-        </header>
-
-        {/* Preview */}
-        <div className="flex flex-1 flex-col items-center gap-10">
-          <div className="sticky top-6 z-20 w-full max-w-3xl">
-            <div className="relative mx-auto aspect-video w-full overflow-hidden bg-gradient-to-b from-black/70 via-black/65 to-black/80 shadow-[0_18px_40px_rgba(0,0,0,0.5)] ring-1 ring-white/10">
-              {playbackUrls.length > 0 && prevIndex !== null && prevIndex !== currentIndex && (
-                <>
-                  <img
-                    src={playbackUrls[prevIndex]}
-                    alt=""
-                    className="absolute inset-0 h-full w-full object-cover scale-110 blur-2xl opacity-60 animate-fade-out"
-                    aria-hidden="true"
-                  />
-                  <img
-                    src={playbackUrls[prevIndex]}
-                    alt="Slideshow preview"
-                    className="absolute inset-0 h-full w-full object-contain animate-fade-out"
-                    aria-hidden="true"
-                  />
-                </>
-              )}
-              {playbackUrls.length > 0 && (
-                <>
-                  <img
-                    src={playbackUrls[currentIndex]}
-                    alt=""
-                    className={`absolute inset-0 h-full w-full object-cover scale-110 blur-2xl opacity-60 animate-fade-in ${
-                      isPlaying ? "opacity-100" : "opacity-90"
-                    }`}
-                    aria-hidden="true"
-                  />
-                  <img
-                    src={playbackUrls[currentIndex]}
-                    alt="Slideshow preview"
-                    className={`absolute inset-0 h-full w-full object-contain animate-fade-in ${
-                      isPlaying ? "opacity-100" : "opacity-90"
-                    }`}
-                    fetchPriority="high"
-                  />
-                </>
-              )}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (playbackUrls.length === 0) return;
-                    setIsPlaying((prev) => !prev);
-                  }}
-                  className="flex h-14 w-14 items-center justify-center rounded-full bg-white/10 text-white shadow-inner shadow-black/40 ring-1 ring-white/15"
-                  aria-label={isPlaying ? strings.pause : strings.play}
-                >
-                  {isPlaying ? "❚❚" : "▶"}
-                </button>
-              </div>
-              {playbackUrls.length === 0 && (
-                <div className="absolute inset-x-0 bottom-4 text-center text-xs text-white/70">
-                  {strings.empty}
-                </div>
-              )}
+      <div className="fixed inset-x-0 top-0 z-30 bg-[#0b0b0d]/95 backdrop-blur-xl">
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/80 via-black/70 to-transparent" />
+        <div className="relative mx-auto flex h-[58svh] w-full max-w-4xl flex-col px-6 pb-4 pt-10">
+          {/* Top Nav */}
+          <header className="mb-6 flex items-center justify-between text-sm text-white/80">
+            <button
+              type="button"
+              aria-label="Back"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/5 ring-1 ring-white/10 backdrop-blur-xl transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-purple-300/60"
+              onClick={handleBack}
+            >
+              ←
+            </button>
+            <div className="flex-1 text-center">
+              <p className="text-lg font-semibold text-white">{memorialName}</p>
             </div>
-          </div>
+            <div className="h-10 w-10" />
+          </header>
 
-          <div className="w-full max-w-md space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                className={primaryButtonClass}
-                onClick={() => setShowMusicPicker(true)}
-              >
-                {selectedTrackIds.length > 0 ? `${strings.musicAdded} ✓` : strings.addMusic}
-              </button>
-              <button
-                type="button"
-                className={primaryButtonClass}
-                onClick={() => fileInputRef.current?.click()}
-              >
-                {strings.addPhotos}
-              </button>
-            </div>
-            {uploadingCount > 0 && (
-              <p className="text-center text-xs text-white/70">
-                Uploading {uploadingCount} photo{uploadingCount === 1 ? "" : "s"}…
-              </p>
-            )}
-            {uploadError && <p className="text-center text-xs text-red-300">{uploadError}</p>}
-            {photoItems.length > 0 && (
-              <div className="grid grid-cols-3 gap-2 pt-2">
-                {photoItems.map((item) => (
-                  <div
-                    key={item.id}
-                    className="relative aspect-square overflow-hidden rounded-xl ring-1 ring-white/10"
-                  >
+          {/* Preview */}
+          <div className="flex flex-1 flex-col items-center gap-6">
+            <div className="w-full max-w-3xl">
+              <div className="relative mx-auto aspect-video w-full overflow-hidden bg-gradient-to-b from-black/70 via-black/65 to-black/80 shadow-[0_18px_40px_rgba(0,0,0,0.5)] ring-1 ring-white/10">
+                {playbackUrls.length > 0 && prevIndex !== null && prevIndex !== currentIndex && (
+                  <>
                     <img
-                      src={item.remoteUrl || item.localUrl}
+                      src={playbackUrls[prevIndex]}
                       alt=""
-                      className="h-full w-full object-cover"
+                      className="absolute inset-0 h-full w-full object-cover scale-110 blur-2xl opacity-60 animate-fade-out"
                       aria-hidden="true"
                     />
-                    <button
-                      type="button"
-                      onClick={() => handleRemovePhoto(item.id)}
-                      className="absolute left-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/70 text-xs text-white ring-1 ring-white/30 transition hover:bg-black/80"
-                      aria-label="Remove photo"
-                    >
-                      ×
-                    </button>
+                    <img
+                      src={playbackUrls[prevIndex]}
+                      alt="Slideshow preview"
+                      className="absolute inset-0 h-full w-full object-contain animate-fade-out"
+                      aria-hidden="true"
+                    />
+                  </>
+                )}
+                {playbackUrls.length > 0 && (
+                  <>
+                    <img
+                      src={playbackUrls[currentIndex]}
+                      alt=""
+                      className={`absolute inset-0 h-full w-full object-cover scale-110 blur-2xl opacity-60 animate-fade-in ${
+                        isPlaying ? "opacity-100" : "opacity-90"
+                      }`}
+                      aria-hidden="true"
+                    />
+                    <img
+                      src={playbackUrls[currentIndex]}
+                      alt="Slideshow preview"
+                      className={`absolute inset-0 h-full w-full object-contain animate-fade-in ${
+                        isPlaying ? "opacity-100" : "opacity-90"
+                      }`}
+                      fetchPriority="high"
+                    />
+                  </>
+                )}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (playbackUrls.length === 0) return;
+                      setIsPlaying((prev) => !prev);
+                    }}
+                    className="flex h-14 w-14 items-center justify-center rounded-full bg-white/10 text-white shadow-inner shadow-black/40 ring-1 ring-white/15"
+                    aria-label={isPlaying ? strings.pause : strings.play}
+                  >
+                    {isPlaying ? "❚❚" : "▶"}
+                  </button>
+                </div>
+                {playbackUrls.length === 0 && (
+                  <div className="absolute inset-x-0 bottom-4 text-center text-xs text-white/70">
+                    {strings.empty}
                   </div>
-                ))}
+                )}
               </div>
-            )}
+            </div>
+
+            <div className="w-full max-w-md">
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  className={primaryButtonClass}
+                  onClick={() => setShowMusicPicker(true)}
+                >
+                  {selectedTrackIds.length > 0 ? `${strings.musicAdded} ✓` : strings.addMusic}
+                </button>
+                <button
+                  type="button"
+                  className={primaryButtonClass}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {strings.addPhotos}
+                </button>
+              </div>
+            </div>
           </div>
+        </div>
+      </div>
+
+      <div className="relative mx-auto flex w-full max-w-4xl flex-col px-6 pb-24 pt-[60svh]">
+        <div className="w-full max-w-md space-y-3">
+          {uploadingCount > 0 && (
+            <p className="text-center text-xs text-white/70">
+              Uploading {uploadingCount} photo{uploadingCount === 1 ? "" : "s"}…
+            </p>
+          )}
+          {uploadError && <p className="text-center text-xs text-red-300">{uploadError}</p>}
+          {photoItems.length > 0 && (
+            <div className="grid grid-cols-3 gap-2 pt-2">
+              {photoItems.map((item) => (
+                <div
+                  key={item.id}
+                  className="relative aspect-square overflow-hidden rounded-xl ring-1 ring-white/10"
+                >
+                  <img
+                    src={item.remoteUrl || item.localUrl}
+                    alt=""
+                    className="h-full w-full object-cover"
+                    aria-hidden="true"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleRemovePhoto(item.id)}
+                    className="absolute left-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/70 text-xs text-white ring-1 ring-white/30 transition hover:bg-black/80"
+                    aria-label="Remove photo"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="mt-12 flex w-full max-w-md justify-center">
