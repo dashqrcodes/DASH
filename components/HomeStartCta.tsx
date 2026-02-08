@@ -9,12 +9,12 @@ export default function HomeStartCta() {
   const lang = resolveLang(searchParams);
 
   return (
-    <div className="mt-auto w-full pb-16 pt-12">
+    <div className="mt-10 w-full pb-16 pt-6">
       <Link
         href={`/memorial/profile?lang=${lang}`}
         className="mx-auto flex h-12 w-full max-w-xs items-center justify-center rounded-full bg-white text-base font-semibold text-gray-900 shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
       >
-        Start
+        Continue
       </Link>
     </div>
   );

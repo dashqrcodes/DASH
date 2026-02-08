@@ -12,23 +12,39 @@ const images: string[] = [
  ];
 
  const fadeDuration = 800;
- const intervalMs = 2000;
+ const intervalMs = 3500;
  const audioSrc = "https://cdn.pixabay.com/audio/2022/10/03/audio_8e0c6c6b35.mp3";
  const initialVolume = 0.15;
 
  export default function HomeHeroClient() {
    const [index, setIndex] = useState(0);
-   const [muted, setMuted] = useState(true);
+  const [muted, setMuted] = useState(true);
+  const [prevIndex, setPrevIndex] = useState<number | null>(null);
    const audioRef = useRef<HTMLAudioElement | null>(null);
+  const lastIndexRef = useRef(0);
 
    const slides = useMemo(
-     () =>
-       images.map((url, i) => ({
-         url,
-         active: i === index,
-       })),
-     [index]
+    () => {
+      const active = index;
+      const previous = prevIndex ?? index;
+      return images
+        .map((url, i) => ({
+          url,
+          active: i === active,
+          visible: i === active || i === previous,
+        }))
+        .filter((slide) => slide.visible);
+    },
+    [index, prevIndex]
    );
+
+  useEffect(() => {
+    const lastIndex = lastIndexRef.current;
+    if (lastIndex !== index) {
+      setPrevIndex(lastIndex);
+    }
+    lastIndexRef.current = index;
+  }, [index]);
 
    useEffect(() => {
      const id = window.setInterval(() => {
@@ -95,8 +111,8 @@ const images: string[] = [
 
    return (
      <>
-      <div
-        className="fixed inset-0"
+     <div
+       className="fixed inset-0 pointer-events-none"
         style={{
           top: "calc(env(safe-area-inset-top) * -1)",
           bottom: "calc(env(safe-area-inset-bottom) * -1)",
