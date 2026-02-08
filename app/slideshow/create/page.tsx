@@ -388,7 +388,7 @@ export default function SlideshowCreatePage() {
 
         {/* Preview */}
         <div className="flex flex-1 flex-col items-center gap-10">
-          <div className="w-full max-w-3xl">
+          <div className="sticky top-6 z-20 w-full max-w-3xl">
             <div className="relative mx-auto aspect-video w-full overflow-hidden bg-gradient-to-b from-black/70 via-black/65 to-black/80 shadow-[0_18px_40px_rgba(0,0,0,0.5)] ring-1 ring-white/10">
               {playbackUrls.length > 0 && prevIndex !== null && prevIndex !== currentIndex && (
                 <>
