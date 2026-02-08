@@ -47,9 +47,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Registration failed." }, { status: 400 });
     }
 
-    const { credentialID, credentialPublicKey, counter } = verification.registrationInfo;
-    const credentialId = isoBase64URL.fromBuffer(credentialID);
-    const publicKey = isoBase64URL.fromBuffer(credentialPublicKey);
+    const { credential } = verification.registrationInfo;
+    const credentialId = credential.id;
+    const publicKey = isoBase64URL.fromBuffer(credential.publicKey);
+    const counter = credential.counter || 0;
     const transports = Array.isArray(response?.response?.transports)
       ? response.response.transports
       : null;
