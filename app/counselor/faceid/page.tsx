@@ -175,12 +175,9 @@ export default function CounselorFaceIdPage() {
 
       <div className="relative mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center px-6 pb-10 pt-14 text-center">
         <div className="space-y-4">
-          <h1 className="text-3xl font-semibold tracking-tight text-gray-900">Enable Face ID</h1>
-          <p className="text-base leading-relaxed text-gray-700">
-            {hasPasskey
-              ? "Use Face ID to continue."
-              : "For quick, easy, private access tap \"Enable Face ID\""}
-          </p>
+          <h1 className="text-3xl font-semibold tracking-tight text-gray-900">
+            Quick Easy Access
+          </h1>
         </div>
 
         <div className="mt-8 w-full flex flex-col items-center">
@@ -198,11 +195,6 @@ export default function CounselorFaceIdPage() {
                 ? "Enabling Face ID..."
                 : "Enable Face ID"}
           </button>
-          <p className="mt-2 text-xs text-gray-500">
-            {hasPasskey
-              ? `Passkey ready (${passkeyCount})`
-              : "No passkey yet. Enable Face ID first."}
-          </p>
           {(statusMessage || errorMessage) && (
             <div className="mt-4 w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700">
               {errorMessage ? (
