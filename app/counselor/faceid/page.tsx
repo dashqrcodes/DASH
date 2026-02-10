@@ -204,6 +204,13 @@ export default function CounselorFaceIdPage() {
               )}
             </div>
           )}
+          <button
+            type="button"
+            onClick={() => router.push(nextUrl)}
+            className="mt-8 w-full text-center text-xs font-medium text-gray-500 underline underline-offset-4 pb-1"
+          >
+            Skip for now, I'll manually input credentials.
+          </button>
         </div>
       </div>
     </main>

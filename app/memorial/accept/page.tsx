@@ -25,7 +25,6 @@ export default function MemorialAcceptPage() {
   const passkeyRedirectedRef = useRef(false);
   const [step, setStep] = useState<"email" | "code">("email");
   const otpInputRef = useRef<HTMLInputElement | null>(null);
-  const otpSlots = Array.from({ length: 6 });
 
   const nextParam = searchParams?.get("next");
   const nextUrl = nextParam && nextParam.startsWith("/") ? nextParam : "/memorial/profile";
@@ -260,10 +259,7 @@ export default function MemorialAcceptPage() {
             {step === "code" && (
               <div className="space-y-2">
                 <div className="text-xs text-white/60">6-digit code</div>
-                <label
-                  htmlFor="otp-code-input"
-                  className="relative flex items-center justify-between gap-2 rounded-2xl bg-white/5 px-3 py-3 text-white/90 ring-1 ring-white/10"
-                >
+                <div className="rounded-2xl bg-white/5 px-3 py-3 text-white/90 ring-1 ring-white/10">
                   <input
                     id="otp-code-input"
                     ref={otpInputRef}
@@ -275,18 +271,11 @@ export default function MemorialAcceptPage() {
                       const nextValue = e.target.value.replace(/\D/g, "").slice(0, 6);
                       setOtp(nextValue);
                     }}
-                    className="absolute inset-0 h-full w-full opacity-0"
+                    className="h-11 w-full rounded-xl border border-white/10 bg-black/20 px-4 text-center text-lg font-semibold text-white placeholder:text-white/40 focus:border-purple-300/60 focus:outline-none focus:ring-2 focus:ring-purple-300/60"
+                    placeholder="Enter code"
                     aria-label="6-digit code"
                   />
-                  {otpSlots.map((_, index) => (
-                    <div
-                      key={`otp-slot-${index}`}
-                      className="flex h-10 w-10 items-center justify-center rounded-xl bg-black/30 text-lg font-semibold text-white ring-1 ring-white/10"
-                    >
-                      {otp[index] ?? ""}
-                    </div>
-                  ))}
-                </label>
+                </div>
                 <button
                   type="button"
                   onClick={handleSendCode}
