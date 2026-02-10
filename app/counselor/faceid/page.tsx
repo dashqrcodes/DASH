@@ -54,6 +54,14 @@ export default function CounselorFaceIdPage() {
   }, [userId, userEmail]);
 
   useEffect(() => {
+    if (!hasPasskey || isAuthenticating) return;
+    if (!isSupported) return;
+    if (!userId && !userEmail) return;
+    handleAuthenticate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasPasskey, isSupported, userId, userEmail]);
+
+  useEffect(() => {
     if (typeof window === "undefined") return;
     if (!window.PublicKeyCredential) {
       setIsSupported(false);
@@ -169,26 +177,26 @@ export default function CounselorFaceIdPage() {
         <div className="space-y-4">
           <h1 className="text-3xl font-semibold tracking-tight text-gray-900">Enable Face ID</h1>
           <p className="text-base leading-relaxed text-gray-700">
-            For quick, easy, private access tap "Enable Face ID"
+            {hasPasskey
+              ? "Use Face ID to continue."
+              : "For quick, easy, private access tap \"Enable Face ID\""}
           </p>
         </div>
 
         <div className="mt-8 w-full flex flex-col items-center">
           <button
             type="button"
-            onClick={handleEnroll}
+            onClick={hasPasskey ? handleAuthenticate : handleEnroll}
             className={primaryButtonClass + " w-full"}
-            disabled={isEnrolling}
+            disabled={hasPasskey ? isAuthenticating : isEnrolling}
           >
-            {isEnrolling ? "Enabling Face ID..." : "Enable Face ID"}
-          </button>
-          <button
-            type="button"
-            onClick={handleAuthenticate}
-            className="mt-4 w-full rounded-full border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-800 shadow-sm transition hover:bg-gray-50 active:scale-95"
-            disabled={isAuthenticating || !hasPasskey}
-          >
-            {isAuthenticating ? "Verifying..." : "Use Face ID to Continue"}
+            {hasPasskey
+              ? isAuthenticating
+                ? "Verifying..."
+                : "Use Face ID to Continue"
+              : isEnrolling
+                ? "Enabling Face ID..."
+                : "Enable Face ID"}
           </button>
           <p className="mt-2 text-xs text-gray-500">
             {hasPasskey
@@ -204,13 +212,6 @@ export default function CounselorFaceIdPage() {
               )}
             </div>
           )}
-          <button
-            type="button"
-            onClick={() => router.push(nextUrl)}
-            className="mt-8 w-full text-center text-sm font-medium text-gray-600 underline underline-offset-4 pb-1"
-          >
-            Skip for now. I will manually input my credentials.
-          </button>
         </div>
       </div>
     </main>

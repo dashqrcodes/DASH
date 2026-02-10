@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { hashOtp } from "@/lib/utils/emailOtp";
+import {
+  SESSION_COOKIE_NAME,
+  createSessionToken,
+  getSessionExpiry,
+} from "@/lib/utils/session";
 
 export const runtime = "nodejs";
 
@@ -56,15 +61,47 @@ export async function POST(req: NextRequest) {
     const bypassEnabled = process.env.NEXT_PUBLIC_OTP_BYPASS === "true";
     const testEmail = process.env.OTP_TEST_EMAIL?.trim().toLowerCase();
     const testCode = process.env.OTP_TEST_CODE || "123456";
+    const createSessionResponse = async (userId: string) => {
+      const { token: sessionToken, hash } = createSessionToken();
+      const expiresAt = getSessionExpiry();
+      const { error: sessionError } = await supabaseAdmin.from("user_sessions").insert({
+        user_id: userId,
+        email: normalizedEmail,
+        token_hash: hash,
+        expires_at: expiresAt.toISOString(),
+        last_seen_at: new Date().toISOString(),
+      });
+      if (sessionError) {
+        return NextResponse.json(
+          { error: `Unable to create session: ${sessionError.message}` },
+          { status: 500 }
+        );
+      }
+
+      const response = NextResponse.json({
+        success: true,
+        userId,
+        email: normalizedEmail,
+      });
+      response.cookies.set(SESSION_COOKIE_NAME, sessionToken, {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        expires: expiresAt,
+        path: "/",
+      });
+      return response;
+    };
+
     if (
       (bypassEnabled && token === String(testCode)) ||
       (testEmail && normalizedEmail === testEmail && token === String(testCode))
     ) {
       const { error, userId } = await getOrCreateUser();
-      if (error) {
-        return NextResponse.json({ error }, { status: 500 });
+      if (error || !userId) {
+        return NextResponse.json({ error: error || "Unable to verify account." }, { status: 500 });
       }
-      return NextResponse.json({ success: true, userId, email: normalizedEmail });
+      return createSessionResponse(userId);
     }
 
     const cleanupCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
@@ -130,7 +167,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: userError }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, userId, email: normalizedEmail });
+    return createSessionResponse(userId);
   } catch (error: any) {
     return NextResponse.json(
       { error: error?.message || "Verification failed." },

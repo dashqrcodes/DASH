@@ -17,14 +17,28 @@ export default function MemorialAcceptPage() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isCheckingSession, setIsCheckingSession] = useState(false);
+  const [isCheckingPasskey, setIsCheckingPasskey] = useState(false);
   const lastRequestedAtRef = useRef<number>(0);
   const lastVerifyOtpRef = useRef<string>("");
+  const sessionRedirectedRef = useRef(false);
+  const passkeyRedirectedRef = useRef(false);
   const [step, setStep] = useState<"email" | "code">("email");
   const otpInputRef = useRef<HTMLInputElement | null>(null);
   const otpSlots = Array.from({ length: 6 });
 
   const nextParam = searchParams?.get("next");
   const nextUrl = nextParam && nextParam.startsWith("/") ? nextParam : "/memorial/profile";
+
+  const pushWithFallback = (target: string) => {
+    if (typeof window !== "undefined") {
+      const current = `${window.location.pathname}${window.location.search}`;
+      if (current === target) return;
+      window.location.assign(target);
+      return;
+    }
+    router.push(target);
+  };
 
   const canSend = isValidEmail(email);
   const canVerify = otp.trim().length === 6 && Boolean(sentTo);
@@ -39,6 +53,69 @@ export default function MemorialAcceptPage() {
   useEffect(() => {
     router.prefetch("/counselor/faceid");
   }, [router]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (sessionRedirectedRef.current) return;
+    setIsCheckingSession(true);
+    fetch("/api/auth/session")
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data?.authenticated) return;
+        sessionRedirectedRef.current = true;
+        if (data.userId) {
+          try {
+            window.localStorage.setItem("dash_user_id", data.userId);
+            window.sessionStorage.setItem("dash_user_id", data.userId);
+          } catch {}
+        }
+        if (data.email) {
+          try {
+            window.localStorage.setItem("dash_user_email", data.email);
+            window.sessionStorage.setItem("dash_user_email", data.email);
+          } catch {}
+          if (!email) {
+            setEmail(data.email);
+          }
+        }
+        setStatusMessage("Welcome back.");
+        pushWithFallback(nextUrl);
+      })
+      .catch(() => {})
+      .finally(() => setIsCheckingSession(false));
+  }, [email, nextUrl]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (passkeyRedirectedRef.current) return;
+    if (sessionRedirectedRef.current || isCheckingSession) return;
+    const storedId =
+      window.sessionStorage.getItem("dash_user_id") ||
+      window.localStorage.getItem("dash_user_id");
+    const storedEmail =
+      window.sessionStorage.getItem("dash_user_email") ||
+      window.localStorage.getItem("dash_user_email");
+    if (!storedId && !storedEmail) return;
+    if (!email && storedEmail) {
+      setEmail(storedEmail);
+    }
+    setIsCheckingPasskey(true);
+    fetch("/api/webauthn/status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: storedId, email: storedEmail }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data?.hasPasskey) return;
+        passkeyRedirectedRef.current = true;
+        const target = nextUrl;
+        const path = `/counselor/faceid?next=${encodeURIComponent(target)}`;
+        pushWithFallback(path);
+      })
+      .catch(() => {})
+      .finally(() => setIsCheckingPasskey(false));
+  }, [email, nextUrl, isCheckingSession]);
 
   useEffect(() => {
     if (!canVerify || isVerifying) return;
@@ -100,16 +177,6 @@ export default function MemorialAcceptPage() {
       setStatusMessage(`Code sent to ${normalizedEmail}. Check your email.`);
     }
     setStep("code");
-  };
-
-  const pushWithFallback = (target: string) => {
-    if (typeof window !== "undefined") {
-      const current = `${window.location.pathname}${window.location.search}`;
-      if (current === target) return;
-      window.location.assign(target);
-      return;
-    }
-    router.push(target);
   };
 
   const handleVerifyCode = async () => {
@@ -232,7 +299,11 @@ export default function MemorialAcceptPage() {
             <button
               type="button"
               disabled={
-                step === "email" ? !canSend || isSending : !canVerify || isVerifying
+                isCheckingSession ||
+                isCheckingPasskey ||
+                (step === "email"
+                  ? !canSend || isSending
+                  : !canVerify || isVerifying)
               }
               onClick={() => {
                 if (step === "email") {
@@ -244,9 +315,13 @@ export default function MemorialAcceptPage() {
               className="w-full rounded-full border border-white/10 bg-white/10 px-4 py-3 text-sm font-semibold text-white/90 transition active:scale-95 hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {step === "email"
-                ? isSending
-                  ? "Sending code..."
-                  : "Send code"
+                ? isCheckingSession
+                  ? "Checking session..."
+                  : isCheckingPasskey
+                    ? "Checking Face ID..."
+                    : isSending
+                      ? "Sending code..."
+                      : "Send code"
                 : isVerifying
                   ? "Verifying..."
                   : "Verify code"}

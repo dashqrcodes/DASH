@@ -3,6 +3,11 @@ import { headers } from "next/headers";
 import { verifyAuthenticationResponse } from "@simplewebauthn/server";
 import { isoBase64URL } from "@simplewebauthn/server/helpers";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import {
+  SESSION_COOKIE_NAME,
+  createSessionToken,
+  getSessionExpiry,
+} from "@/lib/utils/session";
 
 const getOrigin = () => {
   const hdrs = headers();
@@ -80,7 +85,37 @@ export async function POST(req: NextRequest) {
       .eq("user_id", userId)
       .eq("type", "authentication");
 
-    return NextResponse.json({ success: true });
+    const { data: userRow } = await supabaseAdmin
+      .from("users")
+      .select("email")
+      .eq("id", userId)
+      .maybeSingle();
+
+    const { token: sessionToken, hash } = createSessionToken();
+    const expiresAt = getSessionExpiry();
+    const { error: sessionError } = await supabaseAdmin.from("user_sessions").insert({
+      user_id: userId,
+      email: userRow?.email || null,
+      token_hash: hash,
+      expires_at: expiresAt.toISOString(),
+      last_seen_at: new Date().toISOString(),
+    });
+    if (sessionError) {
+      return NextResponse.json(
+        { error: `Unable to create session: ${sessionError.message}` },
+        { status: 500 }
+      );
+    }
+
+    const response = NextResponse.json({ success: true });
+    response.cookies.set(SESSION_COOKIE_NAME, sessionToken, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      expires: expiresAt,
+      path: "/",
+    });
+    return response;
   } catch (error: any) {
     return NextResponse.json(
       { error: error?.message || "Failed to verify passkey." },
