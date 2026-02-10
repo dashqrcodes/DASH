@@ -19,8 +19,8 @@ const getOrigin = () => {
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId, response } = await req.json();
-    if (!userId || !response) {
+    const { userId, response: credentialResponse } = await req.json();
+    if (!userId || !credentialResponse) {
       return NextResponse.json({ error: "Missing data." }, { status: 400 });
     }
 
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Challenge expired." }, { status: 400 });
     }
 
-    const credentialId = response?.id as string | undefined;
+    const credentialId = credentialResponse?.id as string | undefined;
     if (!credentialId) {
       return NextResponse.json({ error: "Missing credential." }, { status: 400 });
     }
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
     const rpID = new URL(origin).hostname;
 
     const verification = await verifyAuthenticationResponse({
-      response,
+      response: credentialResponse,
       expectedChallenge: challengeRow.challenge,
       expectedOrigin: origin,
       expectedRPID: rpID,
@@ -107,15 +107,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const response = NextResponse.json({ success: true });
-    response.cookies.set(SESSION_COOKIE_NAME, sessionToken, {
+    const successResponse = NextResponse.json({ success: true });
+    successResponse.cookies.set(SESSION_COOKIE_NAME, sessionToken, {
       httpOnly: true,
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
       expires: expiresAt,
       path: "/",
     });
-    return response;
+    return successResponse;
   } catch (error: any) {
     return NextResponse.json(
       { error: error?.message || "Failed to verify passkey." },
