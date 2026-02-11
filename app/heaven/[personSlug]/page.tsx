@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getSupabaseAdmin, Story, StoryMoment } from '@/lib/utils/supabaseClient';
 import { getMuxPlaybackId } from '@/lib/utils/mux';
+import SlideshowEmbed from './SlideshowEmbed';
 
 // Zero cache - always fetch fresh from Supabase
 export const revalidate = 0;
@@ -61,6 +62,22 @@ async function fetchDraft(slug: string): Promise<MemorialDraft | null> {
   return data as MemorialDraft;
 }
 
+async function hasSlideshowAssets(slug: string): Promise<boolean> {
+  const supabase = getSupabaseAdmin();
+  const safeSlug = slug.replace(/[^a-zA-Z0-9-_]/g, '_');
+  const folder = `slideshows/${safeSlug}`;
+  const { data, error } = await supabase.storage.from('photos').list(folder, {
+    limit: 1,
+    sortBy: { column: 'name', order: 'asc' },
+  });
+
+  if (error || !data) {
+    return false;
+  }
+
+  return data.some((item) => item.name && !item.name.endsWith('/'));
+}
+
 interface HeavenPersonPageProps {
   params: {
     personSlug: string;
@@ -69,14 +86,15 @@ interface HeavenPersonPageProps {
 
 export default async function HeavenPersonPage({ params }: HeavenPersonPageProps) {
   // Fetch directly from Supabase - no cache, no localStorage, no fallbacks
-  const [story, moments, draft] = await Promise.all([
+  const [story, moments, draft, hasSlideshow] = await Promise.all([
     fetchPerson(params.personSlug),
     fetchMoments(params.personSlug),
     fetchDraft(params.personSlug),
+    hasSlideshowAssets(params.personSlug),
   ]);
 
   // Simple "Not found" if no record exists
-  if (!story && !draft) {
+  if (!story && !draft && !hasSlideshow) {
     notFound();
   }
 
@@ -89,107 +107,93 @@ export default async function HeavenPersonPage({ params }: HeavenPersonPageProps
       : '';
 
   return (
-    <div style={{ minHeight: '100vh', background: '#020617', color: '#e2e8f0', padding: '32px 16px' }}>
-      <div style={{ maxWidth: '960px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '32px' }}>
-        <header>
-          <p style={{ textTransform: 'uppercase', letterSpacing: '0.35em', fontSize: '12px', color: '#38bdf8' }}>
+    <main className="min-h-screen bg-[#020617] text-slate-100">
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-10 px-5 pb-20 pt-10 md:px-8">
+        <header className="space-y-4">
+          <p className="text-xs uppercase tracking-[0.4em] text-sky-300">
             Timeless Transparency Tribute
           </p>
-          <h1 style={{ fontSize: '48px', margin: '8px 0', color: '#f8fafc' }}>{displayName}</h1>
-          {displayDates && (
-            <p style={{ fontSize: '16px', lineHeight: 1.6, color: '#cbd5f5' }}>{displayDates}</p>
-          )}
-          {story?.story_text && (
-            <p style={{ fontSize: '18px', lineHeight: 1.6, color: '#cbd5f5' }}>{story.story_text}</p>
-          )}
-          <div style={{ marginTop: '20px' }}>
-            <Link
-              href={`/_dashmemories/slideshow?slug=${params.personSlug}&name=${encodeURIComponent(
-                displayName
-              )}`}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '12px 20px',
-                borderRadius: '999px',
-                background: 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
-                color: '#f8fafc',
-                textDecoration: 'none',
-                fontWeight: 600,
-                fontSize: '14px',
-                boxShadow: '0 8px 24px rgba(102,126,234,0.35)',
-              }}
-            >
-              ▶ View Slideshow
-            </Link>
-          </div>
+          <h1 className="text-4xl font-semibold text-slate-50 md:text-5xl">{displayName}</h1>
+          {displayDates && <p className="text-base text-slate-300">{displayDates}</p>}
+          {story?.story_text && <p className="text-lg text-slate-200">{story.story_text}</p>}
         </header>
 
         {displayPhoto && (
-          <div style={{ borderRadius: '24px', overflow: 'hidden', background: '#0f172a' }}>
-            <img src={displayPhoto} alt={displayName} style={{ width: '100%', display: 'block' }} />
+          <div className="overflow-hidden rounded-3xl bg-slate-900/80 shadow-[0_30px_80px_rgba(15,23,42,0.45)]">
+            <img src={displayPhoto} alt={displayName} className="block h-full w-full object-cover" />
           </div>
+        )}
+
+        {hasSlideshow && (
+          <section id="slideshow" className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-semibold text-slate-50">Slideshow</h2>
+              <Link
+                href={`/slideshow/create?slug=${encodeURIComponent(params.personSlug)}`}
+                className="text-sm font-medium text-sky-300 hover:text-sky-200"
+              >
+                Add photos
+              </Link>
+            </div>
+            <div className="overflow-hidden rounded-3xl border border-white/10 bg-black/70">
+              <SlideshowEmbed />
+            </div>
+          </section>
         )}
 
         {playbackId && (
-          <div style={{ borderRadius: '24px', overflow: 'hidden', background: '#000' }}>
-            <video
-              controls
-              playsInline
-              style={{ width: '100%', display: 'block' }}
-              poster={displayPhoto || undefined}
-            >
-              <source src={`https://stream.mux.com/${playbackId}.m3u8`} type="application/x-mpegURL" />
-            </video>
-          </div>
+          <section className="space-y-3">
+            <h2 className="text-2xl font-semibold text-slate-50">Video Tribute</h2>
+            <div className="overflow-hidden rounded-3xl bg-black">
+              <video
+                controls
+                playsInline
+                className="block w-full"
+                poster={displayPhoto || undefined}
+              >
+                <source src={`https://stream.mux.com/${playbackId}.m3u8`} type="application/x-mpegURL" />
+              </video>
+            </div>
+          </section>
         )}
 
-        <section>
-          <h2 style={{ fontSize: '28px', marginBottom: '16px', color: '#f8fafc' }}>Moments</h2>
-          {moments.length === 0 && (
-            <p style={{ color: '#94a3b8' }}>No moments have been added yet. Check back soon.</p>
+        <section className="space-y-4">
+          <h2 className="text-2xl font-semibold text-slate-50">Moments</h2>
+          {moments.length === 0 ? (
+            <p className="text-slate-400">No moments have been added yet. Check back soon.</p>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2">
+              {moments.map((moment) => (
+                <Link
+                  key={moment.id}
+                  href={`/heaven/${params.personSlug}/${moment.slug}`}
+                  className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-slate-900/70 p-4 transition hover:border-sky-400/60"
+                >
+                  {moment.photo_url && (
+                    <img
+                      src={moment.photo_url}
+                      alt={moment.slug}
+                      className="h-40 w-full rounded-xl object-cover"
+                    />
+                  )}
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.2em] text-sky-300">
+                      {moment.product_type || 'Timeless Transparency'}
+                    </p>
+                    <h3 className="mt-1 text-lg font-semibold text-slate-50">
+                      {moment.slug.replace(/-/g, ' ')}
+                    </h3>
+                    {moment.caption && <p className="mt-1 text-sm text-slate-300">{moment.caption}</p>}
+                    <p className="mt-2 text-xs text-slate-500">
+                      {new Date(moment.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
           )}
-          <div style={{ display: 'grid', gap: '16px', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
-            {moments.map((moment) => (
-              <Link
-                key={moment.id}
-                href={`/heaven/${params.personSlug}/${moment.slug}`}
-                style={{
-                  borderRadius: '16px',
-                  padding: '16px',
-                  background: '#0f172a',
-                  textDecoration: 'none',
-                  color: '#e2e8f0',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '12px',
-                }}
-              >
-                {moment.photo_url && (
-                  <img
-                    src={moment.photo_url}
-                    alt={moment.slug}
-                    style={{ width: '100%', borderRadius: '12px', objectFit: 'cover', height: '160px' }}
-                  />
-                )}
-                <div>
-                  <p style={{ fontSize: '12px', letterSpacing: '0.2em', color: '#38bdf8', textTransform: 'uppercase' }}>
-                    {moment.product_type || 'Timeless Transparency'}
-                  </p>
-                  <h3 style={{ fontSize: '18px', margin: '4px 0', color: '#f8fafc' }}>
-                    {moment.slug.replace(/-/g, ' ')}
-                  </h3>
-                  {moment.caption && <p style={{ fontSize: '14px', color: '#cbd5f5' }}>{moment.caption}</p>}
-                  <p style={{ fontSize: '12px', color: '#94a3b8' }}>
-                    {new Date(moment.created_at).toLocaleDateString()}
-                  </p>
-                </div>
-              </Link>
-            ))}
-          </div>
         </section>
       </div>
-    </div>
+    </main>
   );
 }

@@ -347,6 +347,16 @@ export default function SlideshowCreatePage() {
     router.push(qs ? `/memorial/order/success?${qs}` : "/memorial/order/success");
   };
 
+  const pushWithFallback = (target: string) => {
+    if (typeof window !== "undefined") {
+      const current = `${window.location.pathname}${window.location.search}`;
+      if (current === target) return;
+      window.location.assign(target);
+      return;
+    }
+    router.push(target);
+  };
+
   const handleContinue = () => {
     if (readyUrls.length === 0) {
       setUploadError(strings.empty);
@@ -358,8 +368,12 @@ export default function SlideshowCreatePage() {
         JSON.stringify(readyUrls.map((url) => ({ type: "photo" as const, url })))
       );
     } catch {}
-    const qs = searchParams?.toString() || "";
-    router.push(qs ? `/_dashmemories/slideshow?${qs}` : "/_dashmemories/slideshow");
+    const params = new URLSearchParams(searchParams?.toString() || "");
+    if (draftSlug) params.set("slug", draftSlug);
+    const qs = params.toString();
+    const heavenTarget = draftSlug ? `/heaven/${encodeURIComponent(draftSlug)}` : "";
+    const target = heavenTarget || (qs ? `/slideshow/view?${qs}` : "/slideshow/view");
+    pushWithFallback(target);
   };
 
   return (
@@ -450,7 +464,8 @@ export default function SlideshowCreatePage() {
             </div>
 
             <div className="w-full max-w-md">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-2xl bg-black/70 p-3 ring-1 ring-white/10 backdrop-blur">
+                <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
                   className={primaryButtonClass}
@@ -465,6 +480,7 @@ export default function SlideshowCreatePage() {
                 >
                   {strings.addPhotos}
                 </button>
+                </div>
               </div>
             </div>
           </div>

@@ -1,7 +1,7 @@
 "use client";
 export const dynamic = "force-dynamic";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { resolveLang } from "@/lib/utils/lang";
 
@@ -34,6 +34,14 @@ export default function FinalApprovalPage() {
   const effectiveBirth = birth || getStoredValue("memorial_birth_date");
   const effectiveDeath = death || getStoredValue("memorial_death_date");
   const effectiveSlug = slug || getStoredValue("memorial_slug");
+  const printBaseUrl = useMemo(() => {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+    if (!supabaseUrl) return "";
+    return `${supabaseUrl}/storage/v1/object/public/prints`;
+  }, []);
+
+  const cardPdfUrl = effectiveSlug ? `${printBaseUrl}/${effectiveSlug}.pdf` : "";
+  const posterPdfUrl = effectiveSlug ? `${printBaseUrl}/${effectiveSlug}-poster.pdf` : "";
 
   useEffect(() => {
     router.prefetch("/memorial/order/success");
@@ -96,6 +104,20 @@ export default function FinalApprovalPage() {
           slug: effectiveSlug,
           photoUrl: effectivePhoto,
           qrUrl,
+          format: "card",
+        }),
+      }).catch(() => {
+        // Ignore; PDF generation should not block navigation.
+      });
+
+      void fetch("/api/generate-print-pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug: effectiveSlug,
+          photoUrl: effectivePhoto,
+          qrUrl,
+          format: "poster",
         }),
       }).catch(() => {
         // Ignore; PDF generation should not block navigation.
@@ -135,6 +157,35 @@ export default function FinalApprovalPage() {
             {isSaving ? strings.saving : strings.approve}
           </button>
         </div>
+
+        {effectiveSlug && printBaseUrl && (
+          <div className="mt-6 w-full rounded-3xl border border-white/10 bg-white/5 px-5 py-4 text-left">
+            <p className="text-sm font-semibold text-white">Print PDF previews</p>
+            <p className="mt-1 text-xs text-white/60">
+              These previews contain the live, working QR code for `heaven/{effectiveSlug}`.
+            </p>
+            <div className="mt-4 flex w-full flex-col gap-3">
+              <a
+                href={cardPdfUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white transition hover:bg-white/15"
+              >
+                4x6 Card Back PDF
+                <span className="text-xs text-white/60">Open</span>
+              </a>
+              <a
+                href={posterPdfUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white transition hover:bg-white/15"
+              >
+                20x30 Hero Poster PDF
+                <span className="text-xs text-white/60">Open</span>
+              </a>
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );

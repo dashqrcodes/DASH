@@ -15,26 +15,48 @@ export async function POST(req: NextRequest) {
     const customerEmail = body?.email || null;
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://dashmemories.com';
-    const qrUrl = slug ? `${appUrl}/heaven/${slug}` : '';
+    const qrDataUrl = slug ? `${appUrl}/heaven/${slug}` : '';
+    const qrUrl = qrDataUrl
+      ? `https://api.qrserver.com/v1/create-qr-code/?size=600x600&color=88-28-135&bgcolor=transparent&data=${encodeURIComponent(
+          qrDataUrl
+        )}`
+      : '';
 
     if (slug && photoUrl && qrUrl) {
       const origin = new URL(req.url).origin;
-      const pdfRes = await fetch(`${origin}/api/generate-print-pdf`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug, photoUrl, qrUrl }),
-      });
-      if (pdfRes.ok) {
-        const pdfBuffer = Buffer.from(await pdfRes.arrayBuffer());
+      const [cardRes, posterRes] = await Promise.all([
+        fetch(`${origin}/api/generate-print-pdf`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slug, photoUrl, qrUrl, format: 'card' }),
+        }),
+        fetch(`${origin}/api/generate-print-pdf`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slug, photoUrl, qrUrl, format: 'poster' }),
+        }),
+      ]);
+
+      const attachments: Array<{ filename: string; content: Buffer }> = [];
+      if (cardRes.ok) {
+        const cardBuffer = Buffer.from(await cardRes.arrayBuffer());
+        attachments.push({ filename: `order-${slug}-card.pdf`, content: cardBuffer });
+      }
+      if (posterRes.ok) {
+        const posterBuffer = Buffer.from(await posterRes.arrayBuffer());
+        attachments.push({ filename: `order-${slug}-poster.pdf`, content: posterBuffer });
+      }
+
+      if (attachments.length > 0) {
         const testEmail = process.env.TEST_PDF_EMAIL;
         const recipientEmail = testEmail || process.env.PRINT_SHOP_EMAIL || '';
         if (recipientEmail) {
           await sendPrintPdfEmail({
-            pdfBuffer,
             slug,
             recipientEmail,
             customerEmail,
             subjectPrefix: testEmail ? 'Test Print PDF' : 'New Print Order',
+            attachments,
           });
         }
       }

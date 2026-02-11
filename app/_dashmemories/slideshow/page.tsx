@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect, Suspense, useMemo, useRef } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { musicTracks } from '@/lib/data/musicTracks';
 
-function SlideshowContent() {
+export function SlideshowContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
   const [lovedOneName, setLovedOneName] = useState('');
   const [sunrise, setSunrise] = useState('');
   const [sunset, setSunset] = useState('');
@@ -39,7 +40,16 @@ function SlideshowContent() {
     return selectedTrackIds.map((id) => map.get(id)).filter(Boolean) as typeof musicTracks;
   }, [selectedTrackIds]);
   const currentTrack = selectedTracks[currentTrackIndex] || null;
-  const slugParam = searchParams?.get('slug') || '';
+  const slugFromPath = useMemo(() => {
+    if (!pathname) return '';
+    const parts = pathname.split('/').filter(Boolean);
+    const heavenIndex = parts.indexOf('heaven');
+    if (heavenIndex >= 0 && parts[heavenIndex + 1]) {
+      return parts[heavenIndex + 1];
+    }
+    return '';
+  }, [pathname]);
+  const slugParam = searchParams?.get('slug') || slugFromPath || '';
 
   useEffect(() => {
     try {
@@ -652,12 +662,14 @@ function SlideshowContent() {
       <div style={{flex:1,display:'flex',flexDirection:'column',minHeight:0,marginBottom:'8px',overflow:'hidden'}}>
         <div style={{position:'relative',width:'100%',aspectRatio:'16/9',background:'rgba(255,255,255,0.05)',borderRadius:'10px',overflow:'hidden',marginBottom:'8px'}}>
           <div style={{width:'100%',height:'100%',display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:'10px'}}>
-            <button onClick={handleUploadClick} style={{background:'transparent',border:'none',color:'rgba(255,255,255,0.5)',fontSize:'clamp(11px, 3vw, 13px)',cursor:'pointer',textDecoration:'underline',WebkitTapHighlightColor:'transparent',touchAction:'manipulation'}}>
-              I already have a slideshow
-            </button>
-            <button onClick={handleCreateSlideshow} onTouchStart={(e)=>e.currentTarget.style.transform='scale(0.95)'} onTouchEnd={(e)=>e.currentTarget.style.transform='scale(1)'} style={{padding:'clamp(10px, 2.5vw, 14px) clamp(24px, 8vw, 36px)',background:'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',border:'none',borderRadius:'50px',color:'white',fontSize:'clamp(13px, 3.5vw, 15px)',fontWeight:'600',cursor:'pointer',boxShadow:'0 4px 15px rgba(102,126,234,0.4)',WebkitTapHighlightColor:'transparent',touchAction:'manipulation',transition:'transform 0.2s'}}>
-              Create slideshow
-            </button>
+            <div style={{background:'rgba(0,0,0,0.7)',borderRadius:'14px',padding:'12px 16px',display:'flex',flexDirection:'column',alignItems:'center',gap:'10px',width:'min(90%, 320px)',backdropFilter:'blur(6px)'}}>
+              <button onClick={handleUploadClick} style={{background:'transparent',border:'none',color:'rgba(255,255,255,0.7)',fontSize:'clamp(11px, 3vw, 13px)',cursor:'pointer',textDecoration:'underline',WebkitTapHighlightColor:'transparent',touchAction:'manipulation'}}>
+                I already have a slideshow
+              </button>
+              <button onClick={handleCreateSlideshow} onTouchStart={(e)=>e.currentTarget.style.transform='scale(0.95)'} onTouchEnd={(e)=>e.currentTarget.style.transform='scale(1)'} style={{padding:'clamp(10px, 2.5vw, 14px) clamp(24px, 8vw, 36px)',background:'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',border:'none',borderRadius:'50px',color:'white',fontSize:'clamp(13px, 3.5vw, 15px)',fontWeight:'600',cursor:'pointer',boxShadow:'0 4px 15px rgba(102,126,234,0.4)',WebkitTapHighlightColor:'transparent',touchAction:'manipulation',transition:'transform 0.2s'}}>
+                Create slideshow
+              </button>
+            </div>
           </div>
 
           {/* Share Button */}
