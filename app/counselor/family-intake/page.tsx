@@ -58,14 +58,10 @@ export default function FamilyIntakePage() {
 
   return (
     <main className="min-h-screen bg-white text-gray-900">
-      <button
-        type="button"
-        aria-label="Back"
-        className="fixed left-4 top-4 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-white text-gray-900 shadow-md ring-1 ring-gray-200 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300"
-        onClick={() => router.back()}
-      >
-        ←
-      </button>
+      <BackArrowButton
+        variant="light"
+        className="fixed left-4 top-4 z-50"
+      />
       <div className="mx-auto flex min-h-screen w-full max-w-lg flex-col px-3 pb-24 pt-10">
         <div className="mb-6 flex items-center justify-end">
           <CounselorLanguageToggle />

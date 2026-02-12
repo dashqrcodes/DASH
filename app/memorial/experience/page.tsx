@@ -2,6 +2,7 @@
 export const dynamic = "force-dynamic";
 
 import { useRouter } from "next/navigation";
+import BackArrowButton from "@/components/BackArrowButton";
 
 const primaryButtonClass =
   "h-12 w-full rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-500 text-base font-semibold text-white shadow-[0_12px_32px_rgba(99,102,241,0.35)] transition duration-200 hover:brightness-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-purple-300/60";
@@ -11,14 +12,9 @@ export default function MemorialExperiencePage() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-gradient-to-b from-[#0c0f1a] via-[#0b0d17] to-[#090b12] text-white">
-      <button
-        type="button"
-        aria-label="Back"
-        className="fixed left-4 top-4 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-white/5 ring-1 ring-white/10 backdrop-blur-xl transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-purple-300/60"
-        onClick={() => router.back()}
-      >
-        ←
-      </button>
+      <BackArrowButton
+        className="fixed left-4 top-4 z-50 bg-white/5 ring-1 ring-white/10 backdrop-blur-xl hover:bg-white/10"
+      />
       {/* Angled photo grid removed for cleaner background */}
 
       {/* Content */}

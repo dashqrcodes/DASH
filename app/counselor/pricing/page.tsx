@@ -2,6 +2,7 @@
 export const dynamic = "force-dynamic";
 
 import CounselorLanguageToggle from "../../../components/CounselorLanguageToggle";
+import BackArrowButton from "@/components/BackArrowButton";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { resolveLang } from "@/lib/utils/lang";
@@ -19,14 +20,10 @@ export default function CounselorPricingPage() {
 
   return (
     <main className="min-h-screen bg-white text-gray-900">
-      <button
-        type="button"
-        aria-label="Back"
-        className="fixed left-4 top-4 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-white text-gray-900 shadow-md ring-1 ring-gray-200 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300"
-        onClick={() => router.back()}
-      >
-        ←
-      </button>
+      <BackArrowButton
+        variant="light"
+        className="fixed left-4 top-4 z-50"
+      />
       <div className="mx-auto flex min-h-screen w-full max-w-xl flex-col gap-8 px-6 pb-24 pt-10">
         <div className="flex items-center justify-end">
           <CounselorLanguageToggle />

@@ -2,6 +2,7 @@
 export const dynamic = "force-dynamic";
 
 import { useRouter, useSearchParams } from "next/navigation";
+import BackArrowButton from "@/components/BackArrowButton";
 import { useEffect, useState } from "react";
 import { resolveLang } from "@/lib/utils/lang";
 
@@ -188,14 +189,10 @@ export default function MemorialCardBackPage() {
 
   return (
     <main className="relative min-h-screen bg-[#0b0b0d] text-white">
-      <button
-        type="button"
-        aria-label="Back"
-        className="fixed left-4 top-4 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-white/5 ring-1 ring-white/10 backdrop-blur-xl transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-purple-300/60"
+      <BackArrowButton
+        className="fixed left-4 top-4 z-50 bg-white/5 ring-1 ring-white/10 backdrop-blur-xl hover:bg-white/10"
         onClick={() => pushWithFallback(`/memorial/card-front${buildQueryString()}`)}
-      >
-        ←
-      </button>
+      />
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-20 left-6 h-64 w-64 rounded-full bg-gradient-to-br from-indigo-500/25 via-purple-500/20 to-blue-400/10 blur-3xl" />
         <div className="absolute bottom-0 right-6 h-56 w-56 rounded-full bg-gradient-to-br from-blue-500/20 via-purple-500/15 to-indigo-400/10 blur-3xl" />

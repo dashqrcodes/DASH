@@ -2,6 +2,7 @@
 export const dynamic = "force-dynamic";
 
 import { useRouter, useSearchParams } from "next/navigation";
+import BackArrowButton from "@/components/BackArrowButton";
 import { useEffect, useState } from "react";
 import { buildCloudinaryFaceCropUrl } from "@/lib/utils/cloudinary";
 import { resolveLang } from "@/lib/utils/lang";
@@ -132,10 +133,8 @@ export default function MemorialPreviewPage() {
           <div className="relative mx-auto flex min-h-screen w-full max-w-md flex-col px-6 pb-24 pt-10">
         {/* Top Nav */}
         <header className="mb-8 flex items-center justify-between text-sm text-white/70">
-          <button
-            type="button"
-            aria-label="Back"
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/5 ring-1 ring-white/10 backdrop-blur-xl transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-purple-300/60"
+          <BackArrowButton
+            className="bg-white/5 ring-1 ring-white/10 backdrop-blur-xl hover:bg-white/10"
             onClick={() =>
               pushWithFallback(
                 `/memorial/profile?lang=${currentLang}${
@@ -149,9 +148,7 @@ export default function MemorialPreviewPage() {
                 }`
               )
             }
-          >
-            ←
-          </button>
+          />
           <div className="flex-1 text-center">
             <p className="text-xs uppercase tracking-[0.25em] text-white/50">{strings.preview}</p>
             <p className="text-base font-semibold text-white/80">{strings.cardLabel}</p>

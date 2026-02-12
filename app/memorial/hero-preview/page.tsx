@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import BackArrowButton from "@/components/BackArrowButton";
 import { buildCloudinaryFaceCropUrl } from "@/lib/utils/cloudinary";
 import { resolveLang } from "@/lib/utils/lang";
 
@@ -164,14 +165,10 @@ export default function HeroPreviewPage() {
 
       <div className="relative mx-auto flex min-h-screen w-full max-w-md flex-col px-6 pb-24 pt-10">
         <header className="mb-8 flex items-center justify-between text-sm text-white/80">
-          <button
-            type="button"
-            aria-label="Back"
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/5 ring-1 ring-white/10 backdrop-blur-xl transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-purple-300/60"
+          <BackArrowButton
+            className="bg-white/5 ring-1 ring-white/10 backdrop-blur-xl hover:bg-white/10"
             onClick={() => pushWithFallback(`/memorial/card-back${buildQueryString()}`)}
-          >
-            ←
-          </button>
+          />
           <div className="flex-1 text-center">
             <p className="text-[11px] uppercase tracking-[0.22em] text-white/60">{strings.preview}</p>
             <p className="text-base font-semibold text-white/80">{strings.heroLabel}</p>

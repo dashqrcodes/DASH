@@ -223,14 +223,9 @@ export default function MemorialAcceptPage() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-gradient-to-b from-[#0c0f1a] via-[#0b0d17] to-[#090b12] text-white">
-      <button
-        type="button"
-        aria-label="Back"
-        className="fixed left-4 top-4 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-white/5 text-white ring-1 ring-white/10 backdrop-blur-xl transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-purple-300/60"
-        onClick={() => router.back()}
-      >
-        ←
-      </button>
+      <BackArrowButton
+        className="fixed left-4 top-4 z-50 bg-white/5 ring-1 ring-white/10 backdrop-blur-xl hover:bg-white/10"
+      />
 
       <div className="relative mx-auto flex min-h-screen w-full max-w-md flex-col px-6 pb-20 pt-20">
         <div className="space-y-8 text-center">

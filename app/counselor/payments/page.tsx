@@ -2,6 +2,7 @@
 export const dynamic = "force-dynamic";
 
 import CounselorLanguageToggle from "../../../components/CounselorLanguageToggle";
+import BackArrowButton from "@/components/BackArrowButton";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { resolveLang } from "@/lib/utils/lang";
@@ -41,14 +42,10 @@ export default function CounselorPaymentsPage() {
         mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
       }`}
     >
-      <button
-        type="button"
-        aria-label="Back"
-        className="fixed left-4 top-4 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-white text-gray-900 shadow-md ring-1 ring-gray-200 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300"
-        onClick={() => router.back()}
-      >
-        ←
-      </button>
+      <BackArrowButton
+        variant="light"
+        className="fixed left-4 top-4 z-50"
+      />
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-16 left-10 h-48 w-48 rounded-full bg-gradient-to-br from-indigo-500/10 via-purple-500/10 to-blue-400/10 blur-3xl" />
         <div className="absolute bottom-0 right-6 h-48 w-48 rounded-full bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-indigo-400/10 blur-3xl" />

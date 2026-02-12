@@ -3,8 +3,13 @@
 import { useState, useEffect, Suspense, useMemo, useRef } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { musicTracks } from '@/lib/data/musicTracks';
+import BackArrowButton from '@/components/BackArrowButton';
 
-export function SlideshowContent() {
+interface SlideshowContentProps {
+  displayName?: string;
+}
+
+export function SlideshowContent({ displayName: displayNameProp }: SlideshowContentProps = {}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
@@ -120,6 +125,39 @@ export function SlideshowContent() {
       setIsPlaying(true);
     }
   }, [isHeavenView, photos.length]);
+
+  // Load display name: same source as memorial profile (memorial_full_name from storage, or draft.full_name from API by slug)
+  useEffect(() => {
+    if (displayNameProp) {
+      setLovedOneName(displayNameProp);
+      return;
+    }
+    const fromQuery = searchParams?.get('name') || '';
+    if (fromQuery) {
+      setLovedOneName(fromQuery);
+      return;
+    }
+    if (typeof window === 'undefined') return;
+    const storedSlug = sessionStorage.getItem('memorial_slug') || localStorage.getItem('memorial_slug') || '';
+    const storedName = sessionStorage.getItem('memorial_full_name') || localStorage.getItem('memorial_full_name') || localStorage.getItem('lovedOneName') || '';
+    if (slugParam && storedSlug === slugParam && storedName) {
+      setLovedOneName(storedName);
+      return;
+    }
+    if (!slugParam) {
+      if (storedName) setLovedOneName(storedName);
+      return;
+    }
+    let active = true;
+    (async () => {
+      try {
+        const res = await fetch(`/api/memorial/name?slug=${encodeURIComponent(slugParam)}`);
+        const data = await res.json();
+        if (active && data?.name) setLovedOneName(data.name);
+      } catch {}
+    })();
+    return () => { active = false; };
+  }, [displayNameProp, slugParam, searchParams]);
 
   const [permissions, setPermissions] = useState({
     faceId: false,
@@ -562,7 +600,7 @@ export function SlideshowContent() {
       {!isHeavenView && (
       <div style={{display:'flex',justifyContent:'space-between',paddingTop:'env(safe-area-inset-top, 6px)',paddingBottom:'6px',paddingLeft:'12px',paddingRight:'12px',marginBottom:'6px',fontSize:'11px',alignItems:'center'}}>
         <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
-          <button onClick={()=>router.back()} style={{background:'transparent',border:'none',color:'white',fontSize:'16px',cursor:'pointer',padding:0,WebkitTapHighlightColor:'transparent'}}>←</button>
+          <BackArrowButton className="bg-transparent text-white hover:bg-white/10" />
           <div style={{fontSize:'13px',fontWeight:'600'}}>9:41</div>
         </div>
         <div style={{display:'flex',alignItems:'center',gap:'4px'}}>
@@ -646,42 +684,10 @@ export function SlideshowContent() {
         </div>
       )}
 
-      {/* Full Name Input Section */}
-      {!isHeavenView && (
-      <div style={{marginBottom:'8px',padding:'0 12px'}}>
-        <div style={{display:'flex',alignItems:'center',gap:'8px',background:'rgba(255,255,255,0.1)',borderRadius:'8px',padding:'8px'}}>
-          <input 
-            type="text" 
-            value={lovedOneName} 
-            onChange={(e)=>setLovedOneName(e.target.value)}
-            readOnly={isNameFromFD}
-            placeholder="Full Name" 
-            style={{flex:1,background:'transparent',border:'none',color:'white',fontSize:'clamp(13px, 3.5vw, 15px)',outline:'none',fontWeight:'500',cursor:isNameFromFD ? 'default' : 'text'}}
-          />
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{opacity:isNameFromFD ? 0.5 : 1}}>
-            <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13M18.5 2.5C18.8978 2.10218 19.4374 1.87868 20 1.87868C20.5626 1.87868 21.1022 2.10218 21.5 2.5C21.8978 2.89782 22.1213 3.43739 22.1213 4C22.1213 4.56261 21.8978 5.10218 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z"/>
-          </svg>
-        </div>
-        {/* Sunrise/Sunset Dates */}
-        {(sunrise || sunset) && (
-          <div style={{display:'flex',justifyContent:'center',alignItems:'center',gap:'8px',marginTop:'4px',fontSize:'10px',color:'rgba(255,255,255,0.6)'}}>
-            {sunrise && (
-              <div style={{display:'flex',flexDirection:'column',alignItems:'center'}}>
-                <span style={{fontSize:'9px',color:'rgba(255,255,255,0.5)'}}>Sunrise</span>
-                <span>{sunrise}</span>
-              </div>
-            )}
-            {sunrise && sunset && <span>-</span>}
-            {sunset && (
-              <div style={{display:'flex',flexDirection:'column',alignItems:'center'}}>
-                <span style={{fontSize:'9px',color:'rgba(255,255,255,0.5)'}}>Sunset</span>
-                <span>{sunset}</span>
-              </div>
-            )}
-          </div>
-        )}
+      {/* Name header above playback (same as heaven page / slideshow create) */}
+      <div style={{display:'flex',alignItems:'center',justifyContent:'center',marginBottom:'8px'}}>
+        <p style={{margin:0,fontSize:'clamp(16px, 4.5vw, 20px)',fontWeight:'600',color:'white'}}>{lovedOneName || (slugParam ? slugParam.replace(/-/g, ' ') : '')}</p>
       </div>
-      )}
 
       {/* Slideshow Player */}
       <div style={{flex:1,display:'flex',flexDirection:'column',minHeight:0,marginBottom:'8px',overflow:'hidden'}}>
@@ -1205,10 +1211,14 @@ export function SlideshowContent() {
   );
 }
 
-export default function Slideshow() {
+interface SlideshowProps {
+  displayName?: string;
+}
+
+export default function Slideshow({ displayName }: SlideshowProps = {}) {
   return (
     <Suspense fallback={<div>Loading...</div>}>
-      <SlideshowContent />
+      <SlideshowContent displayName={displayName} />
     </Suspense>
   );
 }

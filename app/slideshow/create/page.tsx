@@ -2,6 +2,7 @@
 export const dynamic = "force-dynamic";
 
 import { useRouter, useSearchParams } from "next/navigation";
+import BackArrowButton from "@/components/BackArrowButton";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { buildCloudinaryTransformUrl } from "@/lib/utils/cloudinary";
 import { convertToJpeg720p } from "@/lib/utils/clientImage";
@@ -29,6 +30,10 @@ export default function SlideshowCreatePage() {
   const [selectedTrackIds, setSelectedTrackIds] = useState<string[]>([]);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [showMusicPicker, setShowMusicPicker] = useState(false);
+  const [musicDrawerHeight, setMusicDrawerHeight] = useState(0.9);
+  const [musicDrawerDragging, setMusicDrawerDragging] = useState(false);
+  const musicDrawerStartY = useRef(0);
+  const musicDrawerStartH = useRef(0.9);
   const lastIndexRef = useRef(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const slideshowTransform = "f_auto,q_auto,c_fill,g_faces,ar_16:9,w_1280,h_720";
@@ -57,6 +62,9 @@ export default function SlideshowCreatePage() {
           addMusic: "+ Música",
           musicAdded: "Música añadida",
           addPhotos: "+ Fotos",
+          useSpotify: "Spotify",
+          useAppleMusic: "Apple Music",
+          musicHint: "Reproduce tu playlist en Spotify o Apple Music en segundo plano, luego inicia el slideshow. Ambos se reproducirán en paralelo.",
           backToSlideshow: "Volver al slideshow",
           uploadLimit: "Límite de carga total 500MB.",
           maxPhotos: "Máximo 300 fotos por ahora.",
@@ -68,6 +76,9 @@ export default function SlideshowCreatePage() {
           addMusic: "+ Music",
           musicAdded: "Music added",
           addPhotos: "+ Photos",
+          useSpotify: "Spotify",
+          useAppleMusic: "Apple Music",
+          musicHint: "Play your Spotify or Apple Music playlist in the background, then start the slideshow. Both will play in parallel.",
           backToSlideshow: "Back to slideshow",
           uploadLimit: "Max total upload 500MB.",
           maxPhotos: "Maximum 300 photos for now.",
@@ -75,6 +86,26 @@ export default function SlideshowCreatePage() {
           pause: "Pause",
           empty: "Select photos to start playback.",
         };
+
+  useEffect(() => {
+    if (showMusicPicker) setMusicDrawerHeight(0.9);
+  }, [showMusicPicker]);
+
+  useEffect(() => {
+    if (!musicDrawerDragging) return;
+    const onMouseMove = (e: MouseEvent) => {
+      const dy = musicDrawerStartY.current - e.clientY;
+      const h = Math.max(0.35, Math.min(0.95, musicDrawerStartH.current + dy / window.innerHeight));
+      setMusicDrawerHeight(h);
+    };
+    const onMouseUp = () => setMusicDrawerDragging(false);
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+    return () => {
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+    };
+  }, [musicDrawerDragging]);
 
   useEffect(() => {
     if (!isPlaying || playbackUrls.length === 0) return;
@@ -388,14 +419,10 @@ export default function SlideshowCreatePage() {
         <div className="relative mx-auto flex h-[58svh] w-full max-w-4xl flex-col px-6 pb-4 pt-10">
           {/* Top Nav */}
           <header className="mb-6 flex items-center justify-between text-sm text-white/80">
-            <button
-              type="button"
-              aria-label="Back"
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/5 ring-1 ring-white/10 backdrop-blur-xl transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-purple-300/60"
+            <BackArrowButton
               onClick={handleBack}
-            >
-              ←
-            </button>
+              className="shrink-0 bg-white/5 ring-1 ring-white/10 backdrop-blur-xl hover:bg-white/10"
+            />
             <div className="flex-1 text-center">
               <p className="text-lg font-semibold text-white">{memorialName}</p>
             </div>
@@ -473,25 +500,44 @@ export default function SlideshowCreatePage() {
               </div>
             </div>
 
-            <div className="w-full max-w-md">
+            <div className="w-full max-w-md space-y-3">
               <div className="rounded-2xl bg-black/70 p-3 ring-1 ring-white/10 backdrop-blur">
-                <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  className={primaryButtonClass}
-                  onClick={() => setShowMusicPicker(true)}
-                >
-                  {selectedTrackIds.length > 0 ? `${strings.musicAdded} ✓` : strings.addMusic}
-                </button>
-                <button
-                  type="button"
-                  className={primaryButtonClass}
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  {strings.addPhotos}
-                </button>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  <button
+                    type="button"
+                    className={primaryButtonClass}
+                    onClick={() => setShowMusicPicker(true)}
+                  >
+                    {selectedTrackIds.length > 0 ? `${strings.musicAdded} ✓` : strings.addMusic}
+                  </button>
+                  <button
+                    type="button"
+                    className="h-12 w-full rounded-full bg-[#1DB954] text-base font-semibold text-white shadow-[0_12px_32px_rgba(29,185,84,0.35)] transition duration-200 hover:brightness-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-[#1DB954]/60"
+                    onClick={() => window.open("https://open.spotify.com/", "_blank")}
+                    title={strings.musicHint}
+                  >
+                    {strings.useSpotify}
+                  </button>
+                  <button
+                    type="button"
+                    className="h-12 w-full rounded-full bg-[#FA243C] text-base font-semibold text-white shadow-[0_12px_32px_rgba(250,36,60,0.35)] transition duration-200 hover:brightness-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-[#FA243C]/60"
+                    onClick={() => window.open("https://music.apple.com/", "_blank")}
+                    title={strings.musicHint}
+                  >
+                    {strings.useAppleMusic}
+                  </button>
+                  <button
+                    type="button"
+                    className={primaryButtonClass}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    {strings.addPhotos}
+                  </button>
                 </div>
               </div>
+              <p className="text-center text-[11px] text-white/60 px-2">
+                {strings.musicHint}
+              </p>
             </div>
           </div>
         </div>
@@ -545,39 +591,63 @@ export default function SlideshowCreatePage() {
       </div>
       <audio ref={audioRef} preload="auto" />
       {showMusicPicker && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm">
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm"
+          onClick={(e) => e.target === e.currentTarget && setShowMusicPicker(false)}
+        >
           <div
-            className="flex h-[90svh] w-full max-w-lg flex-col overflow-hidden rounded-t-[20px] bg-[#0a0a0b] shadow-2xl"
-            style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif' }}
+            className="flex w-full max-w-lg flex-col overflow-hidden rounded-t-[20px] bg-[#0a0a0b] shadow-2xl transition-[height] duration-200 ease-out"
+            style={{
+              fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif',
+              height: `${musicDrawerHeight * 100}svh`,
+            }}
           >
-            {/* Drag handle */}
-            <div className="flex shrink-0 justify-center pt-3 pb-1">
+            {/* Drag handle - touch target for sliding */}
+            <div
+              className="flex shrink-0 cursor-grab touch-none flex-col items-center justify-center pt-3 pb-1 active:cursor-grabbing"
+              onTouchStart={(e) => {
+                setMusicDrawerDragging(true);
+                musicDrawerStartY.current = e.touches[0].clientY;
+                musicDrawerStartH.current = musicDrawerHeight;
+              }}
+              onTouchMove={(e) => {
+                if (!musicDrawerDragging) return;
+                const dy = musicDrawerStartY.current - e.touches[0].clientY;
+                const h = Math.max(0.35, Math.min(0.95, musicDrawerStartH.current + dy / window.innerHeight));
+                setMusicDrawerHeight(h);
+              }}
+              onTouchEnd={() => setMusicDrawerDragging(false)}
+              onMouseDown={(e) => {
+                if (e.button !== 0) return;
+                setMusicDrawerDragging(true);
+                musicDrawerStartY.current = e.clientY;
+                musicDrawerStartH.current = musicDrawerHeight;
+              }}
+            >
               <div className="h-1 w-9 rounded-full bg-white/25" aria-hidden="true" />
             </div>
 
             {/* Header */}
             <div className="flex shrink-0 items-center justify-between border-b border-white/[0.08] px-4 pb-3">
+              <BackArrowButton
+                onClick={() => setShowMusicPicker(false)}
+                size="sm"
+              />
+              <h2 className="text-base font-semibold text-white">Music</h2>
               <button
                 type="button"
-                className="flex h-9 w-9 items-center justify-center rounded-full text-white/90 transition active:bg-white/10"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white transition active:bg-white/25"
                 onClick={() => setShowMusicPicker(false)}
-                aria-label="Back"
+                aria-label="Done"
               >
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               </button>
-              <h2 className="text-base font-semibold text-white">Add Music</h2>
-              <div className="h-9 w-9" />
             </div>
 
-            {/* Subtitle */}
-            <p className="shrink-0 px-4 pt-2 pb-1 text-[13px] text-[#8e8e93]">
-              Tap to add tracks to your slideshow playlist
-            </p>
-
             {/* Track list - Apple Music style */}
-            <div className="flex-1 overflow-y-auto overscroll-contain">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
               {musicTracks.map((track) => {
                 const isSelected = selectedTrackIds.includes(track.id);
                 const gradientSeed = track.id.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
@@ -684,15 +754,21 @@ export default function SlideshowCreatePage() {
               </div>
             )}
 
-            {/* Done button */}
+            {/* Spotify CTA */}
             <div className="shrink-0 border-t border-white/[0.08] p-4">
               <button
                 type="button"
-                className="w-full rounded-full bg-white/12 py-3.5 text-[15px] font-semibold text-white transition active:bg-white/18"
-                onClick={() => setShowMusicPicker(false)}
+                className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#1DB954] text-base font-semibold text-white shadow-[0_8px_24px_rgba(29,185,84,0.35)] transition duration-200 hover:brightness-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-[#1DB954]/60"
+                onClick={() => window.open("https://open.spotify.com/", "_blank")}
               >
-                {strings.backToSlideshow}
+                <svg className="h-6 w-6 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                  <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.48-4.08 0-10.14-2.44-13.14-5.92-.24-.24-.3-.6-.12-.9.18-.3.54-.36.84-.18 2.64 2.04 8.16 4.92 11.64 4.92.18 0 .36 0 .54-.06.36-.12.66.12.72.48.06.36-.12.66-.48.72zm1.44-3.24c-.3.42-.84.6-1.38.6-5.04 0-12.54-3.72-17.04-8.94-.3-.3-.78-.36-1.14-.12-.36.24-.42.72-.12 1.02 4.92 5.64 12.96 9.12 18.84 9.12.54 0 1.08-.12 1.56-.42.36-.24.42-.12.48.12zm.12-3.36c-.42-.3-.96-.36-1.44-.12-5.76 3.36-14.52 4.32-21.24 4.32-.66 0-1.2-.06-1.5-.12-.48-.12-.96.12-1.08.6-.12.48.12.96.6 1.08-.12 0 1.44.12 2.28.12 7.08 0 16.2-1.08 22.08-4.8.54-.3.66-.96.24-1.38z" />
+                </svg>
+                {strings.useSpotify}
               </button>
+              <p className="mt-2 text-center text-[11px] text-white/60">
+                {strings.musicHint}
+              </p>
             </div>
           </div>
         </div>

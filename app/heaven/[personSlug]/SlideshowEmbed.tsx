@@ -2,6 +2,10 @@
 
 import SlideshowPage from "@/app/_dashmemories/slideshow/page";
 
-export default function SlideshowEmbed() {
-  return <SlideshowPage />;
+interface SlideshowEmbedProps {
+  displayName?: string;
+}
+
+export default function SlideshowEmbed({ displayName }: SlideshowEmbedProps) {
+  return <SlideshowPage displayName={displayName} />;
 }

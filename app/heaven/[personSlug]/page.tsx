@@ -136,7 +136,7 @@ export default async function HeavenPersonPage({ params }: HeavenPersonPageProps
               </Link>
             </div>
             <div className="overflow-hidden rounded-3xl border border-white/10 bg-black/70">
-              <SlideshowEmbed />
+              <SlideshowEmbed displayName={displayName} />
             </div>
           </section>
         )}

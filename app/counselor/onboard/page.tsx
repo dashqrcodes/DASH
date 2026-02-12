@@ -13,14 +13,11 @@ export default function CounselorOnboardPage() {
   return (
     <main className="min-h-screen bg-white text-gray-900">
       {/* Floating back button */}
-      <button
-        type="button"
-        aria-label="Back"
-        className="fixed left-4 top-4 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-white text-gray-900 shadow-md ring-1 ring-gray-200 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300"
+      <BackArrowButton
+        variant="light"
+        className="fixed left-4 top-4 z-50"
         onClick={() => router.push("/start")}
-      >
-        ←
-      </button>
+      />
 
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-6 pb-24 pt-14">
         <header className="mb-10 space-y-3">
