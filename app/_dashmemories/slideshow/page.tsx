@@ -765,12 +765,13 @@ export function SlideshowContent() {
         </div>
       </div>
 
-      {/* Social Wall */}
-      {!isHeavenView && (
+      {/* Social Wall - comment bar and donate icon always visible */}
       <div style={{background:'rgba(255,255,255,0.05)',borderRadius:'10px',padding:'clamp(10px, 3vw, 14px)',marginBottom:'8px'}}>
+        {!isHeavenView && (
         <div style={{marginBottom:'8px',fontSize:'clamp(12px, 3.2vw, 14px)',fontWeight:'600',color:'rgba(255,255,255,0.9)'}}>
           "LIVE YOUR BEST DASH!"
         </div>
+        )}
 
         {/* Comment Input */}
         <div style={{display:'flex',alignItems:'center',gap:'6px'}}>
@@ -787,12 +788,14 @@ export function SlideshowContent() {
               placeholder="Add a memory..." 
               style={{flex:1,background:'transparent',border:'none',color:'white',fontSize:'clamp(12px, 3.2vw, 14px)',outline:'none'}}
             />
+            {!isHeavenView && (
             <button style={{background:'transparent',border:'none',color:'white',cursor:'pointer',padding:'4px',display:'flex',alignItems:'center',justifyContent:'center',WebkitTapHighlightColor:'transparent'}}>
               <svg width="clamp(13px, 3.5vw, 16px)" height="clamp(13px, 3.5vw, 16px)" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M23 19C23 19.5304 22.7893 20.0391 22.4142 20.4142C22.0391 20.7893 21.5304 21 21 21H3C2.46957 21 1.96086 20.7893 1.58579 20.4142C1.21071 20.0391 1 19.5304 1 19V8C1 7.46957 1.21071 6.96086 1.58579 6.58579C1.96086 6.21071 2.46957 6 3 6H7L9 4H15L17 6H21C21.5304 6 22.0391 6.21071 22.4142 6.58579C22.7893 6.96086 23 7.46957 23 8V19Z"/>
                 <circle cx="12" cy="13" r="4"/>
               </svg>
             </button>
+            )}
           </div>
           <button style={{background:'transparent',border:'none',color:'white',cursor:'pointer',padding:'6px',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,WebkitTapHighlightColor:'transparent'}} title="Support with donation">
             <svg width="clamp(16px, 4.5vw, 20px)" height="clamp(16px, 4.5vw, 20px)" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -802,7 +805,6 @@ export function SlideshowContent() {
           </button>
         </div>
       </div>
-      )}
 
       {/* Permission Request Modal */}
       {showPermissionModal && (
