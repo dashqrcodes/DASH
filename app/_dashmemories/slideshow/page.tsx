@@ -30,8 +30,10 @@ export function SlideshowContent() {
   const [dragStartY, setDragStartY] = useState(0);
   const [dragStartHeight, setDragStartHeight] = useState(0.65);
   const [photos, setPhotos] = useState<Array<{id: string, url: string, file: File | null, date?: string, preview?: string}>>([]);
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [language, setLanguage] = useState<'en' | 'es'>('en');
   const [isProcessing, setIsProcessing] = useState(false);
+  const isHeavenView = pathname?.includes('/heaven') ?? false;
   const [selectedTrackIds, setSelectedTrackIds] = useState<string[]>([]);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -102,6 +104,23 @@ export function SlideshowContent() {
       active = false;
     };
   }, [slugParam]);
+
+  // Cycle through photos when playing
+  useEffect(() => {
+    if (!isPlaying || photos.length === 0) return;
+    const interval = setInterval(() => {
+      setCurrentPhotoIndex((i) => (i + 1) % photos.length);
+    }, 3500);
+    return () => clearInterval(interval);
+  }, [isPlaying, photos.length]);
+
+  // Auto-play when in heaven view with photos
+  useEffect(() => {
+    if (isHeavenView && photos.length > 0 && !isPlaying) {
+      setIsPlaying(true);
+    }
+  }, [isHeavenView, photos.length]);
+
   const [permissions, setPermissions] = useState({
     faceId: false,
     microphone: false,
@@ -535,9 +554,12 @@ export function SlideshowContent() {
     }
   }, [isPlaying, totalTime, isLooping]);
 
+  const currentPhotoUrl = photos[currentPhotoIndex]?.url || photos[currentPhotoIndex]?.preview;
+
   return (
     <div style={{width:'100vw',height:'100dvh',background:'#0b0b0d',fontFamily:'-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',color:'white',padding:'6px',paddingBottom:'calc(env(safe-area-inset-bottom, 0px) + 70px)',display:'flex',flexDirection:'column',maxWidth:'100vw',overflow:'hidden',position:'fixed',top:0,left:0,right:0,bottom:0,aspectRatio:'9/16',WebkitTouchCallout:'none',WebkitUserSelect:'none',touchAction:'manipulation'}}>
       {/* Status Bar with Safe Area */}
+      {!isHeavenView && (
       <div style={{display:'flex',justifyContent:'space-between',paddingTop:'env(safe-area-inset-top, 6px)',paddingBottom:'6px',paddingLeft:'12px',paddingRight:'12px',marginBottom:'6px',fontSize:'11px',alignItems:'center'}}>
         <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
           <button onClick={()=>router.back()} style={{background:'transparent',border:'none',color:'white',fontSize:'16px',cursor:'pointer',padding:0,WebkitTapHighlightColor:'transparent'}}>←</button>
@@ -547,9 +569,10 @@ export function SlideshowContent() {
           <span style={{fontSize:'11px'}}>●●●●● 📶 🔋</span>
         </div>
       </div>
+      )}
 
       {/* Scanner Feature Banner */}
-      {showScannerBanner && (
+      {!isHeavenView && showScannerBanner && (
         <div style={{marginBottom:'12px',padding:'0 12px'}}>
           <div 
             onClick={() => {
@@ -594,7 +617,7 @@ export function SlideshowContent() {
       )}
 
       {/* DASH Features Banner */}
-      {showDASHFeaturesBanner && (
+      {!isHeavenView && showDASHFeaturesBanner && (
         <div style={{marginBottom:'12px',padding:'0 12px'}}>
           <div style={{background:'rgba(102,126,234,0.15)',border:'1px solid rgba(102,126,234,0.3)',borderRadius:'12px',padding:'10px 12px',position:'relative'}}>
             <button 
@@ -624,6 +647,7 @@ export function SlideshowContent() {
       )}
 
       {/* Full Name Input Section */}
+      {!isHeavenView && (
       <div style={{marginBottom:'8px',padding:'0 12px'}}>
         <div style={{display:'flex',alignItems:'center',gap:'8px',background:'rgba(255,255,255,0.1)',borderRadius:'8px',padding:'8px'}}>
           <input 
@@ -657,22 +681,32 @@ export function SlideshowContent() {
           </div>
         )}
       </div>
+      )}
 
       {/* Slideshow Player */}
       <div style={{flex:1,display:'flex',flexDirection:'column',minHeight:0,marginBottom:'8px',overflow:'hidden'}}>
         <div style={{position:'relative',width:'100%',aspectRatio:'16/9',background:'rgba(255,255,255,0.05)',borderRadius:'10px',overflow:'hidden',marginBottom:'8px'}}>
           <div style={{width:'100%',height:'100%',display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:'10px'}}>
-            <div style={{background:'rgba(0,0,0,0.7)',borderRadius:'14px',padding:'12px 16px',display:'flex',flexDirection:'column',alignItems:'center',gap:'10px',width:'min(90%, 320px)',backdropFilter:'blur(6px)'}}>
-              <button onClick={handleUploadClick} style={{background:'transparent',border:'none',color:'rgba(255,255,255,0.7)',fontSize:'clamp(11px, 3vw, 13px)',cursor:'pointer',textDecoration:'underline',WebkitTapHighlightColor:'transparent',touchAction:'manipulation'}}>
-                I already have a slideshow
-              </button>
-              <button onClick={handleCreateSlideshow} onTouchStart={(e)=>e.currentTarget.style.transform='scale(0.95)'} onTouchEnd={(e)=>e.currentTarget.style.transform='scale(1)'} style={{padding:'clamp(10px, 2.5vw, 14px) clamp(24px, 8vw, 36px)',background:'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',border:'none',borderRadius:'50px',color:'white',fontSize:'clamp(13px, 3.5vw, 15px)',fontWeight:'600',cursor:'pointer',boxShadow:'0 4px 15px rgba(102,126,234,0.4)',WebkitTapHighlightColor:'transparent',touchAction:'manipulation',transition:'transform 0.2s'}}>
-                Create slideshow
-              </button>
-            </div>
+            {photos.length > 0 && currentPhotoUrl ? (
+              <img
+                src={currentPhotoUrl}
+                alt="Slideshow"
+                style={{width:'100%',height:'100%',objectFit:'contain'}}
+              />
+            ) : !isHeavenView ? (
+              <div style={{background:'rgba(0,0,0,0.7)',borderRadius:'14px',padding:'12px 16px',display:'flex',flexDirection:'column',alignItems:'center',gap:'10px',width:'min(90%, 320px)',backdropFilter:'blur(6px)'}}>
+                <button onClick={handleUploadClick} style={{background:'transparent',border:'none',color:'rgba(255,255,255,0.7)',fontSize:'clamp(11px, 3vw, 13px)',cursor:'pointer',textDecoration:'underline',WebkitTapHighlightColor:'transparent',touchAction:'manipulation'}}>
+                  I already have a slideshow
+                </button>
+                <button onClick={handleCreateSlideshow} onTouchStart={(e)=>e.currentTarget.style.transform='scale(0.95)'} onTouchEnd={(e)=>e.currentTarget.style.transform='scale(1)'} style={{padding:'clamp(10px, 2.5vw, 14px) clamp(24px, 8vw, 36px)',background:'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',border:'none',borderRadius:'50px',color:'white',fontSize:'clamp(13px, 3.5vw, 15px)',fontWeight:'600',cursor:'pointer',boxShadow:'0 4px 15px rgba(102,126,234,0.4)',WebkitTapHighlightColor:'transparent',touchAction:'manipulation',transition:'transform 0.2s'}}>
+                  Create slideshow
+                </button>
+              </div>
+            ) : null}
           </div>
 
           {/* Share Button */}
+          {!isHeavenView && (
           <button style={{position:'absolute',top:'6px',right:'6px',background:'rgba(255,255,255,0.1)',border:'none',borderRadius:'50%',width:'clamp(32px, 9vw, 40px)',height:'clamp(32px, 9vw, 40px)',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',WebkitTapHighlightColor:'transparent'}} title="Share with Friends & Family">
             <svg width="clamp(16px, 4.5vw, 20px)" height="clamp(16px, 4.5vw, 20px)" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M4 12V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V12"/>
@@ -680,6 +714,7 @@ export function SlideshowContent() {
               <path d="M12 2V15"/>
             </svg>
           </button>
+          )}
         </div>
 
         {/* Playback Controls */}
@@ -704,6 +739,7 @@ export function SlideshowContent() {
             </div>
           </div>
 
+          {!isHeavenView && (
           <button onClick={handleVolumeToggle} onTouchStart={(e)=>e.currentTarget.style.transform='scale(0.95)'} onTouchEnd={(e)=>e.currentTarget.style.transform='scale(1)'} style={{background:'transparent',border:'none',color:'white',cursor:'pointer',padding:'4px',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,WebkitTapHighlightColor:'transparent',touchAction:'manipulation',transition:'transform 0.2s'}}>
             <svg width="clamp(18px, 5vw, 24px)" height="clamp(18px, 5vw, 24px)" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               {isMuted ? (
@@ -719,6 +755,7 @@ export function SlideshowContent() {
               )}
             </svg>
           </button>
+          )}
 
           <button onClick={handleLoopToggle} onTouchStart={(e)=>e.currentTarget.style.transform='scale(0.95)'} onTouchEnd={(e)=>e.currentTarget.style.transform='scale(1)'} style={{background:'transparent',border:'none',color:isLooping ? '#667eea' : 'white',cursor:'pointer',padding:'4px',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,WebkitTapHighlightColor:'transparent',touchAction:'manipulation',transition:'transform 0.2s'}} title="Toggle Loop">
             <svg width="clamp(18px, 5vw, 24px)" height="clamp(18px, 5vw, 24px)" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -729,6 +766,7 @@ export function SlideshowContent() {
       </div>
 
       {/* Social Wall */}
+      {!isHeavenView && (
       <div style={{background:'rgba(255,255,255,0.05)',borderRadius:'10px',padding:'clamp(10px, 3vw, 14px)',marginBottom:'8px'}}>
         <div style={{marginBottom:'8px',fontSize:'clamp(12px, 3.2vw, 14px)',fontWeight:'600',color:'rgba(255,255,255,0.9)'}}>
           "LIVE YOUR BEST DASH!"
@@ -764,6 +802,7 @@ export function SlideshowContent() {
           </button>
         </div>
       </div>
+      )}
 
       {/* Permission Request Modal */}
       {showPermissionModal && (
@@ -1128,6 +1167,7 @@ export function SlideshowContent() {
 
       <audio ref={audioRef} preload="auto" />
       {/* Bottom Navigation - Home, HEAVEN, Music, Slideshow */}
+      {!isHeavenView && (
       <div style={{position:'fixed',bottom:0,left:0,right:0,background:'rgba(255,255,255,0.05)',backdropFilter:'blur(20px)',borderTop:'1px solid rgba(255,255,255,0.1)',paddingTop:'10px',paddingBottom:'calc(env(safe-area-inset-bottom, 0px) + 10px)',paddingLeft:'max(16px, env(safe-area-inset-left, 0px))',paddingRight:'max(16px, env(safe-area-inset-right, 0px))',display:'flex',justifyContent:'space-around',zIndex:100}}>
         <button onClick={()=>router.push('/')} style={{background:'transparent',border:'none',color:'white',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:'4px'}}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1158,6 +1198,7 @@ export function SlideshowContent() {
           <span style={{fontSize:'10px',fontWeight:'600'}}>Slideshow</span>
         </button>
       </div>
+      )}
     </div>
   );
 }

@@ -391,7 +391,7 @@ export default function SlideshowCreatePage() {
             <button
               type="button"
               aria-label="Back"
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/5 ring-1 ring-white/10 backdrop-blur-xl transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-purple-300/60"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/5 ring-1 ring-white/10 backdrop-blur-xl transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-purple-300/60"
               onClick={handleBack}
             >
               ←
@@ -399,7 +399,17 @@ export default function SlideshowCreatePage() {
             <div className="flex-1 text-center">
               <p className="text-lg font-semibold text-white">{memorialName}</p>
             </div>
-            <div className="h-10 w-10" />
+            <button
+              type="button"
+              onClick={handleContinue}
+              disabled={readyUrls.length === 0}
+              aria-label="Continue to slideshow"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/15 text-white ring-1 ring-white/20 backdrop-blur transition hover:bg-white/25 active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+              </svg>
+            </button>
           </header>
 
           {/* Preview */}
@@ -520,17 +530,6 @@ export default function SlideshowCreatePage() {
               ))}
             </div>
           )}
-        </div>
-
-        <div className="mt-12 flex w-full max-w-md justify-center">
-          <button
-            type="button"
-            className={primaryButtonClass}
-            onClick={handleContinue}
-            disabled={readyUrls.length === 0}
-          >
-            Continue to Slideshow
-          </button>
         </div>
 
         {/* Hidden file input */}
