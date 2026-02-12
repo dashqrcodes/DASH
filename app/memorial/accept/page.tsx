@@ -50,6 +50,23 @@ export default function MemorialAcceptPage() {
   }, [nextParam, nextUrl]);
 
   useEffect(() => {
+    const counselorName = searchParams?.get("counselorName") || "";
+    const counselorPhone = searchParams?.get("counselorPhone") || "";
+    if (counselorName || counselorPhone) {
+      try {
+        if (counselorName) {
+          window.sessionStorage.setItem("memorial_counselor_name", counselorName);
+          window.localStorage.setItem("memorial_counselor_name", counselorName);
+        }
+        if (counselorPhone) {
+          window.sessionStorage.setItem("memorial_counselor_phone", counselorPhone);
+          window.localStorage.setItem("memorial_counselor_phone", counselorPhone);
+        }
+      } catch {}
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
     router.prefetch("/counselor/faceid");
   }, [router]);
 

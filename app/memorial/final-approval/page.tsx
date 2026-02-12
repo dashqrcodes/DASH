@@ -95,10 +95,10 @@ export default function FinalApprovalPage() {
     setIsSaving(true);
 
     const effectivePhoto = photo || getStoredValue("memorial_photo_url");
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://dashmemories.com";
+    const qrTarget = `${appUrl}/heaven/${effectiveSlug}`;
     const qrUrl = effectiveSlug
-      ? `https://api.qrserver.com/v1/create-qr-code/?size=600x600&color=88-28-135&bgcolor=transparent&data=${encodeURIComponent(
-          `https://dashmemories.com/heaven/${effectiveSlug}`
-        )}`
+      ? `${appUrl}/api/qr?data=${encodeURIComponent(qrTarget)}&size=600`
       : "";
 
     if (effectiveSlug && effectivePhoto && qrUrl) {

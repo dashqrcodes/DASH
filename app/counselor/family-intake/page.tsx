@@ -1,9 +1,10 @@
 "use client";
 export const dynamic = "force-dynamic";
 
+import BackArrowButton from "@/components/BackArrowButton";
 import CounselorLanguageToggle from "../../../components/CounselorLanguageToggle";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { resolveLang } from "@/lib/utils/lang";
 
 type PriceOption = "500" | "350" | "250";
@@ -15,8 +16,19 @@ export default function FamilyIntakePage() {
   const router = useRouter();
   const [price, setPrice] = useState<PriceOption>("350");
   const [familyPhone, setFamilyPhone] = useState("");
+  const [counselorName, setCounselorName] = useState("");
+  const [counselorPhone, setCounselorPhone] = useState("");
   const searchParams = useSearchParams();
   const currentLang = resolveLang(searchParams);
+
+  useEffect(() => {
+    try {
+      const name = window.sessionStorage.getItem("counselor_name") || window.localStorage.getItem("counselor_name") || "";
+      const phone = window.sessionStorage.getItem("counselor_phone") || window.localStorage.getItem("counselor_phone") || "";
+      setCounselorName(name);
+      setCounselorPhone(phone);
+    } catch {}
+  }, []);
 
   const normalizePhone = (value: string) => value.replace(/\D/g, "");
   const formatPhone = (value: string) => {
@@ -165,7 +177,13 @@ export default function FamilyIntakePage() {
       <div className="fixed inset-x-0 bottom-0 border-t border-gray-200 bg-white/95 px-6 py-4 backdrop-blur-sm">
         <button
           type="button"
-          onClick={() => router.push(`/memorial/accept?counselor=Groman&lang=${currentLang}`)}
+          onClick={() => {
+            const params = new URLSearchParams();
+            if (counselorName) params.set("counselorName", counselorName);
+            if (counselorPhone) params.set("counselorPhone", counselorPhone);
+            params.set("lang", currentLang);
+            router.push(`/memorial/accept?${params.toString()}`);
+          }}
           className={primaryButtonClass}
         >
           {strings.cta}

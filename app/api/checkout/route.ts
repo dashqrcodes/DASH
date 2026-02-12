@@ -17,9 +17,7 @@ export async function POST(req: NextRequest) {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://dashmemories.com';
     const qrDataUrl = slug ? `${appUrl}/heaven/${slug}` : '';
     const qrUrl = qrDataUrl
-      ? `https://api.qrserver.com/v1/create-qr-code/?size=600x600&color=88-28-135&bgcolor=transparent&data=${encodeURIComponent(
-          qrDataUrl
-        )}`
+      ? `${appUrl}/api/qr?data=${encodeURIComponent(qrDataUrl)}&size=600`
       : '';
 
     if (slug && photoUrl && qrUrl) {

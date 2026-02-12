@@ -93,9 +93,7 @@ export default function MemorialPreviewPage() {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://dashmemories.com";
     const qrTargetUrl = `${appUrl}/heaven/${slug}`;
     const qrPrefetch = new Image();
-    qrPrefetch.src = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&color=88-28-135&bgcolor=transparent&data=${encodeURIComponent(
-      qrTargetUrl
-    )}`;
+    qrPrefetch.src = `/api/qr?data=${encodeURIComponent(qrTargetUrl)}&size=240`;
   }, [slug]);
 
   const pushWithFallback = (target: string) => {

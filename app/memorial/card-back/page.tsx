@@ -148,7 +148,7 @@ export default function MemorialCardBackPage() {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://dashmemories.com";
   const qrTargetUrl = slug ? `${appUrl}/heaven/${slug}` : "";
   const qrPreviewUrl = qrTargetUrl
-    ? `https://api.qrserver.com/v1/create-qr-code/?size=240x240&color=88-28-135&bgcolor=transparent&data=${encodeURIComponent(qrTargetUrl)}`
+    ? `/api/qr?data=${encodeURIComponent(qrTargetUrl)}&size=240`
     : "/qr-dark-purple.svg";
 
   const strings =

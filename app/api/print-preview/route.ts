@@ -43,9 +43,8 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=600x600&color=88-28-135&bgcolor=transparent&data=${encodeURIComponent(
-      `${APP_URL}/heaven/${slug}`
-    )}`;
+    const qrTarget = `${APP_URL}/heaven/${slug}`;
+    const qrUrl = `${APP_URL}/api/qr?data=${encodeURIComponent(qrTarget)}&size=600`;
 
     const photoRes = await fetch(resolvedPhotoUrl);
     if (!photoRes.ok) {

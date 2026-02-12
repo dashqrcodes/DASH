@@ -59,8 +59,13 @@ export default function StartPage() {
 
   const handleVerify = () => {
     if (!canVerify) return;
-    setCounselorName(inferCounselorName(phone));
+    const name = inferCounselorName(phone);
+    setCounselorName(name);
     setStep("welcome");
+    try {
+      window.sessionStorage.setItem("counselor_name", name);
+      window.sessionStorage.setItem("counselor_phone", formatPhone(phone) || phoneDigits);
+    } catch {}
   };
 
   const strings =
