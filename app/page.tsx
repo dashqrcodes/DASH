@@ -1,10 +1,12 @@
 import HomeHeroClient from "@/components/HomeHeroClient";
 import HomeLanguageToggle from "@/components/HomeLanguageToggle";
 import HomeStartCta from "@/components/HomeStartCta";
+import LogoutButton from "@/components/LogoutButton";
 
 export default function HomePage() {
   return (
     <main className="relative min-h-[100svh] overflow-hidden bg-black text-white">
+      <LogoutButton />
       <HomeHeroClient />
 
       {/* Content */}
