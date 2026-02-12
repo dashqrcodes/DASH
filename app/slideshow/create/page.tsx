@@ -546,35 +546,48 @@ export default function SlideshowCreatePage() {
       </div>
       <audio ref={audioRef} preload="auto" />
       {showMusicPicker && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-4">
-          <div className="flex h-[90svh] w-full max-w-lg flex-col rounded-3xl bg-[#111117] shadow-2xl ring-1 ring-white/10">
-            <div className="flex items-start justify-between gap-3 px-5 pt-5">
-              <div>
-                <h2 className="text-lg font-semibold text-white">Choose music</h2>
-                <p className="text-xs text-white/60">
-                  Tap to add multiple tracks to the playlist
-                </p>
-              </div>
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm">
+          <div
+            className="flex h-[90svh] w-full max-w-lg flex-col overflow-hidden rounded-t-[20px] bg-[#0a0a0b] shadow-2xl"
+            style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif' }}
+          >
+            {/* Drag handle */}
+            <div className="flex shrink-0 justify-center pt-3 pb-1">
+              <div className="h-1 w-9 rounded-full bg-white/25" aria-hidden="true" />
+            </div>
+
+            {/* Header */}
+            <div className="flex shrink-0 items-center justify-between border-b border-white/[0.08] px-4 pb-3">
               <button
                 type="button"
-                className="rounded-full bg-white/10 px-3 py-1 text-xs text-white/70"
+                className="flex h-9 w-9 items-center justify-center rounded-full text-white/90 transition active:bg-white/10"
                 onClick={() => setShowMusicPicker(false)}
+                aria-label="Back"
               >
-                Back
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
               </button>
+              <h2 className="text-base font-semibold text-white">Add Music</h2>
+              <div className="h-9 w-9" />
             </div>
-            <div className="flex-1 space-y-3 overflow-y-auto px-5 pb-5 pt-4">
+
+            {/* Subtitle */}
+            <p className="shrink-0 px-4 pt-2 pb-1 text-[13px] text-[#8e8e93]">
+              Tap to add tracks to your slideshow playlist
+            </p>
+
+            {/* Track list - Apple Music style */}
+            <div className="flex-1 overflow-y-auto overscroll-contain">
               {musicTracks.map((track) => {
                 const isSelected = selectedTrackIds.includes(track.id);
+                const gradientSeed = track.id.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+                const hue = (gradientSeed % 360);
                 return (
                   <button
                     key={track.id}
                     type="button"
-                    className={`w-full rounded-2xl border px-4 py-3 text-left transition ${
-                      isSelected
-                        ? "border-indigo-400/80 bg-indigo-500/15"
-                        : "border-white/10 bg-white/5 hover:border-white/20"
-                    }`}
+                    className="flex w-full items-center gap-4 px-4 py-3 text-left transition active:bg-white/[0.06]"
                     onClick={() => {
                       setSelectedTrackIds((prev) => {
                         const next = prev.includes(track.id)
@@ -588,8 +601,6 @@ export default function SlideshowCreatePage() {
                             "slideshow_music_tracks",
                             JSON.stringify({ ids: next })
                           );
-                        } catch {}
-                        try {
                           window.localStorage.setItem(
                             "slideshow_music_tracks",
                             JSON.stringify({ ids: next })
@@ -603,52 +614,69 @@ export default function SlideshowCreatePage() {
                       } catch {}
                     }}
                   >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="text-sm font-semibold text-white">{track.title}</div>
-                        <div className="text-xs text-white/60">{track.artist}</div>
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-white/50">
-                        <span>{track.duration}</span>
-                        <span
-                          className={`flex h-6 w-6 items-center justify-center rounded-full border text-[13px] ${
-                            isSelected
-                              ? "border-indigo-300/80 bg-indigo-500/30 text-white"
-                              : "border-white/20 text-white/60"
-                          }`}
-                          aria-hidden="true"
-                        >
-                          {isSelected ? "✓" : "+"}
-                        </span>
+                    {/* Album art placeholder */}
+                    <div
+                      className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg"
+                      style={{
+                        background: `linear-gradient(135deg, hsl(${hue}, 45%, 35%) 0%, hsl(${hue}, 55%, 28%) 100%)`,
+                      }}
+                    >
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <svg className="h-6 w-6 text-white/80" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
+                        </svg>
                       </div>
                     </div>
-                    <div className="mt-2 text-[11px] text-white/50">{track.licenseName}</div>
+
+                    {/* Title + artist */}
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-[15px] font-medium text-white">{track.title}</div>
+                      <div className="truncate text-[13px] text-[#8e8e93]">{track.artist}</div>
+                    </div>
+
+                    {/* Duration + add/check */}
+                    <div className="flex shrink-0 items-center gap-3">
+                      <span className="text-[13px] text-[#8e8e93]">{track.duration}</span>
+                      <span
+                        className={`flex h-7 w-7 items-center justify-center rounded-full text-[14px] font-medium ${
+                          isSelected
+                            ? "bg-[#6366f1] text-white"
+                            : "bg-white/15 text-white/90"
+                        }`}
+                        aria-hidden="true"
+                      >
+                        {isSelected ? "✓" : "+"}
+                      </span>
+                    </div>
                   </button>
                 );
               })}
             </div>
+
+            {/* Selected summary */}
             {selectedTracks.length > 0 && (
-              <div className="mt-4 rounded-2xl bg-white/5 px-4 py-3 text-xs text-white/70">
-                <div>
-                  Selected:{" "}
+              <div className="shrink-0 border-t border-white/[0.08] px-4 py-3">
+                <div className="text-[13px] text-[#8e8e93]">
                   <span className="font-semibold text-white">{selectedTracks.length}</span>{" "}
-                  track{selectedTracks.length === 1 ? "" : "s"}
+                  track{selectedTracks.length === 1 ? "" : "s"} selected
                 </div>
                 {selectedTracks.length === 1 && currentTrack && (
-                  <div className="mt-1 flex items-center gap-3 text-[11px] text-white/60">
+                  <div className="mt-1 flex gap-4 text-[11px]">
                     <a
-                      className="underline decoration-dotted"
+                      className="text-[#6366f1] underline decoration-dotted underline-offset-2"
                       href={currentTrack.licenseUrl}
                       target="_blank"
                       rel="noreferrer"
+                      onClick={(e) => e.stopPropagation()}
                     >
                       License
                     </a>
                     <a
-                      className="underline decoration-dotted"
+                      className="text-[#6366f1] underline decoration-dotted underline-offset-2"
                       href={currentTrack.sourceUrl}
                       target="_blank"
                       rel="noreferrer"
+                      onClick={(e) => e.stopPropagation()}
                     >
                       Source
                     </a>
@@ -656,10 +684,12 @@ export default function SlideshowCreatePage() {
                 )}
               </div>
             )}
-            <div className="px-5 pb-5">
+
+            {/* Done button */}
+            <div className="shrink-0 border-t border-white/[0.08] p-4">
               <button
                 type="button"
-                className="mt-2 w-full rounded-full border border-white/10 bg-white/10 px-4 py-3 text-sm font-semibold text-white/80 transition hover:bg-white/20"
+                className="w-full rounded-full bg-white/12 py-3.5 text-[15px] font-semibold text-white transition active:bg-white/18"
                 onClick={() => setShowMusicPicker(false)}
               >
                 {strings.backToSlideshow}
