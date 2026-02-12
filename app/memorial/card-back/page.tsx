@@ -207,20 +207,29 @@ export default function MemorialCardBackPage() {
           <p className="text-sm font-semibold text-white/80">{strings.cardLabel}</p>
         </header>
 
-        <div className="flex flex-1 items-center justify-center">
-          <div className="relative aspect-[2/3] w-[78vw] max-w-[300px] sm:max-w-[340px] md:max-w-[380px] overflow-hidden bg-black shadow-[0_18px_40px_rgba(0,0,0,0.45)]">
+        <div className="flex flex-1 items-center justify-center py-4">
+          <div
+            className="relative overflow-hidden bg-black shadow-[0_18px_40px_rgba(0,0,0,0.45)]"
+            style={{ width: 288, height: 432 }}
+          >
             <div className="absolute inset-0 bg-[url('/sky%20background%20rear.jpg')] bg-cover bg-center" />
             <div className="absolute inset-0 bg-gradient-to-b from-white/65 via-white/55 to-white/45" />
 
-            <div className="absolute inset-0 flex flex-col items-center justify-between px-7 py-6 text-center text-purple-900 drop-shadow-[0_6px_18px_rgba(0,0,0,0.35)]">
-              <div className="pt-2">
-                <p className="text-base md:text-lg font-semibold text-purple-900 font-serif">
+            <div
+              className="absolute inset-0 flex flex-col items-center justify-between text-center text-purple-900 drop-shadow-[0_6px_18px_rgba(0,0,0,0.35)]"
+              style={{ padding: "18px 20px 14px" }}
+            >
+              <div style={{ paddingTop: 4 }}>
+                <p className="font-semibold text-purple-900 font-serif" style={{ fontSize: 14 }}>
                   {strings.forever}
                 </p>
               </div>
 
               <div className="flex-1 w-full flex items-center justify-center">
-                <div className="space-y-2 text-xs md:text-sm leading-relaxed text-purple-900 text-center px-2">
+                <div
+                  className="space-y-2 leading-relaxed text-purple-900 text-center"
+                  style={{ paddingLeft: 8, paddingRight: 8, fontSize: 10 }}
+                >
                   <p
                     role="button"
                     tabIndex={0}
@@ -236,34 +245,48 @@ export default function MemorialCardBackPage() {
                   >
                     {bodyText}
                   </p>
-                  <p className="text-right text-[11px] font-semibold text-purple-900">{bodyCredit}</p>
+                  <p className="text-right font-semibold text-purple-900" style={{ fontSize: 9 }}>
+                    {bodyCredit}
+                  </p>
                 </div>
               </div>
 
-              <div className="flex flex-col items-center gap-2 pb-3">
-                <div className="flex w-full items-center justify-between gap-3 text-xs text-purple-800">
-                  <div className="flex-1 text-center flex flex-col items-center justify-center gap-1 leading-tight">
-                    <p className="text-[12px] font-semibold text-purple-900 whitespace-nowrap">{displayBirthDate}</p>
-                    <p className="uppercase tracking-[0.14em] text-purple-900 font-normal whitespace-nowrap text-[10px]">
+              <div className="flex flex-col items-center gap-1" style={{ paddingBottom: 10 }}>
+                <div className="flex w-full items-center justify-between gap-2">
+                  <div className="flex-1 text-center flex flex-col items-center justify-center gap-0.5 leading-tight">
+                    <p className="font-semibold text-purple-900 whitespace-nowrap" style={{ fontSize: 10 }}>
+                      {displayBirthDate}
+                    </p>
+                    <p
+                      className="uppercase tracking-[0.14em] text-purple-900 font-normal whitespace-nowrap"
+                      style={{ fontSize: 8 }}
+                    >
                       {strings.sunrise}
                     </p>
                   </div>
-                  <div className="flex items-center justify-center">
+                  <div className="flex items-center justify-center shrink-0">
                     <img
                       src={qrPreviewUrl}
                       alt="QR preview"
-                      className="h-[18.75%] w-[18.75%] min-h-[48px] min-w-[48px] max-h-[64px] max-w-[64px] drop-shadow-[0_4px_10px_rgba(88,28,135,0.35)]"
+                      width={54}
+                      height={54}
+                      className="drop-shadow-[0_4px_10px_rgba(88,28,135,0.35)]"
                     />
                   </div>
-                  <div className="flex-1 text-center flex flex-col items-center justify-center gap-1 leading-tight">
-                    <p className="text-[12px] font-semibold text-purple-900 whitespace-nowrap">{displayDeathDate}</p>
-                    <p className="uppercase tracking-[0.14em] text-purple-900 font-normal whitespace-nowrap text-[10px]">
+                  <div className="flex-1 text-center flex flex-col items-center justify-center gap-0.5 leading-tight">
+                    <p className="font-semibold text-purple-900 whitespace-nowrap" style={{ fontSize: 10 }}>
+                      {displayDeathDate}
+                    </p>
+                    <p
+                      className="uppercase tracking-[0.14em] text-purple-900 font-normal whitespace-nowrap"
+                      style={{ fontSize: 8 }}
+                    >
                       {strings.sunset}
                     </p>
                   </div>
                 </div>
-                <p className="text-[11px] text-purple-800">{strings.honoring}</p>
-                <p className="text-[11px] text-purple-800 font-semibold">
+                <p className="text-purple-800" style={{ fontSize: 9 }}>{strings.honoring}</p>
+                <p className="text-purple-800 font-semibold" style={{ fontSize: 9 }}>
                   {counselorName} • {counselorPhone}
                 </p>
               </div>
