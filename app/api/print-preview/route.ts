@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
     }
 
     const qrTarget = `${APP_URL}/heaven/${slug}`;
-    const qrUrl = `${APP_URL}/api/qr?data=${encodeURIComponent(qrTarget)}&size=600`;
+    const qrUrl = `${APP_URL}/api/qr?data=${encodeURIComponent(qrTarget)}&size=600&bg=white`;
 
     const photoRes = await fetch(resolvedPhotoUrl);
     if (!photoRes.ok) {

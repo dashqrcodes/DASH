@@ -16,22 +16,21 @@ export async function POST(req: NextRequest) {
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://dashmemories.com';
     const qrDataUrl = slug ? `${appUrl}/heaven/${slug}` : '';
-    const qrUrl = qrDataUrl
-      ? `${appUrl}/api/qr?data=${encodeURIComponent(qrDataUrl)}&size=600`
-      : '';
+    const qrUrlCard = qrDataUrl ? `${appUrl}/api/qr?data=${encodeURIComponent(qrDataUrl)}&size=600` : '';
+    const qrUrlPoster = qrDataUrl ? `${appUrl}/api/qr?data=${encodeURIComponent(qrDataUrl)}&size=600&bg=white` : '';
 
-    if (slug && photoUrl && qrUrl) {
+    if (slug && photoUrl && qrUrlCard && qrUrlPoster) {
       const origin = new URL(req.url).origin;
       const [cardRes, posterRes] = await Promise.all([
         fetch(`${origin}/api/generate-print-pdf`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ slug, photoUrl, qrUrl, format: 'card' }),
+          body: JSON.stringify({ slug, photoUrl, qrUrl: qrUrlCard, format: 'card' }),
         }),
         fetch(`${origin}/api/generate-print-pdf`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ slug, photoUrl, qrUrl, format: 'poster' }),
+          body: JSON.stringify({ slug, photoUrl, qrUrl: qrUrlPoster, format: 'poster' }),
         }),
       ]);
 

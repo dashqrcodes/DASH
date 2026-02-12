@@ -97,18 +97,17 @@ export default function FinalApprovalPage() {
     const effectivePhoto = photo || getStoredValue("memorial_photo_url");
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://dashmemories.com";
     const qrTarget = `${appUrl}/heaven/${effectiveSlug}`;
-    const qrUrl = effectiveSlug
-      ? `${appUrl}/api/qr?data=${encodeURIComponent(qrTarget)}&size=600`
-      : "";
+    const qrUrlCard = effectiveSlug ? `${appUrl}/api/qr?data=${encodeURIComponent(qrTarget)}&size=600` : "";
+    const qrUrlPoster = effectiveSlug ? `${appUrl}/api/qr?data=${encodeURIComponent(qrTarget)}&size=600&bg=white` : "";
 
-    if (effectiveSlug && effectivePhoto && qrUrl) {
+    if (effectiveSlug && effectivePhoto && qrUrlCard && qrUrlPoster) {
       void fetch("/api/generate-print-pdf", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           slug: effectiveSlug,
           photoUrl: effectivePhoto,
-          qrUrl,
+          qrUrl: qrUrlCard,
           format: "card",
         }),
       }).catch(() => {
@@ -121,7 +120,7 @@ export default function FinalApprovalPage() {
         body: JSON.stringify({
           slug: effectiveSlug,
           photoUrl: effectivePhoto,
-          qrUrl,
+          qrUrl: qrUrlPoster,
           format: "poster",
         }),
       }).catch(() => {

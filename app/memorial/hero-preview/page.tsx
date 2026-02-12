@@ -90,7 +90,7 @@ export default function HeroPreviewPage() {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://dashmemories.com";
     const qrTargetUrl = `${appUrl}/heaven/${slug}`;
     const qrPrefetch = new Image();
-    qrPrefetch.src = `/api/qr?data=${encodeURIComponent(qrTargetUrl)}&size=240`;
+    qrPrefetch.src = `/api/qr?data=${encodeURIComponent(qrTargetUrl)}&size=240&bg=white&v=2`;
   }, [slug]);
 
   useEffect(() => {
@@ -116,7 +116,7 @@ export default function HeroPreviewPage() {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://dashmemories.com";
   const qrTargetUrl = slug ? `${appUrl}/heaven/${slug}` : "";
   const qrPreviewUrl = qrTargetUrl
-    ? `/api/qr?data=${encodeURIComponent(qrTargetUrl)}&size=240`
+    ? `/api/qr?data=${encodeURIComponent(qrTargetUrl)}&size=240&bg=white&v=2`
     : "/qr-dark-purple.svg";
 
   const buildQueryString = () => {
@@ -175,7 +175,7 @@ export default function HeroPreviewPage() {
         </header>
 
         <div className="flex flex-1 items-center justify-center">
-          <div className="relative aspect-[2/3] w-full max-w-[440px] overflow-hidden bg-black shadow-[0_18px_40px_rgba(0,0,0,0.45)]">
+          <div className="relative aspect-[2/3] w-full max-w-[440px] overflow-hidden bg-black shadow-[0_18px_40px_rgba(0,0,0,0.45)] [container-type:size]">
             {cardData.photoUrl && (
               <>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -189,25 +189,30 @@ export default function HeroPreviewPage() {
             )}
             <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/35 to-black/70" />
 
-            <div className="absolute inset-0 flex flex-col items-center justify-end px-6 pb-10 text-center text-white drop-shadow-[0_6px_18px_rgba(0,0,0,0.55)] space-y-3">
-              <p className="text-[20px] font-semibold tracking-tight leading-[1.2]">{cardData.fullName}</p>
-
-              <div className="flex w-full items-center justify-center gap-4 text-[7px] font-medium text-white/85">
-                <div className="flex flex-col items-center leading-[1.3]">
-                  <p className="text-[7px] font-semibold text-white/90 leading-[1.2]">
+            {/* 20"×30" print scale: QR 1.25" total with white border */}
+            <div className="absolute inset-0 flex flex-col items-center justify-end pb-[6.67%] px-[5%] text-center text-white drop-shadow-[0_6px_18px_rgba(0,0,0,0.55)]">
+              <p className="font-semibold tracking-tight leading-[1.2] max-w-full truncate text-[20px] sm:text-[24px]">
+                {cardData.fullName}
+              </p>
+              <div className="flex w-full items-center justify-center gap-4 mt-2" style={{ fontSize: "11px" }}>
+                <div className="flex flex-col items-center leading-[1.3] flex-1 min-w-0">
+                  <p className="font-semibold text-white/90 leading-[1.2]">
                     {cardData.birthDate}
                   </p>
                   <p className="uppercase tracking-[0.2em] text-white/80 text-center">{strings.sunrise}</p>
                 </div>
-                <div className="flex items-center justify-center">
+                <div
+                  className="flex items-center justify-center flex-shrink-0 bg-white p-3 rounded-sm drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)]"
+                  style={{ width: "10%", minWidth: 56, aspectRatio: "1" }}
+                >
                   <img
                     src={qrPreviewUrl}
                     alt="QR preview"
-                    className="h-[7.5%] w-[7.5%] min-h-[30px] min-w-[30px] max-h-[36px] max-w-[36px] drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)]"
+                    className="w-full h-full object-contain"
                   />
                 </div>
-                <div className="flex flex-col items-center leading-[1.3]">
-                  <p className="text-[7px] font-semibold text-white/90 leading-[1.2]">
+                <div className="flex flex-col items-center leading-[1.3] flex-1 min-w-0">
+                  <p className="font-semibold text-white/90 leading-[1.2]">
                     {cardData.deathDate}
                   </p>
                   <p className="uppercase tracking-[0.2em] text-white/80 text-center">{strings.sunset}</p>

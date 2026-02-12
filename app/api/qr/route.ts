@@ -11,10 +11,13 @@ const TRANSPARENT = "#0000";
 export async function GET(req: NextRequest) {
   const data = req.nextUrl.searchParams.get("data");
   const size = Math.min(600, Math.max(120, parseInt(req.nextUrl.searchParams.get("size") || "240", 10) || 240));
+  const bg = req.nextUrl.searchParams.get("bg") || "transparent";
 
   if (!data) {
     return NextResponse.json({ error: "Missing data parameter" }, { status: 400 });
   }
+
+  const lightColor = bg === "white" ? "#ffffff" : TRANSPARENT;
 
   try {
     const dataUrl = await QRCode.toDataURL(data, {
@@ -23,7 +26,7 @@ export async function GET(req: NextRequest) {
       margin: 1,
       color: {
         dark: DARK_PURPLE,
-        light: TRANSPARENT,
+        light: lightColor,
       },
       errorCorrectionLevel: "H",
     });
