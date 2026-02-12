@@ -34,14 +34,19 @@ export default function FinalApprovalPage() {
   const effectiveBirth = birth || getStoredValue("memorial_birth_date");
   const effectiveDeath = death || getStoredValue("memorial_death_date");
   const effectiveSlug = slug || getStoredValue("memorial_slug");
-  const printBaseUrl = useMemo(() => {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-    if (!supabaseUrl) return "";
-    return `${supabaseUrl}/storage/v1/object/public/prints`;
-  }, []);
-
-  const cardPdfUrl = effectiveSlug ? `${printBaseUrl}/${effectiveSlug}.pdf` : "";
-  const posterPdfUrl = effectiveSlug ? `${printBaseUrl}/${effectiveSlug}-poster.pdf` : "";
+  const effectivePhoto = photo || getStoredValue("memorial_photo_url");
+  const cardPdfUrl = useMemo(() => {
+    if (!effectiveSlug) return "";
+    const params = new URLSearchParams({ slug: effectiveSlug, format: "card" });
+    if (effectivePhoto) params.set("photo", effectivePhoto);
+    return `/api/print-preview?${params.toString()}`;
+  }, [effectiveSlug, effectivePhoto]);
+  const posterPdfUrl = useMemo(() => {
+    if (!effectiveSlug) return "";
+    const params = new URLSearchParams({ slug: effectiveSlug, format: "poster" });
+    if (effectivePhoto) params.set("photo", effectivePhoto);
+    return `/api/print-preview?${params.toString()}`;
+  }, [effectiveSlug, effectivePhoto]);
 
   useEffect(() => {
     router.prefetch("/memorial/order/success");
@@ -158,7 +163,7 @@ export default function FinalApprovalPage() {
           </button>
         </div>
 
-        {effectiveSlug && printBaseUrl && (
+        {effectiveSlug && (
           <div className="mt-6 w-full rounded-3xl border border-white/10 bg-white/5 px-5 py-4 text-left">
             <p className="text-sm font-semibold text-white">Print PDF previews</p>
             <p className="mt-1 text-xs text-white/60">

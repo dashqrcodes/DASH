@@ -1,0 +1,124 @@
+import { NextRequest, NextResponse } from "next/server";
+import PDFDocument from "pdfkit";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export const runtime = "nodejs";
+
+const DPI = 72;
+const IN = (v: number) => v * DPI;
+const CARD_WIDTH_IN = 4;
+const CARD_HEIGHT_IN = 6;
+const POSTER_WIDTH_IN = 20;
+const POSTER_HEIGHT_IN = 30;
+
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://dashmemories.com";
+
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const slug = searchParams.get("slug");
+    const format = searchParams.get("format") || "card";
+    const photoUrl = searchParams.get("photo");
+
+    if (!slug) {
+      return NextResponse.json({ error: "Missing slug" }, { status: 400 });
+    }
+
+    let resolvedPhotoUrl = photoUrl;
+    if (!resolvedPhotoUrl) {
+      const { data: draft } = await supabaseAdmin
+        .from("drafts")
+        .select("photo_url")
+        .eq("slug", slug)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      resolvedPhotoUrl = draft?.photo_url || null;
+    }
+
+    if (!resolvedPhotoUrl) {
+      return NextResponse.json(
+        { error: "No photo found. Add a photo in the memorial flow first." },
+        { status: 400 }
+      );
+    }
+
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=600x600&color=88-28-135&bgcolor=transparent&data=${encodeURIComponent(
+      `${APP_URL}/heaven/${slug}`
+    )}`;
+
+    const photoRes = await fetch(resolvedPhotoUrl);
+    if (!photoRes.ok) {
+      const text = await photoRes.text();
+      const msg = text?.toLowerCase().includes("object not found") || text?.toLowerCase().includes("not_found")
+        ? "Photo not found at storage URL. Make sure you added a photo in the memorial flow."
+        : `Failed to fetch photo (${photoRes.status})`;
+      return NextResponse.json({ error: msg }, { status: 400 });
+    }
+    const photoBuf = Buffer.from(await photoRes.arrayBuffer());
+    if (photoBuf.length === 0) {
+      return NextResponse.json(
+        { error: "Photo URL returned empty. Try uploading the photo again." },
+        { status: 400 }
+      );
+    }
+
+    const qrRes = await fetch(qrUrl);
+    if (!qrRes.ok) {
+      return NextResponse.json(
+        { error: "Failed to generate QR code. Please try again." },
+        { status: 500 }
+      );
+    }
+    const qrBuf = Buffer.from(await qrRes.arrayBuffer());
+
+    const isPoster = format === "poster";
+    const widthIn = isPoster ? POSTER_WIDTH_IN : CARD_WIDTH_IN;
+    const heightIn = isPoster ? POSTER_HEIGHT_IN : CARD_HEIGHT_IN;
+
+    const doc = new PDFDocument({
+      size: [IN(widthIn), IN(heightIn)],
+      margin: 0,
+    });
+    const chunks: Buffer[] = [];
+    doc.on("data", (c: Buffer) => chunks.push(c));
+    const done = new Promise<Buffer>((resolve) =>
+      doc.on("end", () => resolve(Buffer.concat(chunks)))
+    );
+
+    doc.image(photoBuf, 0, 0, { width: IN(widthIn), height: IN(heightIn) });
+
+    const posterUnderlaySize = 1.25;
+    const posterBorder = 3 / 16;
+    const qrSize = IN(isPoster ? posterUnderlaySize - posterBorder * 2 : 0.75);
+    const pad = IN(isPoster ? 1.0 : 0.5);
+    const qrX = pad;
+    const qrY = IN(heightIn) - pad - qrSize;
+    if (isPoster) {
+      const underlayPad = IN(posterBorder);
+      const underlaySize = IN(posterUnderlaySize);
+      const underlayX = qrX - underlayPad;
+      const underlayY = qrY - underlayPad;
+      doc.rect(underlayX, underlayY, underlaySize, underlaySize).fill("#FFFFFF");
+    }
+    doc.image(qrBuf, qrX, qrY, { width: qrSize, height: qrSize });
+
+    doc.end();
+    const pdfBuffer = await done;
+
+    const filename = `${slug}${isPoster ? "-poster" : ""}.pdf`;
+    return new NextResponse(pdfBuffer as unknown as BodyInit, {
+      status: 200,
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `inline; filename="${filename}"`,
+      },
+    });
+  } catch (error: any) {
+    console.error("print-preview error", error);
+    return NextResponse.json(
+      { error: error?.message || "Failed to generate preview" },
+      { status: 500 }
+    );
+  }
+}
