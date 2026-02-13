@@ -2,6 +2,7 @@
 export const dynamic = "force-dynamic";
 
 import { useRouter, useSearchParams } from "next/navigation";
+import BackArrowButton from "@/components/BackArrowButton";
 import { resolveLang } from "@/lib/utils/lang";
 
 const primaryButtonClass =

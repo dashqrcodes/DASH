@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { getSupabaseAdmin, Story, StoryMoment } from '@/lib/utils/supabaseClient';
 import { getMuxPlaybackId } from '@/lib/utils/mux';
 import SlideshowEmbed from './SlideshowEmbed';
+import VideoTribute from './VideoTribute';
 
 // Zero cache - always fetch fresh from Supabase
 export const revalidate = 0;
@@ -79,34 +80,40 @@ async function hasSlideshowAssets(slug: string): Promise<boolean> {
 }
 
 interface HeavenPersonPageProps {
-  params: {
-    personSlug: string;
-  };
+  params: Promise<{ personSlug: string }> | { personSlug: string };
 }
 
 export default async function HeavenPersonPage({ params }: HeavenPersonPageProps) {
+  const { personSlug } = await (params as Promise<{ personSlug: string }>);
   // Fetch directly from Supabase - no cache, no localStorage, no fallbacks
   const [story, moments, draft, hasSlideshow] = await Promise.all([
-    fetchPerson(params.personSlug),
-    fetchMoments(params.personSlug),
-    fetchDraft(params.personSlug),
-    hasSlideshowAssets(params.personSlug),
+    fetchPerson(personSlug),
+    fetchMoments(personSlug),
+    fetchDraft(personSlug),
+    hasSlideshowAssets(personSlug),
   ]);
 
-  // Hardened: kobe-bryant must never 404 (acrylic QR given to Mike Jones / Liquid Death)
-  const isKobeBryant = params.personSlug === 'kobe-bryant';
-  if (!story && !draft && !hasSlideshow && !isKobeBryant) {
+  // Hardened: kobe-bryant and kelly-wong must never 404
+  const isKobeBryant = personSlug === 'kobe-bryant';
+  const isKellyWong = personSlug === 'kelly-wong';
+  const isHardenedSlug = isKobeBryant || isKellyWong;
+  if (!story && !draft && !hasSlideshow && !isHardenedSlug) {
     notFound();
   }
 
-  const displayName = story?.name || draft?.full_name || (isKobeBryant ? 'Kobe Bryant' : params.personSlug);
+  const displayName = story?.name || draft?.full_name
+    || (isKobeBryant ? 'Kobe Bryant' : isKellyWong ? 'Kelly Wong' : personSlug);
   const displayPhoto = story?.photo_url || draft?.photo_url || null;
-  let playbackId: string | null =
-    story?.mux_playback_id ??
-    (story?.mux_asset_id ? await getMuxPlaybackId(story.mux_asset_id) : null);
-  if (!playbackId && isKobeBryant) {
-    const envPlayback = process.env.NEXT_PUBLIC_KOBE_DEMO_VIDEO?.match(/mux\.com\/([a-zA-Z0-9]+)/)?.[1];
-    playbackId = envPlayback ?? 'BVzwixnKSqqpqmEdELwUWRIMQ7kKI02YZamR00wJdI624';
+
+  // kobe-bryant: always use this exact Mux playback ID, no DB/env logic
+  const KOBE_PLAYBACK_ID = 'BVzwixnKSqqpqmEdELwUWRIMQ7kKI02YZamR00wJdI624';
+  let playbackId: string | null = isKobeBryant
+    ? KOBE_PLAYBACK_ID
+    : story?.mux_playback_id ??
+      (story?.mux_asset_id ? await getMuxPlaybackId(story.mux_asset_id) : null);
+  if (!playbackId && isKellyWong) {
+    const raw = process.env.NEXT_PUBLIC_KELLY_DEMO_VIDEO?.trim();
+    playbackId = raw?.match(/mux\.com\/([a-zA-Z0-9]+)/)?.[1] ?? (raw && /^[a-zA-Z0-9_-]+$/.test(raw) ? raw : null);
   }
   const displayDates =
     draft?.birth_date || draft?.death_date
@@ -136,7 +143,7 @@ export default async function HeavenPersonPage({ params }: HeavenPersonPageProps
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-semibold text-slate-50">Slideshow</h2>
               <Link
-                href={`/slideshow/create?slug=${encodeURIComponent(params.personSlug)}`}
+                href={`/slideshow/create?slug=${encodeURIComponent(personSlug)}`}
                 className="text-sm font-medium text-sky-300 hover:text-sky-200"
               >
                 Add photos
@@ -148,21 +155,7 @@ export default async function HeavenPersonPage({ params }: HeavenPersonPageProps
           </section>
         )}
 
-        {playbackId && (
-          <section className="space-y-3">
-            <h2 className="text-2xl font-semibold text-slate-50">Video Tribute</h2>
-            <div className="overflow-hidden rounded-3xl bg-black">
-              <video
-                controls
-                playsInline
-                className="block w-full"
-                poster={displayPhoto || undefined}
-              >
-                <source src={`https://stream.mux.com/${playbackId}.m3u8`} type="application/x-mpegURL" />
-              </video>
-            </div>
-          </section>
-        )}
+        {playbackId && <VideoTribute playbackId={playbackId} poster={displayPhoto} />}
 
         <section className="space-y-4">
           <h2 className="text-2xl font-semibold text-slate-50">Moments</h2>
@@ -173,7 +166,7 @@ export default async function HeavenPersonPage({ params }: HeavenPersonPageProps
               {moments.map((moment) => (
                 <Link
                   key={moment.id}
-                  href={`/heaven/${params.personSlug}/${moment.slug}`}
+                  href={`/heaven/${personSlug}/${moment.slug}`}
                   className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-slate-900/70 p-4 transition hover:border-sky-400/60"
                 >
                   {moment.photo_url && (

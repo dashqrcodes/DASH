@@ -57,5 +57,10 @@ export function handleStripeWebhook(rawBody: string, signature: string) {
   );
 }
 
-// Expose a shared Stripe client for server-side callers.
-export const stripe = getStripe();
+// Lazy Stripe client - only throws when actually used (not at import time).
+// Allows build to succeed when STRIPE_SECRET_KEY is not set locally.
+export const stripe = new Proxy({} as Stripe, {
+  get(_, prop) {
+    return (getStripe() as unknown as Record<string, unknown>)[prop as string];
+  },
+});
