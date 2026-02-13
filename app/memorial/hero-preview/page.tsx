@@ -194,7 +194,7 @@ export default function HeroPreviewPage() {
               <p className="font-semibold tracking-tight leading-[1.2] max-w-full truncate text-[20px]">
                 {cardData.fullName}
               </p>
-              <div className="flex w-full items-center justify-center gap-4 text-[7px] font-medium text-white/85 mt-2">
+              <div className="flex w-full items-center justify-center gap-3 text-[7px] font-medium text-white/85 mt-2">
                 <div className="flex flex-col items-center leading-[1.3] flex-1 min-w-0">
                   <p className="font-semibold text-white/90 leading-[1.2]">
                     {cardData.birthDate}
