@@ -20,21 +20,43 @@ export async function POST(req: Request) {
     );
   }
 
-  const { data, error } = await supabaseAdmin
+  const now = new Date().toISOString();
+  const updates: Record<string, unknown> = {
+    updated_at: now,
+  };
+  if (mux_asset_id != null) updates.mux_asset_id = mux_asset_id;
+  if (mux_playback_id != null) updates.mux_playback_id = mux_playback_id;
+  if (photo_url != null) updates.photo_url = photo_url;
+
+  const { data: updated, error: updateError } = await supabaseAdmin
     .from("stories")
-    .update({
+    .update(updates)
+    .eq("slug", "kobe-bryant")
+    .select()
+    .maybeSingle();
+
+  if (!updateError && updated) {
+    return NextResponse.json({ success: true, story: updated });
+  }
+
+  // No existing row - insert so kobe-bryant always exists
+  const { data: inserted, error: insertError } = await supabaseAdmin
+    .from("stories")
+    .insert({
+      slug: "kobe-bryant",
+      name: "Kobe Bryant",
       mux_asset_id,
       mux_playback_id,
       photo_url,
-      updated_at: new Date().toISOString(),
+      created_at: now,
+      updated_at: now,
     })
-    .eq("slug", "kobe-bryant")
     .select()
-    .single();
+    .maybeSingle();
 
-  if (error) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  if (insertError) {
+    return NextResponse.json({ success: false, error: insertError.message }, { status: 500 });
   }
 
-  return NextResponse.json({ success: true, story: data });
+  return NextResponse.json({ success: true, story: inserted });
 }

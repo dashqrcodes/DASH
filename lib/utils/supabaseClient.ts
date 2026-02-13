@@ -11,6 +11,7 @@ export interface Story {
   story_text?: string | null;
   photo_url?: string | null;
   mux_asset_id?: string | null;
+  mux_playback_id?: string | null;
   created_at: string;
   updated_at?: string | null;
 }

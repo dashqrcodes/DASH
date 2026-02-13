@@ -191,10 +191,10 @@ export default function HeroPreviewPage() {
 
             {/* 20"×30" print scale: QR 1.25" total with white border */}
             <div className="absolute inset-0 flex flex-col items-center justify-end pb-[6.67%] px-[5%] text-center text-white drop-shadow-[0_6px_18px_rgba(0,0,0,0.55)]">
-              <p className="font-semibold tracking-tight leading-[1.2] max-w-full truncate text-[20px] sm:text-[24px]">
+              <p className="font-semibold tracking-tight leading-[1.2] max-w-full truncate text-[20px]">
                 {cardData.fullName}
               </p>
-              <div className="flex w-full items-center justify-center gap-4 mt-2" style={{ fontSize: "11px" }}>
+              <div className="flex w-full items-center justify-center gap-4 text-[7px] font-medium text-white/85 mt-2">
                 <div className="flex flex-col items-center leading-[1.3] flex-1 min-w-0">
                   <p className="font-semibold text-white/90 leading-[1.2]">
                     {cardData.birthDate}

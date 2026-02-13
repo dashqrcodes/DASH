@@ -93,14 +93,21 @@ export default async function HeavenPersonPage({ params }: HeavenPersonPageProps
     hasSlideshowAssets(params.personSlug),
   ]);
 
-  // Simple "Not found" if no record exists
-  if (!story && !draft && !hasSlideshow) {
+  // Hardened: kobe-bryant must never 404 (acrylic QR given to Mike Jones / Liquid Death)
+  const isKobeBryant = params.personSlug === 'kobe-bryant';
+  if (!story && !draft && !hasSlideshow && !isKobeBryant) {
     notFound();
   }
 
-  const displayName = story?.name || draft?.full_name || params.personSlug;
+  const displayName = story?.name || draft?.full_name || (isKobeBryant ? 'Kobe Bryant' : params.personSlug);
   const displayPhoto = story?.photo_url || draft?.photo_url || null;
-  const playbackId = story?.mux_asset_id ? await getMuxPlaybackId(story.mux_asset_id) : null;
+  let playbackId: string | null =
+    story?.mux_playback_id ??
+    (story?.mux_asset_id ? await getMuxPlaybackId(story.mux_asset_id) : null);
+  if (!playbackId && isKobeBryant) {
+    const envPlayback = process.env.NEXT_PUBLIC_KOBE_DEMO_VIDEO?.match(/mux\.com\/([a-zA-Z0-9]+)/)?.[1];
+    playbackId = envPlayback ?? 'BVzwixnKSqqpqmEdELwUWRIMQ7kKI02YZamR00wJdI624';
+  }
   const displayDates =
     draft?.birth_date || draft?.death_date
       ? `${draft?.birth_date || ''}${draft?.birth_date && draft?.death_date ? ' – ' : ''}${draft?.death_date || ''}`
