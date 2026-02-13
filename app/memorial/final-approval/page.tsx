@@ -96,9 +96,9 @@ export default function FinalApprovalPage() {
 
     const effectivePhoto = photo || getStoredValue("memorial_photo_url");
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://dashmemories.com";
-    const qrTarget = `${appUrl}/heaven/${effectiveSlug}`;
-    const qrUrlCard = effectiveSlug ? `${appUrl}/api/qr?data=${encodeURIComponent(qrTarget)}&size=600` : "";
-    const qrUrlPoster = effectiveSlug ? `${appUrl}/api/qr?data=${encodeURIComponent(qrTarget)}&size=600&bg=white` : "";
+    const qrTarget = `${appUrl}/h/${effectiveSlug}`;
+    const qrUrlCard = effectiveSlug ? `${appUrl}/api/qr?data=${encodeURIComponent(qrTarget)}&size=600&ecl=L` : "";
+    const qrUrlPoster = effectiveSlug ? `${appUrl}/api/qr?data=${encodeURIComponent(qrTarget)}&size=600&bg=white&ecl=L` : "";
 
     if (effectiveSlug && effectivePhoto && qrUrlCard && qrUrlPoster) {
       void fetch("/api/generate-print-pdf", {
@@ -166,7 +166,7 @@ export default function FinalApprovalPage() {
           <div className="mt-6 w-full rounded-3xl border border-white/10 bg-white/5 px-5 py-4 text-left">
             <p className="text-sm font-semibold text-white">Print PDF previews</p>
             <p className="mt-1 text-xs text-white/60">
-              These previews contain the live, working QR code for `heaven/{effectiveSlug}`.
+              These previews contain the live, working QR code for `h/{effectiveSlug}` (→ heaven).
             </p>
             <div className="mt-4 flex w-full flex-col gap-3">
               <a

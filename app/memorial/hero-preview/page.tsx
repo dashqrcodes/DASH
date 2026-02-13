@@ -88,9 +88,9 @@ export default function HeroPreviewPage() {
   useEffect(() => {
     if (!slug) return;
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://dashmemories.com";
-    const qrTargetUrl = `${appUrl}/heaven/${slug}`;
+    const qrTargetUrl = `${appUrl}/h/${slug}`;
     const qrPrefetch = new Image();
-    qrPrefetch.src = `/api/qr?data=${encodeURIComponent(qrTargetUrl)}&size=240&bg=white&v=2`;
+    qrPrefetch.src = `/api/qr?data=${encodeURIComponent(qrTargetUrl)}&size=240&bg=white&ecl=L&v=2`;
   }, [slug]);
 
   useEffect(() => {
@@ -114,9 +114,9 @@ export default function HeroPreviewPage() {
     ? buildCloudinaryFaceCropUrl(cardData.photoUrl, { aspectRatio: "2:3", width: previewWidth })
     : "";
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://dashmemories.com";
-  const qrTargetUrl = slug ? `${appUrl}/heaven/${slug}` : "";
+  const qrTargetUrl = slug ? `${appUrl}/h/${slug}` : "";
   const qrPreviewUrl = qrTargetUrl
-    ? `/api/qr?data=${encodeURIComponent(qrTargetUrl)}&size=240&bg=white&v=2`
+    ? `/api/qr?data=${encodeURIComponent(qrTargetUrl)}&size=240&bg=white&ecl=L&v=2`
     : "/qr-dark-purple.svg";
 
   const buildQueryString = () => {
@@ -201,14 +201,20 @@ export default function HeroPreviewPage() {
                   </p>
                   <p className="uppercase tracking-[0.2em] text-white/80 text-center">{strings.sunrise}</p>
                 </div>
+                {/* 20"×30" print: container 1.25"×1.25", QR matrix 1"×1" (0.125" white border each side) */}
                 <div
-                  className="flex items-center justify-center flex-shrink-0 bg-white p-3 rounded-sm drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)]"
-                  style={{ width: "10%", minWidth: 56, aspectRatio: "1" }}
+                  className="flex items-center justify-center flex-shrink-0 bg-white rounded-sm drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)]"
+                  style={{
+                    width: "6.25cqw",
+                    height: "6.25cqw",
+                    padding: "0.625cqw",
+                    boxSizing: "border-box",
+                  }}
                 >
                   <img
                     src={qrPreviewUrl}
                     alt="QR preview"
-                    className="w-full h-full object-contain"
+                    className="h-full w-full object-contain"
                   />
                 </div>
                 <div className="flex flex-col items-center leading-[1.3] flex-1 min-w-0">

@@ -146,9 +146,9 @@ export default function MemorialCardBackPage() {
   };
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://dashmemories.com";
-  const qrTargetUrl = slug ? `${appUrl}/heaven/${slug}` : "";
+  const qrTargetUrl = slug ? `${appUrl}/h/${slug}` : "";
   const qrPreviewUrl = qrTargetUrl
-    ? `/api/qr?data=${encodeURIComponent(qrTargetUrl)}&size=240`
+    ? `/api/qr?data=${encodeURIComponent(qrTargetUrl)}&size=240&ecl=L`
     : "/qr-dark-purple.svg";
 
   const strings =

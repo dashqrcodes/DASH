@@ -12,12 +12,14 @@ export async function GET(req: NextRequest) {
   const data = req.nextUrl.searchParams.get("data");
   const size = Math.min(600, Math.max(120, parseInt(req.nextUrl.searchParams.get("size") || "240", 10) || 240));
   const bg = req.nextUrl.searchParams.get("bg") || "transparent";
+  const ecl = req.nextUrl.searchParams.get("ecl") || (bg === "white" ? "L" : "H");
 
   if (!data) {
     return NextResponse.json({ error: "Missing data parameter" }, { status: 400 });
   }
 
   const lightColor = bg === "white" ? "#ffffff" : TRANSPARENT;
+  const errorLevel = ["L", "M", "Q", "H"].includes(ecl) ? ecl : "H";
 
   try {
     const dataUrl = await QRCode.toDataURL(data, {
@@ -28,7 +30,7 @@ export async function GET(req: NextRequest) {
         dark: DARK_PURPLE,
         light: lightColor,
       },
-      errorCorrectionLevel: "H",
+      errorCorrectionLevel: errorLevel as "L" | "M" | "Q" | "H",
     });
 
     const base64 = dataUrl.replace(/^data:image\/png;base64,/, "");

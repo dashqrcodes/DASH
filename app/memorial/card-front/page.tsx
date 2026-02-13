@@ -91,7 +91,7 @@ export default function MemorialPreviewPage() {
   useEffect(() => {
     if (!slug) return;
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://dashmemories.com";
-    const qrTargetUrl = `${appUrl}/heaven/${slug}`;
+    const qrTargetUrl = `${appUrl}/h/${slug}`;
     const qrPrefetch = new Image();
     qrPrefetch.src = `/api/qr?data=${encodeURIComponent(qrTargetUrl)}&size=240`;
   }, [slug]);

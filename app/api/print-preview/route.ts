@@ -43,8 +43,8 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const qrTarget = `${APP_URL}/heaven/${slug}`;
-    const qrUrl = `${APP_URL}/api/qr?data=${encodeURIComponent(qrTarget)}&size=600&bg=white`;
+    const qrTarget = `${APP_URL}/h/${slug}`;
+    const qrUrl = `${APP_URL}/api/qr?data=${encodeURIComponent(qrTarget)}&size=600&bg=white&ecl=L`;
 
     const photoRes = await fetch(resolvedPhotoUrl);
     if (!photoRes.ok) {
