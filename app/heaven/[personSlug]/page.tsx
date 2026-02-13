@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { getSupabaseAdmin, Story, StoryMoment } from '@/lib/utils/supabaseClient';
 import { getMuxPlaybackId } from '@/lib/utils/mux';
 import SlideshowEmbed from './SlideshowEmbed';
-import VideoTribute from './VideoTribute';
+import VideoTribute from '@/components/VideoTribute';
 
 // Zero cache - always fetch fresh from Supabase
 export const revalidate = 0;

@@ -1,4 +1,4 @@
-import VideoTribute from "../[personSlug]/VideoTribute";
+import VideoTribute from "@/components/VideoTribute";
 
 // Dedicated route for /heaven/kobe-bryant - no Supabase, no DB, no env vars.
 // Always works regardless of backend config.
