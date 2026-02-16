@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import PDFDocument from "pdfkit";
+import { PDFDocument, rgb } from "pdf-lib";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export const runtime = "nodejs";
@@ -72,41 +72,58 @@ export async function GET(req: NextRequest) {
     const qrBuf = Buffer.from(await qrRes.arrayBuffer());
 
     const isPoster = format === "poster";
-    const widthIn = isPoster ? POSTER_WIDTH_IN : CARD_WIDTH_IN;
-    const heightIn = isPoster ? POSTER_HEIGHT_IN : CARD_HEIGHT_IN;
+    const widthPt = IN(isPoster ? POSTER_WIDTH_IN : CARD_WIDTH_IN);
+    const heightPt = IN(isPoster ? POSTER_HEIGHT_IN : CARD_HEIGHT_IN);
 
-    const doc = new PDFDocument({
-      size: [IN(widthIn), IN(heightIn)],
-      margin: 0,
+    const pdfDoc = await PDFDocument.create();
+    const page = pdfDoc.addPage([widthPt, heightPt]);
+
+    const contentType = photoRes.headers.get("content-type") || "";
+    const photoImage =
+      contentType.includes("jpeg") || contentType.includes("jpg")
+        ? await pdfDoc.embedJpg(photoBuf)
+        : await pdfDoc.embedPng(photoBuf);
+
+    page.drawImage(photoImage, {
+      x: 0,
+      y: 0,
+      width: widthPt,
+      height: heightPt,
     });
-    const chunks: Buffer[] = [];
-    doc.on("data", (c: Buffer) => chunks.push(c));
-    const done = new Promise<Buffer>((resolve) =>
-      doc.on("end", () => resolve(Buffer.concat(chunks)))
-    );
-
-    doc.image(photoBuf, 0, 0, { width: IN(widthIn), height: IN(heightIn) });
 
     const posterUnderlaySize = 1.25;
     const posterBorder = 3 / 16;
     const qrSize = IN(isPoster ? posterUnderlaySize - posterBorder * 2 : 0.75);
     const pad = IN(isPoster ? 1.0 : 0.5);
     const qrX = pad;
-    const qrY = IN(heightIn) - pad - qrSize;
+    const qrY = pad;
+
     if (isPoster) {
       const underlayPad = IN(posterBorder);
       const underlaySize = IN(posterUnderlaySize);
       const underlayX = qrX - underlayPad;
       const underlayY = qrY - underlayPad;
-      doc.rect(underlayX, underlayY, underlaySize, underlaySize).fill("#FFFFFF");
+      page.drawRectangle({
+        x: underlayX,
+        y: underlayY,
+        width: underlaySize,
+        height: underlaySize,
+        color: rgb(1, 1, 1),
+      });
     }
-    doc.image(qrBuf, qrX, qrY, { width: qrSize, height: qrSize });
 
-    doc.end();
-    const pdfBuffer = await done;
+    const qrImage = await pdfDoc.embedPng(qrBuf);
+    page.drawImage(qrImage, {
+      x: qrX,
+      y: qrY,
+      width: qrSize,
+      height: qrSize,
+    });
+
+    const pdfBytes = await pdfDoc.save();
 
     const filename = `${slug}${isPoster ? "-poster" : ""}.pdf`;
-    return new NextResponse(pdfBuffer as unknown as BodyInit, {
+    return new NextResponse(Buffer.from(pdfBytes), {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
