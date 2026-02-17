@@ -16,8 +16,8 @@ export async function POST(req: NextRequest) {
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://dashmemories.com';
     const qrDataUrl = slug ? `${appUrl}/h/${slug}` : '';
-    const qrUrlCard = qrDataUrl ? `${appUrl}/api/qr?data=${encodeURIComponent(qrDataUrl)}&size=600&ecl=L` : '';
-    const qrUrlPoster = qrDataUrl ? `${appUrl}/api/qr?data=${encodeURIComponent(qrDataUrl)}&size=600&bg=white&ecl=L` : '';
+    const qrUrlCard = qrDataUrl ? `${appUrl}/api/qr?data=${encodeURIComponent(qrDataUrl)}&size=600&bg=white&ecl=L&fg=black` : '';
+    const qrUrlPoster = qrDataUrl ? `${appUrl}/api/qr?data=${encodeURIComponent(qrDataUrl)}&size=600&bg=white&ecl=L&fg=black` : '';
 
     if (slug && photoUrl && qrUrlCard && qrUrlPoster) {
       const origin = new URL(req.url).origin;

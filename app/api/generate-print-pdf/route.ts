@@ -48,24 +48,27 @@ export async function POST(req: NextRequest) {
 
     const posterUnderlaySize = 1.25;
     const posterBorder = 3 / 16;
-    const qrSize = IN(isPoster ? posterUnderlaySize - posterBorder * 2 : 0.75);
-    const pad = IN(isPoster ? 1.0 : 0.5);
-    const qrX = pad;
+    const cardQrSize = 0.75;
+    const cardUnderlaySize = 1.0;
+    const cardPad = 0.5;
+    const qrSize = IN(isPoster ? posterUnderlaySize - posterBorder * 2 : cardQrSize);
+    const pad = IN(isPoster ? 1.0 : cardPad);
+
+    const qrX = isPoster ? pad : widthPt - pad - qrSize;
     const qrY = pad;
 
-    if (isPoster) {
-      const underlayPad = IN(posterBorder);
-      const underlaySize = IN(posterUnderlaySize);
-      const underlayX = qrX - underlayPad;
-      const underlayY = qrY - underlayPad;
-      page.drawRectangle({
-        x: underlayX,
-        y: underlayY,
-        width: underlaySize,
-        height: underlaySize,
-        color: rgb(1, 1, 1),
-      });
-    }
+    const underlaySize = IN(isPoster ? posterUnderlaySize : cardUnderlaySize);
+    const underlayPad = IN(isPoster ? posterBorder : (cardUnderlaySize - cardQrSize) / 2);
+    const underlayX = qrX - underlayPad;
+    const underlayY = qrY - underlayPad;
+
+    page.drawRectangle({
+      x: underlayX,
+      y: underlayY,
+      width: underlaySize,
+      height: underlaySize,
+      color: rgb(1, 1, 1),
+    });
 
     const qrImage = await pdfDoc.embedPng(qrBuf);
     page.drawImage(qrImage, {

@@ -97,8 +97,8 @@ export default function FinalApprovalPage() {
     const effectivePhoto = photo || getStoredValue("memorial_photo_url");
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://dashmemories.com";
     const qrTarget = `${appUrl}/h/${effectiveSlug}`;
-    const qrUrlCard = effectiveSlug ? `${appUrl}/api/qr?data=${encodeURIComponent(qrTarget)}&size=600&ecl=L` : "";
-    const qrUrlPoster = effectiveSlug ? `${appUrl}/api/qr?data=${encodeURIComponent(qrTarget)}&size=600&bg=white&ecl=L` : "";
+    const qrUrlCard = effectiveSlug ? `${appUrl}/api/qr?data=${encodeURIComponent(qrTarget)}&size=600&bg=white&ecl=L&fg=black` : "";
+    const qrUrlPoster = effectiveSlug ? `${appUrl}/api/qr?data=${encodeURIComponent(qrTarget)}&size=600&bg=white&ecl=L&fg=black` : "";
 
     if (effectiveSlug && effectivePhoto && qrUrlCard && qrUrlPoster) {
       void fetch("/api/generate-print-pdf", {

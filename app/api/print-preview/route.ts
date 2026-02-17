@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import crypto from "crypto";
+import sharp from "sharp";
 import { PDFDocument, rgb } from "pdf-lib";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
@@ -19,21 +21,24 @@ export async function GET(req: NextRequest) {
     const slug = searchParams.get("slug");
     const format = searchParams.get("format") || "card";
     const photoUrl = searchParams.get("photo");
+    const forceRefresh = searchParams.get("refresh") === "1";
 
     if (!slug) {
       return NextResponse.json({ error: "Missing slug" }, { status: 400 });
     }
 
     let resolvedPhotoUrl = photoUrl;
+    let draftUpdatedAt: string | null = null;
     if (!resolvedPhotoUrl) {
       const { data: draft } = await supabaseAdmin
         .from("drafts")
-        .select("photo_url")
+        .select("photo_url, updated_at")
         .eq("slug", slug)
         .order("updated_at", { ascending: false })
         .limit(1)
         .maybeSingle();
       resolvedPhotoUrl = draft?.photo_url || null;
+      draftUpdatedAt = draft?.updated_at || null;
     }
 
     if (!resolvedPhotoUrl) {
@@ -43,8 +48,33 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    const versionInput = resolvedPhotoUrl + (draftUpdatedAt || "");
+    const version = crypto.createHash("md5").update(versionInput).digest("hex").slice(0, 8);
+    const isPoster = format === "poster";
+    const storagePath = `prints/${slug}-${format}-${version}.pdf`;
+
+    if (!forceRefresh) {
+      const { data: storedPdf, error: downloadError } = await supabaseAdmin.storage
+        .from("prints")
+        .download(storagePath);
+
+      if (!downloadError && storedPdf) {
+        const arrayBuffer = await storedPdf.arrayBuffer();
+        const pdfBytes = Buffer.from(arrayBuffer);
+        const filename = `${slug}-${format}.pdf`;
+        return new NextResponse(pdfBytes, {
+          status: 200,
+          headers: {
+            "Content-Type": "application/pdf",
+            "Content-Disposition": `inline; filename="${filename}"`,
+            "Cache-Control": "public, max-age=3600, s-maxage=86400",
+          },
+        });
+      }
+    }
+
     const qrTarget = `${APP_URL}/h/${slug}`;
-    const qrUrl = `${APP_URL}/api/qr?data=${encodeURIComponent(qrTarget)}&size=600&bg=white&ecl=L`;
+    const qrUrl = `${APP_URL}/api/qr?data=${encodeURIComponent(qrTarget)}&size=600&bg=white&ecl=L&fg=black`;
 
     const photoRes = await fetch(resolvedPhotoUrl);
     if (!photoRes.ok) {
@@ -62,6 +92,27 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    const minCardShort = 1200;
+    const minCardLong = 1800;
+    const minPosterShort = 6000;
+    const minPosterLong = 9000;
+
+    const metadata = await sharp(photoBuf).metadata();
+    const imgWidth = metadata.width ?? 0;
+    const imgHeight = metadata.height ?? 0;
+    const imgShort = Math.min(imgWidth, imgHeight);
+    const imgLong = Math.max(imgWidth, imgHeight);
+
+    const minShort = isPoster ? minPosterShort : minCardShort;
+    const minLong = isPoster ? minPosterLong : minCardLong;
+
+    if (imgShort < minShort || imgLong < minLong) {
+      return NextResponse.json(
+        { error: "Image resolution too low for print quality" },
+        { status: 422 }
+      );
+    }
+
     const qrRes = await fetch(qrUrl);
     if (!qrRes.ok) {
       return NextResponse.json(
@@ -71,7 +122,6 @@ export async function GET(req: NextRequest) {
     }
     const qrBuf = Buffer.from(await qrRes.arrayBuffer());
 
-    const isPoster = format === "poster";
     const widthPt = IN(isPoster ? POSTER_WIDTH_IN : CARD_WIDTH_IN);
     const heightPt = IN(isPoster ? POSTER_HEIGHT_IN : CARD_HEIGHT_IN);
 
@@ -93,24 +143,27 @@ export async function GET(req: NextRequest) {
 
     const posterUnderlaySize = 1.25;
     const posterBorder = 3 / 16;
-    const qrSize = IN(isPoster ? posterUnderlaySize - posterBorder * 2 : 0.75);
-    const pad = IN(isPoster ? 1.0 : 0.5);
-    const qrX = pad;
+    const cardQrSize = 0.75;
+    const cardUnderlaySize = 1.0;
+    const cardPad = 0.5;
+    const qrSize = IN(isPoster ? posterUnderlaySize - posterBorder * 2 : cardQrSize);
+    const pad = IN(isPoster ? 1.0 : cardPad);
+
+    const qrX = isPoster ? pad : widthPt - pad - qrSize;
     const qrY = pad;
 
-    if (isPoster) {
-      const underlayPad = IN(posterBorder);
-      const underlaySize = IN(posterUnderlaySize);
-      const underlayX = qrX - underlayPad;
-      const underlayY = qrY - underlayPad;
-      page.drawRectangle({
-        x: underlayX,
-        y: underlayY,
-        width: underlaySize,
-        height: underlaySize,
-        color: rgb(1, 1, 1),
-      });
-    }
+    const underlaySize = IN(isPoster ? posterUnderlaySize : cardUnderlaySize);
+    const underlayPad = IN(isPoster ? posterBorder : (cardUnderlaySize - cardQrSize) / 2);
+    const underlayX = qrX - underlayPad;
+    const underlayY = qrY - underlayPad;
+
+    page.drawRectangle({
+      x: underlayX,
+      y: underlayY,
+      width: underlaySize,
+      height: underlaySize,
+      color: rgb(1, 1, 1),
+    });
 
     const qrImage = await pdfDoc.embedPng(qrBuf);
     page.drawImage(qrImage, {
@@ -122,12 +175,17 @@ export async function GET(req: NextRequest) {
 
     const pdfBytes = await pdfDoc.save();
 
-    const filename = `${slug}${isPoster ? "-poster" : ""}.pdf`;
+    await supabaseAdmin.storage
+      .from("prints")
+      .upload(storagePath, Buffer.from(pdfBytes), { upsert: true, contentType: "application/pdf" });
+
+    const filename = `${slug}-${format}.pdf`;
     return new NextResponse(Buffer.from(pdfBytes), {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `inline; filename="${filename}"`,
+        "Cache-Control": "public, max-age=3600, s-maxage=86400",
       },
     });
   } catch (error: any) {
