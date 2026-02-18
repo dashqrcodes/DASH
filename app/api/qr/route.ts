@@ -3,17 +3,19 @@ import QRCode from "qrcode";
 
 export const runtime = "nodejs";
 
-/** Dark purple (#581c87 = RGB 88,28,135) */
-const DARK_PURPLE = "#581c87ff";
-/** Transparent - use #0000 per qrcode docs */
+/** Dash print dark purple (#3B0066) - high contrast for grayscale */
+const DARK_PURPLE = "#3B0066";
+/** Transparent for PNG RGBA (per qrcode docs) */
 const TRANSPARENT = "#0000";
 
 export async function GET(req: NextRequest) {
   const data = req.nextUrl.searchParams.get("data");
-  const size = Math.min(600, Math.max(120, parseInt(req.nextUrl.searchParams.get("size") || "240", 10) || 240));
+  const sizeParam = parseInt(req.nextUrl.searchParams.get("size") || "240", 10) || 240;
+  const size = Math.min(1000, Math.max(120, sizeParam));
   const bg = req.nextUrl.searchParams.get("bg") || "transparent";
-  const ecl = req.nextUrl.searchParams.get("ecl") || (bg === "white" ? "L" : "H");
+  const ecl = req.nextUrl.searchParams.get("ecl") || "H";
   const fg = req.nextUrl.searchParams.get("fg") || "";
+  const margin = Math.max(4, parseInt(req.nextUrl.searchParams.get("margin") || "4", 10) || 4);
 
   if (!data) {
     return NextResponse.json({ error: "Missing data parameter" }, { status: 400 });
@@ -21,13 +23,18 @@ export async function GET(req: NextRequest) {
 
   const lightColor = bg === "white" ? "#ffffff" : TRANSPARENT;
   const errorLevel = ["L", "M", "Q", "H"].includes(ecl) ? ecl : "H";
-  const darkColor = fg === "black" ? "#000000" : DARK_PURPLE;
+  const darkColor =
+    fg === "black"
+      ? "#000000"
+      : /^[0-9A-Fa-f]{6}$/.test(fg)
+        ? `#${fg}`
+        : DARK_PURPLE;
 
   try {
     const dataUrl = await QRCode.toDataURL(data, {
       type: "image/png",
       width: size,
-      margin: 1,
+      margin,
       color: {
         dark: darkColor,
         light: lightColor,

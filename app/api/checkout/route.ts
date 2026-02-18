@@ -16,32 +16,72 @@ export async function POST(req: NextRequest) {
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://dashmemories.com';
     const qrDataUrl = slug ? `${appUrl}/h/${slug}` : '';
-    const qrUrlCard = qrDataUrl ? `${appUrl}/api/qr?data=${encodeURIComponent(qrDataUrl)}&size=600&bg=white&ecl=L&fg=black` : '';
-    const qrUrlPoster = qrDataUrl ? `${appUrl}/api/qr?data=${encodeURIComponent(qrDataUrl)}&size=600&bg=white&ecl=L&fg=black` : '';
+    const qrParams = (bg: string) =>
+      qrDataUrl ? `${appUrl}/api/qr?data=${encodeURIComponent(qrDataUrl)}&size=1000&bg=${bg}&ecl=H&fg=3B0066&margin=4` : '';
+    const qrUrlCard = qrParams('transparent');
+    const qrUrlPoster = qrParams('white');
+
+    const counselorName = body?.counselorName || 'Groman Mortuary';
+    const counselorPhone = body?.counselorPhone || '323-476-8005';
+    const passageIndex = typeof body?.passageIndex === 'number' ? body.passageIndex : 0;
 
     if (slug && photoUrl && qrUrlCard && qrUrlPoster) {
       const origin = new URL(req.url).origin;
-      const [cardRes, posterRes] = await Promise.all([
+      const [cardFrontRes, cardBackRes, posterRes] = await Promise.all([
         fetch(`${origin}/api/generate-print-pdf`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ slug, photoUrl, qrUrl: qrUrlCard, format: 'card' }),
+          body: JSON.stringify({
+            slug,
+            photoUrl,
+            format: 'card-front',
+            fullName: name,
+            birthDate: birth,
+            deathDate: death,
+          }),
         }),
         fetch(`${origin}/api/generate-print-pdf`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ slug, photoUrl, qrUrl: qrUrlPoster, format: 'poster' }),
+          body: JSON.stringify({
+            slug,
+            qrUrl: qrUrlCard,
+            format: 'card-back',
+            fullName: name,
+            birthDate: birth,
+            deathDate: death,
+            counselorName,
+            counselorPhone,
+            passageIndex,
+          }),
+        }),
+        fetch(`${origin}/api/generate-print-pdf`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            slug,
+            photoUrl,
+            qrUrl: qrUrlPoster,
+            format: 'poster',
+            fullName: name,
+            birthDate: birth,
+            deathDate: death,
+          }),
         }),
       ]);
 
       const attachments: Array<{ filename: string; content: Buffer }> = [];
-      if (cardRes.ok) {
-        const cardBuffer = Buffer.from(await cardRes.arrayBuffer());
-        attachments.push({ filename: `order-${slug}-card.pdf`, content: cardBuffer });
+      if (cardFrontRes.ok) {
+        const buf = Buffer.from(await cardFrontRes.arrayBuffer());
+        attachments.push({ filename: `order-${slug}-card-front.pdf`, content: buf });
+      }
+      if (cardBackRes.ok) {
+        const buf = Buffer.from(await cardBackRes.arrayBuffer());
+        attachments.push({ filename: `order-${slug}-card-back.pdf`, content: buf });
       }
       if (posterRes.ok) {
-        const posterBuffer = Buffer.from(await posterRes.arrayBuffer());
-        attachments.push({ filename: `order-${slug}-poster.pdf`, content: posterBuffer });
+        const buf = Buffer.from(await posterRes.arrayBuffer());
+        attachments.push({ filename: `order-${slug}-poster.pdf`, content: buf });
       }
 
       if (attachments.length > 0) {

@@ -35,18 +35,51 @@ export default function FinalApprovalPage() {
   const effectiveDeath = death || getStoredValue("memorial_death_date");
   const effectiveSlug = slug || getStoredValue("memorial_slug");
   const effectivePhoto = photo || getStoredValue("memorial_photo_url");
-  const cardPdfUrl = useMemo(() => {
+  const effectiveCounselorName = getStoredValue("memorial_counselor_name") || "Groman Mortuary";
+  const effectiveCounselorPhone = getStoredValue("memorial_counselor_phone") || "323-476-8005";
+  const effectivePassageIndex = parseInt(getStoredValue("memorial_passage_index") || "0", 10) || 0;
+
+  const cardFrontPdfUrl = useMemo(() => {
     if (!effectiveSlug) return "";
-    const params = new URLSearchParams({ slug: effectiveSlug, format: "card" });
+    const params = new URLSearchParams({ slug: effectiveSlug, format: "card-front" });
     if (effectivePhoto) params.set("photo", effectivePhoto);
+    if (effectiveName) params.set("name", effectiveName);
+    if (effectiveBirth) params.set("birth", effectiveBirth);
+    if (effectiveDeath) params.set("death", effectiveDeath);
     return `/api/print-preview?${params.toString()}`;
-  }, [effectiveSlug, effectivePhoto]);
+  }, [effectiveSlug, effectivePhoto, effectiveName, effectiveBirth, effectiveDeath]);
+
+  const cardBackPdfUrl = useMemo(() => {
+    if (!effectiveSlug) return "";
+    const params = new URLSearchParams({ slug: effectiveSlug, format: "card-back" });
+    if (effectivePhoto) params.set("photo", effectivePhoto);
+    if (effectiveName) params.set("name", effectiveName);
+    if (effectiveBirth) params.set("birth", effectiveBirth);
+    if (effectiveDeath) params.set("death", effectiveDeath);
+    params.set("counselorName", effectiveCounselorName);
+    params.set("counselorPhone", effectiveCounselorPhone);
+    params.set("passageIndex", String(effectivePassageIndex));
+    return `/api/print-preview?${params.toString()}`;
+  }, [
+    effectiveSlug,
+    effectivePhoto,
+    effectiveName,
+    effectiveBirth,
+    effectiveDeath,
+    effectiveCounselorName,
+    effectiveCounselorPhone,
+    effectivePassageIndex,
+  ]);
+
   const posterPdfUrl = useMemo(() => {
     if (!effectiveSlug) return "";
     const params = new URLSearchParams({ slug: effectiveSlug, format: "poster" });
     if (effectivePhoto) params.set("photo", effectivePhoto);
+    if (effectiveName) params.set("name", effectiveName);
+    if (effectiveBirth) params.set("birth", effectiveBirth);
+    if (effectiveDeath) params.set("death", effectiveDeath);
     return `/api/print-preview?${params.toString()}`;
-  }, [effectiveSlug, effectivePhoto]);
+  }, [effectiveSlug, effectivePhoto, effectiveName, effectiveBirth, effectiveDeath]);
 
   useEffect(() => {
     router.prefetch("/memorial/order/success");
@@ -97,8 +130,10 @@ export default function FinalApprovalPage() {
     const effectivePhoto = photo || getStoredValue("memorial_photo_url");
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://dashmemories.com";
     const qrTarget = `${appUrl}/h/${effectiveSlug}`;
-    const qrUrlCard = effectiveSlug ? `${appUrl}/api/qr?data=${encodeURIComponent(qrTarget)}&size=600&bg=white&ecl=L&fg=black` : "";
-    const qrUrlPoster = effectiveSlug ? `${appUrl}/api/qr?data=${encodeURIComponent(qrTarget)}&size=600&bg=white&ecl=L&fg=black` : "";
+    const qrParams = (bg: string) =>
+      `data=${encodeURIComponent(qrTarget)}&size=1000&bg=${bg}&ecl=H&fg=3B0066&margin=4`;
+    const qrUrlCard = effectiveSlug ? `${appUrl}/api/qr?${qrParams("transparent")}` : "";
+    const qrUrlPoster = effectiveSlug ? `${appUrl}/api/qr?${qrParams("white")}` : "";
 
     if (effectiveSlug && effectivePhoto && qrUrlCard && qrUrlPoster) {
       void fetch("/api/generate-print-pdf", {
@@ -107,12 +142,28 @@ export default function FinalApprovalPage() {
         body: JSON.stringify({
           slug: effectiveSlug,
           photoUrl: effectivePhoto,
-          qrUrl: qrUrlCard,
-          format: "card",
+          format: "card-front",
+          fullName: effectiveName,
+          birthDate: effectiveBirth,
+          deathDate: effectiveDeath,
         }),
-      }).catch(() => {
-        // Ignore; PDF generation should not block navigation.
-      });
+      }).catch(() => {});
+
+      void fetch("/api/generate-print-pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug: effectiveSlug,
+          qrUrl: qrUrlCard,
+          format: "card-back",
+          fullName: effectiveName,
+          birthDate: effectiveBirth,
+          deathDate: effectiveDeath,
+          counselorName: effectiveCounselorName,
+          counselorPhone: effectiveCounselorPhone,
+          passageIndex: effectivePassageIndex,
+        }),
+      }).catch(() => {});
 
       void fetch("/api/generate-print-pdf", {
         method: "POST",
@@ -122,10 +173,11 @@ export default function FinalApprovalPage() {
           photoUrl: effectivePhoto,
           qrUrl: qrUrlPoster,
           format: "poster",
+          fullName: effectiveName,
+          birthDate: effectiveBirth,
+          deathDate: effectiveDeath,
         }),
-      }).catch(() => {
-        // Ignore; PDF generation should not block navigation.
-      });
+      }).catch(() => {});
     }
 
     const nextUrl = `/memorial/order/success${buildParams()}`;
@@ -170,12 +222,21 @@ export default function FinalApprovalPage() {
             </p>
             <div className="mt-4 flex w-full flex-col gap-3">
               <a
-                href={cardPdfUrl}
+                href={cardFrontPdfUrl}
                 target="_blank"
                 rel="noreferrer"
                 className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white transition hover:bg-white/15"
               >
-                4x6 Card Back PDF
+                4×6 Card Front PDF
+                <span className="text-xs text-white/60">Open</span>
+              </a>
+              <a
+                href={cardBackPdfUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white transition hover:bg-white/15"
+              >
+                4×6 Card Back PDF
                 <span className="text-xs text-white/60">Open</span>
               </a>
               <a
@@ -184,7 +245,7 @@ export default function FinalApprovalPage() {
                 rel="noreferrer"
                 className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white transition hover:bg-white/15"
               >
-                20x30 Hero Poster PDF
+                20×30 Hero Poster PDF
                 <span className="text-xs text-white/60">Open</span>
               </a>
             </div>

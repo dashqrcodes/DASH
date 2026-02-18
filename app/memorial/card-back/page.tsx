@@ -68,7 +68,16 @@ export default function MemorialCardBackPage() {
     searchParams?.get("counselorPhone") || "323-476-8005"
   );
   const [slug, setSlug] = useState(searchParams?.get("slug") || "");
-  const [passageIndex, setPassageIndex] = useState(0);
+  const [passageIndex, setPassageIndex] = useState(() => {
+    if (typeof window === "undefined") return 0;
+    try {
+      const v = window.sessionStorage.getItem("memorial_passage_index") || window.localStorage.getItem("memorial_passage_index");
+      const n = parseInt(v || "0", 10);
+      return isNaN(n) ? 0 : Math.max(0, Math.min(n, passages.length - 1));
+    } catch {
+      return 0;
+    }
+  });
   const bodyText = passages[passageIndex].text;
   const bodyCredit = passages[passageIndex].credit;
   const displayBirthDate = formatShortMonth(birthDate);
@@ -131,7 +140,8 @@ export default function MemorialCardBackPage() {
     if (slug) persistValue("memorial_slug", slug);
     if (counselorName) persistValue("memorial_counselor_name", counselorName);
     if (counselorPhone) persistValue("memorial_counselor_phone", counselorPhone);
-  }, [memorialName, birthDate, deathDate, slug, counselorName, counselorPhone]);
+    persistValue("memorial_passage_index", String(passageIndex));
+  }, [memorialName, birthDate, deathDate, slug, counselorName, counselorPhone, passageIndex]);
 
   useEffect(() => {
     router.prefetch("/memorial/hero-preview");
