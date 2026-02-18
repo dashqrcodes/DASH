@@ -124,63 +124,36 @@ export default function FinalApprovalPage() {
     router.push(target);
   };
 
-  const handleApprove = () => {
+  const handleApprove = async () => {
     setIsSaving(true);
 
     const effectivePhoto = photo || getStoredValue("memorial_photo_url");
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://dashmemories.com";
-    const qrTarget = `${appUrl}/h/${effectiveSlug}`;
-    const qrParams = (bg: string) =>
-      `data=${encodeURIComponent(qrTarget)}&size=1000&bg=${bg}&ecl=H&fg=3B0066&margin=4`;
-    const qrUrlCard = effectiveSlug ? `${appUrl}/api/qr?${qrParams("transparent")}` : "";
-    const qrUrlPoster = effectiveSlug ? `${appUrl}/api/qr?${qrParams("white")}` : "";
+    const nextUrl = `/memorial/order/success${buildParams()}`;
 
-    if (effectiveSlug && effectivePhoto && qrUrlCard && qrUrlPoster) {
-      void fetch("/api/generate-print-pdf", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          slug: effectiveSlug,
-          photoUrl: effectivePhoto,
-          format: "card-front",
-          fullName: effectiveName,
-          birthDate: effectiveBirth,
-          deathDate: effectiveDeath,
-        }),
-      }).catch(() => {});
-
-      void fetch("/api/generate-print-pdf", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          slug: effectiveSlug,
-          qrUrl: qrUrlCard,
-          format: "card-back",
-          fullName: effectiveName,
-          birthDate: effectiveBirth,
-          deathDate: effectiveDeath,
-          counselorName: effectiveCounselorName,
-          counselorPhone: effectiveCounselorPhone,
-          passageIndex: effectivePassageIndex,
-        }),
-      }).catch(() => {});
-
-      void fetch("/api/generate-print-pdf", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          slug: effectiveSlug,
-          photoUrl: effectivePhoto,
-          qrUrl: qrUrlPoster,
-          format: "poster",
-          fullName: effectiveName,
-          birthDate: effectiveBirth,
-          deathDate: effectiveDeath,
-        }),
-      }).catch(() => {});
+    if (effectiveSlug && effectivePhoto) {
+      try {
+        const res = await fetch("/api/approve-print-order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            slug: effectiveSlug,
+            photoUrl: effectivePhoto,
+            fullName: effectiveName,
+            birthDate: effectiveBirth,
+            deathDate: effectiveDeath,
+            counselorName: effectiveCounselorName || undefined,
+            counselorPhone: effectiveCounselorPhone,
+            passageIndex: effectivePassageIndex,
+          }),
+        });
+        if (!res.ok) {
+          console.error("Approve print order failed", await res.text());
+        }
+      } catch (err) {
+        console.error("Approve print order error", err);
+      }
     }
 
-    const nextUrl = `/memorial/order/success${buildParams()}`;
     pushWithFallback(`/memorial/accept?next=${encodeURIComponent(nextUrl)}`);
   };
 

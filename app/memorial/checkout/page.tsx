@@ -55,10 +55,15 @@ export default function MemorialCheckoutPage() {
 
   const handleCheckout = async () => {
     let photoUrl = "";
+    let counselorName = "";
     try {
       photoUrl =
         window.sessionStorage.getItem("memorial_photo_url") ||
         window.localStorage.getItem("memorial_photo_url") ||
+        "";
+      counselorName =
+        window.sessionStorage.getItem("memorial_counselor_name") ||
+        window.localStorage.getItem("memorial_counselor_name") ||
         "";
     } catch {}
 
@@ -75,6 +80,7 @@ export default function MemorialCheckoutPage() {
           name: memorialName,
           birth,
           death,
+          counselorName: counselorName || undefined,
           lang: currentLang,
         }),
       });

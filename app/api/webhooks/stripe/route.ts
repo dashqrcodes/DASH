@@ -82,14 +82,11 @@ export async function POST(req: NextRequest) {
       });
 
       // Step 3: Email PDF to vendor
-      const testEmail = process.env.TEST_PDF_EMAIL;
-      const recipientEmail = testEmail || process.env.PRINT_SHOP_EMAIL || 'printshop@example.com';
+      const recipientEmail = process.env.TEST_PDF_EMAIL || process.env.PRINT_SHOP_EMAIL || 'printshop@example.com';
       await sendPrintPdfEmail({
-        pdfBuffer,
         slug,
         recipientEmail,
-        customerEmail: session.customer_email,
-        subjectPrefix: testEmail ? 'Test Print PDF' : 'New Acrylic Order',
+        pdfBuffer,
       });
 
       // Step 4: Update draft status to 'paid'

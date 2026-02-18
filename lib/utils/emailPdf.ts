@@ -1,14 +1,15 @@
 import { Buffer } from 'node:buffer';
 
 export async function sendPrintPdfEmail(options: {
-  pdfBuffer?: Buffer;
   slug: string;
+  fullName?: string;
+  counselorName?: string;
   recipientEmail: string;
-  customerEmail?: string | null;
-  subjectPrefix?: string;
   attachments?: Array<{ filename: string; content: Buffer }>;
+  /** Legacy: single PDF for acrylic orders */
+  pdfBuffer?: Buffer;
 }) {
-  const { pdfBuffer, slug, recipientEmail, customerEmail, subjectPrefix, attachments } = options;
+  const { slug, fullName, counselorName, recipientEmail, attachments, pdfBuffer } = options;
   const nodemailer = await import('nodemailer');
   const transporter = nodemailer.default.createTransport({
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
@@ -20,21 +21,28 @@ export async function sendPrintPdfEmail(options: {
     },
   });
 
+  const displayName = fullName || slug;
+  const body = [
+    'Groman Mortuary Print Order',
+    '',
+    `Person: ${displayName}`,
+    ...(counselorName ? [`Counselor: ${counselorName}`] : []),
+    '',
+    'Please print the attached files.',
+  ].join('\n');
+
+  const resolvedAttachments =
+    attachments && attachments.length > 0
+      ? attachments
+      : pdfBuffer
+        ? [{ filename: `order-${slug}.pdf`, content: pdfBuffer }]
+        : [];
+
   await transporter.sendMail({
     from: process.env.SMTP_FROM || 'noreply@dash.gift',
     to: recipientEmail,
-    subject: `${subjectPrefix || 'New Print Order'} - ${slug}`,
-    text: `Order ID: ${slug}\nCustomer Email: ${customerEmail || 'N/A'}\n\nPDF attached for printing.`,
-    attachments:
-      attachments && attachments.length > 0
-        ? attachments
-        : pdfBuffer
-          ? [
-              {
-                filename: `order-${slug}.pdf`,
-                content: pdfBuffer,
-              },
-            ]
-          : [],
+    subject: `Print Order — ${displayName}`,
+    text: body,
+    attachments: resolvedAttachments,
   });
 }

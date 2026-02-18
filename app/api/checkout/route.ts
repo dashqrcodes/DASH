@@ -72,30 +72,24 @@ export async function POST(req: NextRequest) {
 
       const attachments: Array<{ filename: string; content: Buffer }> = [];
       if (cardFrontRes.ok) {
-        const buf = Buffer.from(await cardFrontRes.arrayBuffer());
-        attachments.push({ filename: `order-${slug}-card-front.pdf`, content: buf });
+        attachments.push({ filename: 'card-front.pdf', content: Buffer.from(await cardFrontRes.arrayBuffer()) });
       }
       if (cardBackRes.ok) {
-        const buf = Buffer.from(await cardBackRes.arrayBuffer());
-        attachments.push({ filename: `order-${slug}-card-back.pdf`, content: buf });
+        attachments.push({ filename: 'card-back.pdf', content: Buffer.from(await cardBackRes.arrayBuffer()) });
       }
       if (posterRes.ok) {
-        const buf = Buffer.from(await posterRes.arrayBuffer());
-        attachments.push({ filename: `order-${slug}-poster.pdf`, content: buf });
+        attachments.push({ filename: 'poster.pdf', content: Buffer.from(await posterRes.arrayBuffer()) });
       }
 
-      if (attachments.length > 0) {
-        const testEmail = process.env.TEST_PDF_EMAIL;
-        const recipientEmail = testEmail || process.env.PRINT_SHOP_EMAIL || '';
-        if (recipientEmail) {
-          await sendPrintPdfEmail({
-            slug,
-            recipientEmail,
-            customerEmail,
-            subjectPrefix: testEmail ? 'Test Print PDF' : 'New Print Order',
-            attachments,
-          });
-        }
+      const recipientEmail = process.env.TEST_PDF_EMAIL || process.env.PRINT_SHOP_EMAIL || '';
+      if (recipientEmail && attachments.length > 0) {
+        await sendPrintPdfEmail({
+          slug,
+          fullName: name || '—',
+          counselorName: counselorName || undefined,
+          recipientEmail,
+          attachments,
+        });
       }
     }
 
