@@ -6,7 +6,7 @@ import {
   generatePosterPdf,
 } from "@/lib/utils/printPdfGenerator";
 import { getBaseUrl } from "@/lib/utils/baseUrl";
-import { getRawCloudinaryUrl } from "@/lib/utils/cloudinary";
+import { getCardFrontPhotoUrl } from "@/lib/utils/cloudinary";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -95,8 +95,8 @@ export async function GET(req: NextRequest) {
     let pdfBytes: Buffer;
 
     if (isCard) {
-      const rawPhotoUrl = getRawCloudinaryUrl(resolvedPhotoUrl!);
-      const photoRes = await fetch(rawPhotoUrl);
+      const photoUrlForPdf = getCardFrontPhotoUrl(resolvedPhotoUrl!);
+      const photoRes = await fetch(photoUrlForPdf);
       if (!photoRes.ok) {
         const text = await photoRes.text();
         const msg =
@@ -115,7 +115,7 @@ export async function GET(req: NextRequest) {
       }
       const contentType = photoRes.headers.get("content-type") || "image/jpeg";
       const embedFn = contentType.includes("jpeg") || contentType.includes("jpg") ? "embedJpg" : "embedPng";
-      console.log("[print-preview] imageUrl:", rawPhotoUrl, "contentType:", contentType, "embedFn:", embedFn);
+      console.log("[print-preview] imageUrl:", photoUrlForPdf, "contentType:", contentType, "embedFn:", embedFn);
 
       const qrTarget = `${APP_URL}/h/${slug}`;
       const qrUrl = `${APP_URL}/api/qr?data=${encodeURIComponent(qrTarget)}&size=1000&bg=transparent&ecl=H&fg=3B0066&margin=4`;
@@ -153,8 +153,7 @@ export async function GET(req: NextRequest) {
     } else {
       const qrTarget = `${APP_URL}/h/${slug}`;
       const qrUrl = `${APP_URL}/api/qr?data=${encodeURIComponent(qrTarget)}&size=1000&bg=white&ecl=H&fg=3B0066&margin=4`;
-      const rawPhotoUrl = getRawCloudinaryUrl(resolvedPhotoUrl!);
-      const [qrRes, photoRes] = await Promise.all([fetch(qrUrl), fetch(rawPhotoUrl)]);
+      const [qrRes, photoRes] = await Promise.all([fetch(qrUrl), fetch(resolvedPhotoUrl!)]);
       if (!qrRes.ok) {
         return NextResponse.json(
           { error: "Failed to generate QR code. Please try again." },

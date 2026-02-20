@@ -5,7 +5,7 @@ import {
   generatePosterPdf,
 } from "@/lib/utils/printPdfGenerator";
 import { getBaseUrl } from "@/lib/utils/baseUrl";
-import { getRawCloudinaryUrl } from "@/lib/utils/cloudinary";
+import { getCardFrontPhotoUrl } from "@/lib/utils/cloudinary";
 
 export const runtime = "nodejs";
 
@@ -53,13 +53,13 @@ export async function POST(req: NextRequest) {
       qrBuf = Buffer.from(await qrRes.arrayBuffer());
     }
     if (isCard || isPoster) {
-      const rawPhotoUrl = getRawCloudinaryUrl(photoUrl!);
-      const photoRes = await fetch(rawPhotoUrl);
+      const photoUrlForFetch = isCard ? getCardFrontPhotoUrl(photoUrl!) : photoUrl!;
+      const photoRes = await fetch(photoUrlForFetch);
       if (!photoRes.ok) return NextResponse.json({ error: "Failed to fetch photo" }, { status: 400 });
       photoBuf = Buffer.from(await photoRes.arrayBuffer());
       photoContentType = photoRes.headers.get("content-type") || "image/jpeg";
       const embedFn = photoContentType.includes("jpeg") || photoContentType.includes("jpg") ? "embedJpg" : "embedPng";
-      console.log("[generate-print-pdf] imageUrl:", rawPhotoUrl, "contentType:", photoContentType, "embedFn:", embedFn);
+      console.log("[generate-print-pdf] imageUrl:", photoUrlForFetch, "contentType:", photoContentType, "embedFn:", embedFn);
     }
 
     let pdfBytes: Buffer;

@@ -38,6 +38,12 @@ export function buildCloudinaryFaceCropUrl(url: string, options: FaceCropOptions
   return `${prefix}${transforms}/${rest}`;
 }
 
+/** URL for card-front PDF: matches the 2:3 face-crop shown on memorial/card-front. */
+export function getCardFrontPhotoUrl(url: string): string {
+  if (!url || !url.includes("res.cloudinary.com")) return url;
+  return buildCloudinaryFaceCropUrl(url, { aspectRatio: "2:3", width: 1200 });
+}
+
 /** Returns the raw/original Cloudinary URL with no transforms (q_auto, f_auto, w_, h_, c_fill, etc.). */
 export function getRawCloudinaryUrl(url: string): string {
   if (!url || !url.includes("res.cloudinary.com")) return url;
