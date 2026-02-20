@@ -27,26 +27,15 @@ export async function POST(req: NextRequest) {
 
     if (slug && photoUrl && qrUrlCard && qrUrlPoster) {
       const origin = new URL(req.url).origin;
-      const [cardFrontRes, cardBackRes, posterRes] = await Promise.all([
+      const [cardRes, posterRes] = await Promise.all([
         fetch(`${origin}/api/generate-print-pdf`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             slug,
             photoUrl,
-            format: 'card-front',
-            fullName: name,
-            birthDate: birth,
-            deathDate: death,
-          }),
-        }),
-        fetch(`${origin}/api/generate-print-pdf`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            slug,
             qrUrl: qrUrlCard,
-            format: 'card-back',
+            format: 'card',
             fullName: name,
             birthDate: birth,
             deathDate: death,
@@ -71,11 +60,8 @@ export async function POST(req: NextRequest) {
       ]);
 
       const attachments: Array<{ filename: string; content: Buffer }> = [];
-      if (cardFrontRes.ok) {
-        attachments.push({ filename: 'card-front.pdf', content: Buffer.from(await cardFrontRes.arrayBuffer()) });
-      }
-      if (cardBackRes.ok) {
-        attachments.push({ filename: 'card-back.pdf', content: Buffer.from(await cardBackRes.arrayBuffer()) });
+      if (cardRes.ok) {
+        attachments.push({ filename: 'card.pdf', content: Buffer.from(await cardRes.arrayBuffer()) });
       }
       if (posterRes.ok) {
         attachments.push({ filename: 'poster.pdf', content: Buffer.from(await posterRes.arrayBuffer()) });

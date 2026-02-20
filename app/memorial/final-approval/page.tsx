@@ -39,19 +39,9 @@ export default function FinalApprovalPage() {
   const effectiveCounselorPhone = getStoredValue("memorial_counselor_phone") || "323-476-8005";
   const effectivePassageIndex = parseInt(getStoredValue("memorial_passage_index") || "0", 10) || 0;
 
-  const cardFrontPdfUrl = useMemo(() => {
+  const cardPdfUrl = useMemo(() => {
     if (!effectiveSlug) return "";
-    const params = new URLSearchParams({ slug: effectiveSlug, format: "card-front" });
-    if (effectivePhoto) params.set("photo", effectivePhoto);
-    if (effectiveName) params.set("name", effectiveName);
-    if (effectiveBirth) params.set("birth", effectiveBirth);
-    if (effectiveDeath) params.set("death", effectiveDeath);
-    return `/api/print-preview?${params.toString()}`;
-  }, [effectiveSlug, effectivePhoto, effectiveName, effectiveBirth, effectiveDeath]);
-
-  const cardBackPdfUrl = useMemo(() => {
-    if (!effectiveSlug) return "";
-    const params = new URLSearchParams({ slug: effectiveSlug, format: "card-back" });
+    const params = new URLSearchParams({ slug: effectiveSlug, format: "card" });
     if (effectivePhoto) params.set("photo", effectivePhoto);
     if (effectiveName) params.set("name", effectiveName);
     if (effectiveBirth) params.set("birth", effectiveBirth);
@@ -195,21 +185,12 @@ export default function FinalApprovalPage() {
             </p>
             <div className="mt-4 flex w-full flex-col gap-3">
               <a
-                href={cardFrontPdfUrl}
+                href={cardPdfUrl}
                 target="_blank"
                 rel="noreferrer"
                 className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white transition hover:bg-white/15"
               >
-                4×6 Card Front PDF
-                <span className="text-xs text-white/60">Open</span>
-              </a>
-              <a
-                href={cardBackPdfUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white transition hover:bg-white/15"
-              >
-                4×6 Card Back PDF
+                4×6 Postcard (front + back)
                 <span className="text-xs text-white/60">Open</span>
               </a>
               <a

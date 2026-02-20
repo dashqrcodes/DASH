@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
-import sharp from "sharp";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import {
-  generateCardFrontPdf,
-  generateCardBackPdf,
+  generateCardPdf,
   generatePosterPdf,
 } from "@/lib/utils/printPdfGenerator";
 import { getBaseUrl } from "@/lib/utils/baseUrl";
+import { getRawCloudinaryUrl } from "@/lib/utils/cloudinary";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,7 +17,7 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const slug = searchParams.get("slug");
-    const format = searchParams.get("format") || "card-back";
+    const format = searchParams.get("format") || "card";
     const photoUrl = searchParams.get("photo");
     const forceRefresh = searchParams.get("refresh") === "1";
     const fullName = searchParams.get("name") || "";
@@ -32,13 +31,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Missing slug" }, { status: 400 });
     }
 
-    const isCardFront = format === "card-front";
-    const isCardBack = format === "card-back";
+    const isCard = format === "card";
     const isPoster = format === "poster";
 
-    if (!["card-front", "card-back", "poster"].includes(format)) {
+    if (!["card", "poster"].includes(format)) {
       return NextResponse.json(
-        { error: "Invalid format. Use card-front, card-back, or poster." },
+        { error: "Invalid format. Use card or poster." },
         { status: 400 }
       );
     }
@@ -57,7 +55,7 @@ export async function GET(req: NextRequest) {
       draftUpdatedAt = draft?.updated_at || null;
     }
 
-    if ((isCardFront || isPoster) && !resolvedPhotoUrl) {
+    if ((isCard || isPoster) && !resolvedPhotoUrl) {
       return NextResponse.json(
         { error: "No photo found. Add a photo in the memorial flow first." },
         { status: 400 }
@@ -65,12 +63,12 @@ export async function GET(req: NextRequest) {
     }
 
     const versionInput =
-      (isCardFront || isPoster ? resolvedPhotoUrl || "" : "") +
+      (isCard || isPoster ? resolvedPhotoUrl || "" : "") +
       (draftUpdatedAt || "") +
       fullName +
       birthDate +
       deathDate +
-      (isCardBack ? `${passageIndex}` : "");
+      (isCard ? `${passageIndex}` : "");
     const version = crypto.createHash("md5").update(versionInput).digest("hex").slice(0, 8);
     const storagePath = `prints/${slug}-${format}-${version}.pdf`;
 
@@ -96,8 +94,9 @@ export async function GET(req: NextRequest) {
 
     let pdfBytes: Buffer;
 
-    if (isCardFront) {
-      const photoRes = await fetch(resolvedPhotoUrl!);
+    if (isCard) {
+      const rawPhotoUrl = getRawCloudinaryUrl(resolvedPhotoUrl!);
+      const photoRes = await fetch(rawPhotoUrl);
       if (!photoRes.ok) {
         const text = await photoRes.text();
         const msg =
@@ -114,29 +113,10 @@ export async function GET(req: NextRequest) {
           { status: 400 }
         );
       }
-      const minCardShort = 1200;
-      const minCardLong = 1800;
-      const metadata = await sharp(photoBuf).metadata();
-      const imgWidth = metadata.width ?? 0;
-      const imgHeight = metadata.height ?? 0;
-      const imgShort = Math.min(imgWidth, imgHeight);
-      const imgLong = Math.max(imgWidth, imgHeight);
-      if (imgShort < minCardShort || imgLong < minCardLong) {
-        return NextResponse.json(
-          { error: "Image resolution too low for print quality" },
-          { status: 422 }
-        );
-      }
       const contentType = photoRes.headers.get("content-type") || "image/jpeg";
-      pdfBytes = await generateCardFrontPdf({
-        photoBuf,
-        photoContentType: contentType,
-        qrBuf: Buffer.alloc(0),
-        fullName,
-        birthDate,
-        deathDate,
-      });
-    } else if (isCardBack) {
+      const embedFn = contentType.includes("jpeg") || contentType.includes("jpg") ? "embedJpg" : "embedPng";
+      console.log("[print-preview] imageUrl:", rawPhotoUrl, "contentType:", contentType, "embedFn:", embedFn);
+
       const qrTarget = `${APP_URL}/h/${slug}`;
       const qrUrl = `${APP_URL}/api/qr?data=${encodeURIComponent(qrTarget)}&size=1000&bg=transparent&ecl=H&fg=3B0066&margin=4`;
       const qrRes = await fetch(qrUrl);
@@ -157,7 +137,9 @@ export async function GET(req: NextRequest) {
       } catch {
         // fallback to solid color in generator
       }
-      pdfBytes = await generateCardBackPdf({
+      pdfBytes = await generateCardPdf({
+        photoBuf,
+        photoContentType: contentType,
         qrBuf,
         fullName,
         birthDate,
@@ -167,10 +149,12 @@ export async function GET(req: NextRequest) {
         passageIndex,
         skyBackgroundBuf,
       });
+      console.log("[print-preview] card PDF pageCount: 2, pageSize: 4x6 inches");
     } else {
       const qrTarget = `${APP_URL}/h/${slug}`;
       const qrUrl = `${APP_URL}/api/qr?data=${encodeURIComponent(qrTarget)}&size=1000&bg=white&ecl=H&fg=3B0066&margin=4`;
-      const [qrRes, photoRes] = await Promise.all([fetch(qrUrl), fetch(resolvedPhotoUrl!)]);
+      const rawPhotoUrl = getRawCloudinaryUrl(resolvedPhotoUrl!);
+      const [qrRes, photoRes] = await Promise.all([fetch(qrUrl), fetch(rawPhotoUrl)]);
       if (!qrRes.ok) {
         return NextResponse.json(
           { error: "Failed to generate QR code. Please try again." },
@@ -191,19 +175,6 @@ export async function GET(req: NextRequest) {
         return NextResponse.json(
           { error: "Photo URL returned empty. Try uploading the photo again." },
           { status: 400 }
-        );
-      }
-      const minPosterShort = 6000;
-      const minPosterLong = 9000;
-      const metadata = await sharp(photoBuf).metadata();
-      const imgWidth = metadata.width ?? 0;
-      const imgHeight = metadata.height ?? 0;
-      const imgShort = Math.min(imgWidth, imgHeight);
-      const imgLong = Math.max(imgWidth, imgHeight);
-      if (imgShort < minPosterShort || imgLong < minPosterLong) {
-        return NextResponse.json(
-          { error: "Image resolution too low for print quality" },
-          { status: 422 }
         );
       }
       const qrBuf = Buffer.from(await qrRes.arrayBuffer());

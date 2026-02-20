@@ -9,6 +9,23 @@ const POSTER_HEIGHT_IN = 30;
 
 /** Print bleed: 0.125" on all sides */
 const BLEED_PT = IN(0.125);
+/** Points reserved above artwork for FRONT/BACK label */
+const LABEL_BAND = 14;
+const LABEL_FONT_SIZE = 9;
+
+const CARD_PAGE_H = IN(CARD_HEIGHT_IN) + BLEED_PT * 2;
+
+function drawSideLabel(page: { drawText: (text: string, opts: object) => void }, font: { widthOfTextAtSize?: (text: string, size: number) => number }, label: "FRONT" | "BACK") {
+  const x = BLEED_PT;
+  const y = CARD_PAGE_H - BLEED_PT - LABEL_FONT_SIZE - 2;
+  page.drawText(label, {
+    x,
+    y,
+    size: LABEL_FONT_SIZE,
+    font,
+    color: rgb(0.4, 0.4, 0.4),
+  });
+}
 /** Safe margin: 0.25" inside trim edges */
 const SAFE_PT = IN(0.25);
 /** Card QR: 0.75" x 0.75" (54 pt) - transparent PNG on sky */
@@ -114,34 +131,40 @@ export async function generateCardFrontPdf(opts: PrintPdfOptions): Promise<Buffe
   const safeW = trimW - SAFE_PT * 2;
   const safeH = trimH - SAFE_PT * 2;
 
+  // Artwork box: inside trim, shifted down to reserve LABEL_BAND at top
+  const artX = BLEED_PT;
+  const artY = BLEED_PT;
+  const artW = trimW;
+  const artH = trimH - LABEL_BAND;
+
   const pdfDoc = await PDFDocument.create();
   const page = pdfDoc.addPage([docW, docH]);
   const helvetica = await pdfDoc.embedFont("Helvetica");
   const helveticaBold = await pdfDoc.embedFont("Helvetica-Bold");
 
-  // Full-bleed image extends to document edges
+  // FRONT artwork (photo) in art box
   if (photoBuf.length > 0) {
     const photoImage =
       photoContentType.includes("jpeg") || photoContentType.includes("jpg")
         ? await pdfDoc.embedJpg(photoBuf)
         : await pdfDoc.embedPng(photoBuf);
-    page.drawImage(photoImage, { x: 0, y: 0, width: docW, height: docH });
+    page.drawImage(photoImage, { x: artX, y: artY, width: artW, height: artH });
   } else {
     page.drawRectangle({
-      x: 0,
-      y: 0,
-      width: docW,
-      height: docH,
+      x: artX,
+      y: artY,
+      width: artW,
+      height: artH,
       color: rgb(0.2, 0.2, 0.2),
     });
   }
 
-  // Gradient overlay (full bleed)
+  // Gradient overlay over artwork
   page.drawRectangle({
-    x: 0,
-    y: 0,
-    width: docW,
-    height: docH,
+    x: artX,
+    y: artY,
+    width: artW,
+    height: artH,
     color: rgb(0, 0, 0),
     opacity: 0.35,
   });
@@ -177,7 +200,28 @@ export async function generateCardFrontPdf(opts: PrintPdfOptions): Promise<Buffe
     color: rgb(0.9, 0.9, 0.9),
   });
 
+  drawSideLabel(page, helvetica, "FRONT");
+
   return Buffer.from(await pdfDoc.save());
+}
+
+/** Merges front + back into a single 2-page PDF (Page 1 = front, Page 2 = back). Both 4x6. */
+export async function generateCardPdf(opts: PrintPdfOptions): Promise<Buffer> {
+  const frontBuf = await generateCardFrontPdf(opts);
+  const backBuf = await generateCardBackPdf(opts);
+  const frontDoc = await PDFDocument.load(frontBuf);
+  const backDoc = await PDFDocument.load(backBuf);
+  const merged = await PDFDocument.create();
+  const [frontPage] = await merged.copyPages(frontDoc, [0]);
+  const [backPage] = await merged.copyPages(backDoc, [0]);
+  merged.insertPage(0, frontPage);
+  merged.insertPage(1, backPage);
+  const pdfBytes = Buffer.from(await merged.save());
+  const pageCount = merged.getPageCount();
+  if (pageCount !== 2) {
+    console.error("[printPdfGenerator] generateCardPdf pageCount expected 2, got", pageCount);
+  }
+  return pdfBytes;
 }
 
 export async function generateCardBackPdf(opts: PrintPdfOptions): Promise<Buffer> {
@@ -201,35 +245,41 @@ export async function generateCardBackPdf(opts: PrintPdfOptions): Promise<Buffer
   const safeW = trimW - SAFE_PT * 2;
   const safeH = trimH - SAFE_PT * 2;
 
+  // Artwork box: inside trim, shifted down to reserve LABEL_BAND at top
+  const artX = BLEED_PT;
+  const artY = BLEED_PT;
+  const artW = trimW;
+  const artH = trimH - LABEL_BAND;
+
   const pdfDoc = await PDFDocument.create();
   const page = pdfDoc.addPage([docW, docH]);
   const helvetica = await pdfDoc.embedFont("Helvetica");
   const helveticaBold = await pdfDoc.embedFont("Helvetica-Bold");
 
-  // Sky background (full bleed to document edges)
+  // BACK artwork (sky) in art box
   if (skyBackgroundBuf) {
     const skyContentType = "image/jpeg";
     const skyImage =
       skyContentType.includes("jpeg") || skyContentType.includes("jpg")
         ? await pdfDoc.embedJpg(skyBackgroundBuf)
         : await pdfDoc.embedPng(skyBackgroundBuf);
-    page.drawImage(skyImage, { x: 0, y: 0, width: docW, height: docH });
+    page.drawImage(skyImage, { x: artX, y: artY, width: artW, height: artH });
   } else {
     page.drawRectangle({
-      x: 0,
-      y: 0,
-      width: docW,
-      height: docH,
+      x: artX,
+      y: artY,
+      width: artW,
+      height: artH,
       color: rgb(0.4, 0.6, 0.9),
     });
   }
 
-  // Gradient overlay (full bleed)
+  // Gradient overlay over artwork
   page.drawRectangle({
-    x: 0,
-    y: 0,
-    width: docW,
-    height: docH,
+    x: artX,
+    y: artY,
+    width: artW,
+    height: artH,
     color: rgb(1, 1, 1),
     opacity: 0.55,
   });
@@ -344,6 +394,8 @@ export async function generateCardBackPdf(opts: PrintPdfOptions): Promise<Buffer
     font: helveticaBold,
     color: rgb(0.25, 0.15, 0.35),
   });
+
+  drawSideLabel(page, helvetica, "BACK");
 
   return Buffer.from(await pdfDoc.save());
 }

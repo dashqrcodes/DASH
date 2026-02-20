@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import {
-  generateCardFrontPdf,
-  generateCardBackPdf,
+  generateCardPdf,
   generatePosterPdf,
 } from "@/lib/utils/printPdfGenerator";
 import { getBaseUrl } from "@/lib/utils/baseUrl";
+import { getRawCloudinaryUrl } from "@/lib/utils/cloudinary";
 
 export const runtime = "nodejs";
 
@@ -29,18 +29,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing slug" }, { status: 400 });
     }
 
-    const isCardFront = format === "card-front";
-    const isCardBack = format === "card-back";
+    const isCard = format === "card";
     const isPoster = format === "poster";
 
-    if (!["card-front", "card-back", "poster"].includes(format)) {
-      return NextResponse.json({ error: "Invalid format. Use card-front, card-back, or poster." }, { status: 400 });
+    if (!["card", "poster"].includes(format)) {
+      return NextResponse.json({ error: "Invalid format. Use card or poster." }, { status: 400 });
     }
 
-    if ((isCardFront || isPoster) && !photoUrl) {
+    if ((isCard || isPoster) && !photoUrl) {
       return NextResponse.json({ error: "Missing photoUrl" }, { status: 400 });
     }
-    if ((isCardBack || isPoster) && !qrUrl) {
+    if ((isCard || isPoster) && !qrUrl) {
       return NextResponse.json({ error: "Missing qrUrl" }, { status: 400 });
     }
 
@@ -48,30 +47,24 @@ export async function POST(req: NextRequest) {
     let photoBuf: Buffer | undefined;
     let photoContentType = "image/jpeg";
 
-    if (isCardBack || isPoster) {
+    if (isCard || isPoster) {
       const qrRes = await fetch(qrUrl);
       if (!qrRes.ok) return NextResponse.json({ error: "Failed to fetch QR" }, { status: 400 });
       qrBuf = Buffer.from(await qrRes.arrayBuffer());
     }
-    if (isCardFront || isPoster) {
-      const photoRes = await fetch(photoUrl!);
+    if (isCard || isPoster) {
+      const rawPhotoUrl = getRawCloudinaryUrl(photoUrl!);
+      const photoRes = await fetch(rawPhotoUrl);
       if (!photoRes.ok) return NextResponse.json({ error: "Failed to fetch photo" }, { status: 400 });
       photoBuf = Buffer.from(await photoRes.arrayBuffer());
       photoContentType = photoRes.headers.get("content-type") || "image/jpeg";
+      const embedFn = photoContentType.includes("jpeg") || photoContentType.includes("jpg") ? "embedJpg" : "embedPng";
+      console.log("[generate-print-pdf] imageUrl:", rawPhotoUrl, "contentType:", photoContentType, "embedFn:", embedFn);
     }
 
     let pdfBytes: Buffer;
 
-    if (isCardFront) {
-      pdfBytes = await generateCardFrontPdf({
-        photoBuf: photoBuf!,
-        photoContentType,
-        qrBuf: Buffer.alloc(0),
-        fullName: fullName || "",
-        birthDate: birthDate || "",
-        deathDate: deathDate || "",
-      });
-    } else if (isCardBack) {
+    if (isCard) {
       const baseUrl =
         process.env.NEXT_PUBLIC_APP_URL || getBaseUrl() || "https://dashmemories.com";
       const skyUrl = `${baseUrl.replace(/\/$/, "")}/sky%20background%20rear.jpg`;
@@ -82,7 +75,9 @@ export async function POST(req: NextRequest) {
       } catch {
         // fallback to solid color in generator
       }
-      pdfBytes = await generateCardBackPdf({
+      pdfBytes = await generateCardPdf({
+        photoBuf: photoBuf!,
+        photoContentType,
         qrBuf: qrBuf!,
         fullName: fullName || "",
         birthDate: birthDate || "",
@@ -92,6 +87,8 @@ export async function POST(req: NextRequest) {
         passageIndex: typeof passageIndex === "number" ? passageIndex : 0,
         skyBackgroundBuf,
       });
+      const pageCount = 2;
+      console.log("[generate-print-pdf] card PDF pageCount:", pageCount, "pageSize: 4x6 inches");
     } else {
       pdfBytes = await generatePosterPdf({
         photoBuf: photoBuf!,
@@ -103,7 +100,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const suffix = format === "poster" ? "-poster" : format === "card-front" ? "-card-front" : "-card-back";
+    const suffix = format === "poster" ? "-poster" : "-card";
     const path = `prints/${slug}${suffix}.pdf`;
     const { error: uploadError } = await supabaseAdmin.storage
       .from("prints")
@@ -117,7 +114,7 @@ export async function POST(req: NextRequest) {
     const { data: urlData } = supabaseAdmin.storage.from("prints").getPublicUrl(path);
     const printUrl = urlData.publicUrl;
 
-    if (isCardBack) {
+    if (isCard) {
       await supabaseAdmin.from("drafts").update({ print_pdf_url: printUrl }).eq("slug", slug);
     }
 

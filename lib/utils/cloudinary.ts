@@ -38,6 +38,22 @@ export function buildCloudinaryFaceCropUrl(url: string, options: FaceCropOptions
   return `${prefix}${transforms}/${rest}`;
 }
 
+/** Returns the raw/original Cloudinary URL with no transforms (q_auto, f_auto, w_, h_, c_fill, etc.). */
+export function getRawCloudinaryUrl(url: string): string {
+  if (!url || !url.includes("res.cloudinary.com")) return url;
+  const markerIndex = url.indexOf(CLOUDINARY_IMAGE_UPLOAD_SEGMENT);
+  if (markerIndex === -1) return url;
+  const prefix = url.slice(0, markerIndex + CLOUDINARY_IMAGE_UPLOAD_SEGMENT.length);
+  const rest = url.slice(markerIndex + CLOUDINARY_IMAGE_UPLOAD_SEGMENT.length);
+  if (!rest) return url;
+  const parts = rest.split("/");
+  const versionIdx = parts.findIndex((p) => /^v\d+$/.test(p));
+  if (versionIdx >= 0) {
+    return `${prefix}${parts.slice(versionIdx).join("/")}`;
+  }
+  return url;
+}
+
 export function buildCloudinaryTransformUrl(url: string, transform: string) {
   if (!url || !transform || !url.includes("res.cloudinary.com")) return url;
 
